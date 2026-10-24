@@ -61,3 +61,36 @@ it('hundreds of boundary mutations preserve connectivity and every solution anch
     placement.forEach((c, r) => expect(regions[r][c]).toBe(r))
   }
 })
+
+it('rejects singleton regions and enforces inclusive difficulty area thresholds', () => {
+  expect(validRegions([[0]])).toBe(false)
+  expect(
+    validRegions([
+      [0, 1, 1],
+      [2, 1, 1],
+      [2, 2, 2],
+    ]),
+  ).toBe(false)
+  const threeCellsEach = [
+    [0, 0, 0],
+    [1, 1, 1],
+    [2, 2, 2],
+  ]
+  expect(validRegions(threeCellsEach, 3)).toBe(true)
+  expect(validRegions(threeCellsEach, 4)).toBe(false)
+  const fourCellsEach = Array.from({ length: 4 }, (_, r) => Array<number>(4).fill(r))
+  expect(validRegions(fourCellsEach, 4)).toBe(true)
+  expect(validRegions(fourCellsEach, 0)).toBe(false)
+})
+
+for (const minimumArea of [2, 3, 4])
+  it(`boundary mutations never shrink a donor below ${minimumArea} cells`, () => {
+    const rng = random(734)
+    const solution = generatePlacement(6, rng)
+    let regions = Array.from({ length: 6 }, (_, r) => Array<number>(6).fill(r))
+    for (let i = 0; i < 100; i++) {
+      regions = mutateRegions(regions, solution, rng, minimumArea) ?? regions
+      expect(validRegions(regions, minimumArea)).toBe(true)
+      expect(validPlacement(regions, solution)).toBe(true)
+    }
+  })

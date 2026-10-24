@@ -2,7 +2,7 @@ import { evaluateDifficulty } from './difficulty'
 import { generatePlacement, random } from './random'
 import { growRegions, mutateRegions } from './regionGrower'
 import { solve, uniqueSolution } from './solver'
-import { validRegions } from './validator'
+import { MIN_REGION_AREA, validRegions } from './validator'
 import type { GenerateOptions, QueensPuzzle } from './types'
 import { GENERATOR_VERSION } from './version'
 export { GENERATOR_VERSION } from './version'
@@ -26,16 +26,23 @@ export function generatePuzzle(options: GenerateOptions): QueensPuzzle {
     mutationBudget > 1000
   )
     throw new Error('生成參數不合法。')
+  const minimumArea = MIN_REGION_AREA[options.difficulty ?? 'easy']
   const rng = random(seed)
   for (let attempt = 0; attempt < maxAttempts; attempt++) {
     const solution = generatePlacement(size, rng)
-    let regions = growRegions(solution, rng)
-    let count = solve(regions, 24).solutionCount
+    let regions = growRegions(solution, rng, minimumArea)
+    if (!validRegions(regions, minimumArea)) continue
+    let search = solve(regions, 24)
     for (let mutation = 0; mutation <= mutationBudget; mutation++) {
-      if (count === 1 && uniqueSolution(regions, solution) && validRegions(regions)) {
+      if (
+        search.solutionCount === 1 &&
+        uniqueSolution(regions, solution) &&
+        validRegions(regions, minimumArea)
+      ) {
         const analysis = evaluateDifficulty(regions)
         if (
           analysis.difficulty !== 'unrated' &&
+          validRegions(regions, MIN_REGION_AREA[analysis.difficulty]) &&
           (!options.difficulty || options.difficulty === analysis.difficulty)
         ) {
           return {
@@ -54,12 +61,12 @@ export function generatePuzzle(options: GenerateOptions): QueensPuzzle {
         break
       }
       if (mutation === mutationBudget) break
-      const candidate = mutateRegions(regions, solution, rng)
+      const candidate = mutateRegions(regions, solution, rng, minimumArea, search.solutions)
       if (!candidate) continue
       const result = solve(candidate, 24)
-      if (!result.exhausted && result.solutionCount <= count) {
+      if (!result.exhausted && result.solutionCount <= search.solutionCount) {
         regions = candidate
-        count = result.solutionCount
+        search = result
       }
     }
   }

@@ -1,11 +1,13 @@
 import type { CellState, DeductionStep, DifficultyReport, Strategy } from './types'
 import { applyStep, contradiction, createState, type LogicState } from './deductions/state'
+import { adjacentExclusion } from './deductions/adjacency'
 import { singleCandidate } from './deductions/singles'
 import { lockedCandidates } from './deductions/intersections'
 import { hallSets } from './deductions/hall'
 import { contradictionReasoning } from './deductions/contradiction'
 export const STRATEGY_WEIGHTS: Record<Strategy, number> = {
   single: 1,
+  adjacency: 1,
   intersection: 4,
   hall: 10,
   contradiction: 16,
@@ -13,6 +15,7 @@ export const STRATEGY_WEIGHTS: Record<Strategy, number> = {
 export function nextDeduction(state: LogicState, maxLevel = 3): DeductionStep | null {
   return (
     singleCandidate(state) ??
+    adjacentExclusion(state) ??
     (maxLevel >= 2 ? lockedCandidates(state) : null) ??
     (maxLevel >= 3 ? (hallSets(state) ?? contradictionReasoning(state)) : null)
   )

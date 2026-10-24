@@ -69,3 +69,26 @@ it('Hall sets safely eliminate candidates even on a board with multiple solution
     expect(step!.cells.every((c) => !queenCells.includes(c))).toBe(true)
   }
 })
+
+it('basic adjacency exclusion preserves every solution and does not exclude its own candidates', async () => {
+  const { adjacentExclusion } = await import('../queens/deductions/adjacency')
+  const { random, generatePlacement } = await import('../queens/random')
+  const { growRegions } = await import('../queens/regionGrower')
+  let deductions = 0
+  for (let seed = 0; seed < 30; seed++) {
+    const rng = random(seed)
+    const regions = growRegions(generatePlacement(6, rng), rng)
+    const state = createState(regions)
+    const step = adjacentExclusion(state)
+    if (!step) continue
+    deductions++
+    expect(step.level).toBe(1)
+    const result = solve(regions, 1000)
+    expect(result.exhausted).toBe(false)
+    for (const solution of result.solutions) {
+      const queenCells = solution.map((col, row) => row * 6 + col)
+      expect(step.cells.every((cell) => !queenCells.includes(cell))).toBe(true)
+    }
+  }
+  expect(deductions).toBeGreaterThan(0)
+})

@@ -1,4 +1,4 @@
-import type { Position } from './types'
+import type { Difficulty, Position } from './types'
 export function neighbors(index: number, size: number): number[] {
   const row = Math.floor(index / size),
     col = index % size
@@ -25,17 +25,24 @@ export function connected(cells: number[], size: number): boolean {
     }
   return seen.size === cells.length
 }
-export function validRegions(regions: number[][]): boolean {
+export const MIN_REGION_AREA: Readonly<Record<Difficulty, number>> = { easy: 2, medium: 3, hard: 4 }
+
+export function validRegions(regions: number[][], minimumArea = 2): boolean {
   const n = regions.length
-  if (n < 1 || n > 12 || regions.some((row) => row.length !== n)) return false
+  if (
+    !Number.isInteger(minimumArea) ||
+    minimumArea < 1 ||
+    n < 1 ||
+    n > 12 ||
+    regions.some((row) => row.length !== n)
+  )
+    return false
   const flat = regions.flat()
   if (flat.some((id) => !Number.isInteger(id) || id < 0 || id >= n)) return false
-  return Array.from({ length: n }, (_, id) =>
-    connected(
-      flat.flatMap((v, i) => (v === id ? [i] : [])),
-      n,
-    ),
-  ).every(Boolean)
+  return Array.from({ length: n }, (_, id) => {
+    const cells = flat.flatMap((v, i) => (v === id ? [i] : []))
+    return cells.length >= minimumArea && connected(cells, n)
+  }).every(Boolean)
 }
 export function conflictCells(regions: number[][], queens: Position[]): number[] {
   const n = regions.length,

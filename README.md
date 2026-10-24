@@ -14,7 +14,7 @@ npm run dev
 預設開啟 http://localhost:5173 。可直接使用以下網址重現一局：
 
 ```text
-http://localhost:5173/?size=8&difficulty=easy&seed=42&v=1.0.0
+http://localhost:5173/?size=8&difficulty=easy&seed=42&v=2.0.0
 ```
 
 ```sh
@@ -84,10 +84,10 @@ src/
 
 1. Mulberry32 seeded PRNG 驅動所有隨機選擇，不使用 Math.random 或牆鐘時間作為生成條件。
 2. Randomized backtracking 產生不重複的欄排列；相鄰列欄差必須大於 1，最多搜尋 200,000 節點。
-3. 每個皇冠格建立一個區域，以隨機加權 frontier 生長填滿棋盤。只能從上下左右加入未分配格，連通性由構造保證。面積的軟性懲罰避免總是由同一區無限擴張；隨機生長偏好允許區域大小差異與不規則邊界。
-4. 用最多 24 解的計數作為局部搜尋目標。隨機轉移邊界格到相鄰區，只接受不增加解數的盤面。皇冠 seed 格不移動；每次檢查 donor 的連通性，recipient 因正交相鄰保持連通。
-5. 候選唯一盤面再次以最多 **2 解**的獨立 Solver 驗證，必須只有一解、搜尋未超限、找到的解逐列等於原始皇冠配置，並驗證整張盤面連通性，才可繼續難度驗證。
-6. 推理引擎完整解出且分級精確符合目標時接受，否則重新生成。
+3. 每個皇冠格建立一個區域，以隨機加權 frontier 生長填滿棋盤。只能從上下左右加入未分配格，連通性由構造保證。優先擴張尚未達到最小面積的區域，再以軟性面積平衡與隨機偏好完成剩餘格子。輕鬆每區至少 2 格、適中至少 3 格、挑戰至少 4 格；任何單格色區都不合格。若區域被包圍而無法達標，整張盤面會被拒絕並重新生成。
+4. 用最多 24 解的計數作為局部搜尋目標，優先轉移替代解中的非目標皇冠格，以消除已知多解，分數相同時使用 Seed 決定順序。只接受不增加解數的盤面。皇冠 seed 格不移動；每次檢查 donor 的連通性與最小面積，recipient 因正交相鄰保持連通。
+5. 候選唯一盤面再次以最多 **2 解**的獨立 Solver 驗證，必須只有一解、搜尋未超限、找到的解逐列等於原始皇冠配置，並驗證整張盤面連通性與最小區域面積，才可繼續難度驗證。
+6. 推理引擎完整解出且分級精確符合目標時，再依實際難度驗證最小區域面積才接受；否則重新生成。面積限制不取代邏輯難度評估。生成器版本為 2.0.0，舊版連結不會被當成相同關卡。
 
 Solver 使用 row-by-row DFS、column/region bitmask 和相鄰列剪枝；每次最多 2,000,000 節點。到達節點上限時回傳 `exhausted`，不得當成唯一解成功。一般唯一解檢查找到第二組解立刻終止。
 
@@ -107,11 +107,11 @@ console.log(puzzle.analysis.steps) // strategy、level、place/eliminate、cells
 
 | 分級             | 實際策略                                       | 權重                         |
 | ---------------- | ---------------------------------------------- | ---------------------------- |
-| Easy / Level 1   | 列、欄、區域與皇冠八鄰格排除後的單一候選       | 每次放置 1                   |
+| Easy / Level 1   | 單一候選與所有候選位置的共同八鄰格排除         | 放置 1；相鄰排除 1 + 格數    |
 | Medium / Level 2 | 區域/列/欄交集與 locked candidates             | 4 + 排除格數                 |
 | Hard / Level 3   | 不同單位家族間的 2/3 組 Hall sets；深度 1 反證 | Hall 10 / 反證 16 + 排除格數 |
 
-總分加總每一步權重，記錄在 `difficultyScore`；權重集中於 `STRATEGY_WEIGHTS`，步驟保存在 `analysis.steps`。每步皇冠放置自動排除所有同行、同欄、同區與八鄰格候選。反證只在一個候選格假設放皇冠，然後進行單一候選/交集推理；如導出矛盾才排除該格，並保留子步驟與具體矛盾單位，提示中可展開查看。**不以暴力搜尋節點數計算難度。**
+總分加總每一步權重，記錄在 `difficultyScore`；權重集中於 `STRATEGY_WEIGHTS`，步驟保存在 `analysis.steps`。每步皇冠放置自動排除所有同行、同欄、同區與八鄰格候選。若某格會與某單位的所有候選位置直接相鄰，基礎相鄰排除可安全將其標 X，避免輕鬆關卡依賴單格色區。反證只在一個候選格假設放皇冠，然後進行單一候選/相鄰排除/交集推理；如導出矛盾才排除該格，並保留子步驟與具體矛盾單位，提示中可展開查看。**不以暴力搜尋節點數計算難度。**
 
 最多進行 2N² 個推理步驟；反證分支也最多 2N² 步。未能完整解完的盤面標示 `unrated` 並拒絕交付。分級表示「目前固定策略順序與範圍下需要的最高層級」，不是經玩家實測校準的心理難度，也不保證是理論上最低的解題難度。
 
@@ -119,11 +119,11 @@ console.log(puzzle.analysis.steps) // strategy、level、place/eliminate、cells
 
 ## 驗證與限制
 
-最終驗證：43 個 Vitest 核心測試、14 個 Playwright E2E 全數通過；TypeScript、Oxlint＋ESLint、Oxfmt format check 與 production build 通過。E2E 每局監聽 browser console errors 與 uncaught page errors。
+最終驗證：51 個 Vitest 核心測試、14 個 Playwright E2E 全數通過；TypeScript、Oxlint＋ESLint、Oxfmt format check 與 production build 通過。E2E 每局監聽 browser console errors 與 uncaught page errors。
 
-測試包含：獨立 permutation oracle 與 Solver 的全解對照、無解/多解/唯一解、遠距對角線、跨 Seed/大小批次生成、250 次邊界變異的連通性、完整 recipe 序列化重現、所有難度標籤與最低層級驗證、提示/排除的解保留、Hall sets 的多解安全性，以及預算耗盡的明確失敗。
+測試包含：獨立 permutation oracle 與 Solver 的全解對照、無解/多解/唯一解、遠距對角線、跨 Seed/大小批次生成、250 次邊界變異的連通性、各難度最小面積與變異下限、完整 recipe 序列化重現、所有難度標籤與最低層級驗證、提示/排除的解保留、Hall sets 與基礎相鄰排除的多解安全性，以及預算耗盡的明確失敗。
 
-18 種大小（6/7/8/9/10/12）與難度組合皆以 Seed 42 在預設預算下成功；2026-10-24 本機單獨執行矩陣測試，6～9 格約 1～63ms、10 格約 9～483ms、12 格約 2.3～5.4s。這是單一 Seed 的樣本測量，不代表每一個 Seed 都會成功，也不是裝置效能保證。可重跑：
+18 種大小（6/7/8/9/10/12）與難度組合皆以 Seed 42 在預設預算下成功；2026-10-24 本機單獨執行矩陣測試，6～9 格約 2～140ms、10 格約 36～899ms、12 格約 1.9～6.6s。這是單一 Seed 的樣本測量，不代表每一個 Seed 都會成功，也不是裝置效能保證。可重跑：
 
 ```sh
 npx vitest run src/tests/generation-matrix.test.ts --disableConsoleIntercept
@@ -132,7 +132,7 @@ npx vitest run src/tests/generation-matrix.test.ts --disableConsoleIntercept
 已知限制：
 
 - 部分 Seed 與難度組合仍可能用盡預算；UI 明確回報失敗，沒有預設題庫 fallback。
-- 區域有連通性與軟性面積平衡，但沒有美觀最佳化目標，可能出現單格、細長或較大的區域。
+- 區域有連通性與軟性面積平衡，但沒有美觀最佳化目標，可能出現細長或較大的區域；最小面積依難度強制為 2/3/4 格。
 - Hall sets 限 2/3 組，反證限單層；不包含所有人類策略。Unrated 關卡不提供遊玩。
 - 遊戲進度與 Undo/Redo 不跨重新整理儲存；重載分享 URL 重開相同關卡。操作歷史保留最近 1,000 步。
 - E2E 使用桌面 Chromium 與同引擎的 Pixel 7 模擬，尚未驗證實體手機、Safari 或 Firefox；可見焦點與 ARIA 已實作，但沒有實體螢幕閱讀器使用者測試。

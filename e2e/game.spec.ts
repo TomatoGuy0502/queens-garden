@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test'
+import { GENERATOR_VERSION } from '../src/queens/version'
 import { solve } from '../src/queens/solver'
 import type { Page } from '@playwright/test'
 const browserErrors = new WeakMap<Page, string[]>()
@@ -14,7 +15,7 @@ test.afterEach(({ page }) => {
   expect(browserErrors.get(page)).toEqual([])
 })
 async function start(page: Page) {
-  await page.goto('/?size=6&difficulty=easy&seed=42&v=1.0.0')
+  await page.goto(`/?size=6&difficulty=easy&seed=42&v=${GENERATOR_VERSION}`)
   await expect(page.getByRole('grid')).toBeVisible({ timeout: 30000 })
   await expect(page.getByRole('gridcell')).toHaveCount(36)
 }
@@ -112,9 +113,9 @@ test('pause conceals board and freezes timer; hint explains and safely applies',
   await page.getByRole('button', { name: '繼續遊戲', exact: true }).last().click()
   await page.getByRole('button', { name: '給我一點提示', exact: true }).click()
   await expect(page.getByRole('button', { name: '套用這一步 →' })).toBeVisible()
-  await expect(page.locator('.feedback')).toContainText('只剩一個候選格')
+  await expect(page.locator('.feedback')).toContainText('相鄰')
   await page.getByRole('button', { name: '套用這一步 →' }).click()
-  await expect(page.locator('[data-state="queen"]')).toHaveCount(1)
+  await expect(page.locator('[data-state="marked"]')).not.toHaveCount(0)
   await page.getByRole('button', { name: '檢查錯誤', exact: true }).click()
   await expect(page.locator('.feedback')).toContainText('都正確')
 })
@@ -162,7 +163,7 @@ test('contradictory placements get contradiction feedback before any hint', asyn
 })
 
 test('large boards retain touch targets without widening the document', async ({ page }) => {
-  await page.goto('/?size=12&difficulty=easy&seed=42&v=1.0.0')
+  await page.goto(`/?size=12&difficulty=easy&seed=42&v=${GENERATOR_VERSION}`)
   await expect(page.getByRole('gridcell')).toHaveCount(144, { timeout: 30000 })
   expect((await cell(page, 0).boundingBox())!.width).toBeGreaterThanOrEqual(40)
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)

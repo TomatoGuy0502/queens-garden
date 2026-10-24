@@ -25,7 +25,7 @@ export interface SolveResult {
   nodes: number
   exhausted: boolean
 }
-export type Strategy = 'single' | 'intersection' | 'hall' | 'contradiction'
+export type Strategy = 'single' | 'adjacency' | 'intersection' | 'hall' | 'contradiction'
 export interface DeductionStep {
   strategy: Strategy
   level: 1 | 2 | 3
