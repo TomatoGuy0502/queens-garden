@@ -74,6 +74,8 @@ export interface SharedHint {
   boardRevision: number
   step: DeductionStep | null
   message: string
+  /** 1 = where to look, 2 = the technique, 3 = the answer; 0 when there is no logical step. */
+  level: number
 }
 export interface GameSnapshot {
   id: string

@@ -12,6 +12,7 @@ import type {
 } from '../shared/coop'
 import { ROOM_CODE_ALPHABET, ROOM_CODE_LENGTH, ROOM_CODE_PATTERN } from '../shared/roomCode'
 import type { CellState, PuzzleDefinition } from '../src/queens/types'
+import { HINT_LEVELS } from '../src/queens/strategies'
 import { conflictCells } from '../src/queens/validator'
 import { RoomError, type RoomRepository, type StoredPlayer, type StoredRoom } from './model'
 import type { Compute, HintResult } from './compute'
@@ -445,6 +446,8 @@ export class RoomManager {
             hint.boardRevision !== room.boardRevision
           )
             throw new RoomError('提示已過期，請重新取得。', 'STALE_HINT')
+          if (hint.level < HINT_LEVELS)
+            throw new RoomError('請先看完整個提示，再套用這一步。', 'HINT_NOT_REVEALED')
           const changes = hint.step.cells
             .map((index): Change => ({
               index,
@@ -510,9 +513,15 @@ export class RoomManager {
     if (context.duplicate) return this.snapshot(context.room)
     let result: HintResult | null = null
     const mistakes: number[] = []
-    if (command.type === 'hint')
+    // Asking again on an unchanged board reveals more of the shared hint without recomputing it.
+    const current = context.room.hint
+    const deepen =
+      command.type === 'hint' &&
+      !!current?.step &&
+      current.boardRevision === context.room.boardRevision
+    if (command.type === 'hint' && !deepen)
       result = await this.compute.hint(context.room.puzzle!.regions, context.room.cells)
-    else
+    else if (command.type === 'check')
       context.room.cells.forEach((state, index) => {
         const queen =
           context.room.puzzle!.solution[Math.floor(index / context.room.settings.size)] ===
@@ -528,9 +537,21 @@ export class RoomManager {
       if (room.boardRevision !== context.room.boardRevision)
         throw new RoomError('棋盤已改變，請重新取得提示。', 'STALE_HINT')
       this.remember(room, credentials, command)
-      if (result) {
+      if (command.type === 'hint' && deepen) {
+        const shown = room.hint
+        // Once the answer is on the board, asking again neither changes nor counts anything.
+        if (shown?.step && shown.level < HINT_LEVELS) {
+          room.hints++
+          room.hint = { ...shown, level: shown.level + 1 }
+        }
+      } else if (result) {
         room.hints++
-        room.hint = { ...result, id: command.actionId, boardRevision: room.boardRevision }
+        room.hint = {
+          ...result,
+          id: command.actionId,
+          boardRevision: room.boardRevision,
+          level: result.step ? 1 : 0,
+        }
         room.message = result.message
         room.mistakes = []
       } else {

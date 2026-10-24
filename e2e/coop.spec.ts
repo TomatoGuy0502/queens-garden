@@ -87,6 +87,8 @@ test('two players share cells, personal undo, markers, hints and team completion
     await cell(page, 0).click()
     await expect(cell(guest, 0)).toHaveAttribute('data-state', 'empty')
     await page.getByRole('button', { name: '給我一點提示', exact: true }).click()
+    await page.getByRole('button', { name: '再多一點提示', exact: true }).click()
+    await page.getByRole('button', { name: '告訴我答案', exact: true }).click()
     await expect(guest.getByRole('button', { name: '套用這一步 →' })).toBeVisible({
       timeout: 15000,
     })
@@ -511,6 +513,8 @@ test('host restarts the same shared puzzle with confirmation while guests cannot
     const seed = await page.locator('.coop-footer').innerText()
     await expect(guest.getByRole('button', { name: '重新開始', exact: true })).toBeDisabled()
     await page.getByRole('button', { name: '給我一點提示', exact: true }).click()
+    await page.getByRole('button', { name: '再多一點提示', exact: true }).click()
+    await page.getByRole('button', { name: '告訴我答案', exact: true }).click()
     await guest.getByRole('button', { name: '套用這一步 →' }).click()
     await expect(page.locator('[data-state="marked"]')).not.toHaveCount(0)
     await cell(guest, 0).click()
@@ -547,6 +551,49 @@ test('host restarts the same shared puzzle with confirmation while guests cannot
       .click()
     for (const p of [page, guest])
       await expect(p.getByRole('heading', { name: /等待室/ })).toBeVisible()
+  } finally {
+    await context.close()
+  }
+})
+
+test('a team hint is revealed in levels that every player sees together', async ({
+  page,
+  browser,
+  isMobile,
+}) => {
+  const { guest, context } = await pair(page, browser, isMobile)
+  try {
+    const apply = (who: Page) => who.getByRole('button', { name: '套用這一步 →' })
+    await page.getByRole('button', { name: '給我一點提示', exact: true }).click()
+    for (const who of [page, guest]) {
+      await expect(who.locator('.coop-feedback')).toContainText('邏輯提示 1 / 3', {
+        timeout: 15000,
+      })
+      await expect(who.locator('.coop-feedback')).toContainText('先看看')
+      await expect(apply(who)).toHaveCount(0)
+    }
+    const looking = await guest.locator('.cell.highlighted').count()
+    expect(looking).toBeGreaterThan(0)
+    // The other player deepens the same hint, and the host sees it follow.
+    await guest.getByRole('button', { name: '再多一點提示', exact: true }).click()
+    for (const who of [page, guest]) {
+      await expect(who.locator('.coop-feedback')).toContainText('邏輯提示 2 / 3')
+      await expect(who.locator('.coop-feedback')).toContainText('相鄰排除')
+      await expect(apply(who)).toHaveCount(0)
+    }
+    await page.getByRole('button', { name: '告訴我答案', exact: true }).click()
+    for (const who of [page, guest]) {
+      await expect(who.locator('.coop-feedback')).toContainText('邏輯提示 3 / 3')
+      await expect(apply(who)).toBeVisible()
+      await expect(who.getByRole('button', { name: '答案已顯示', exact: true })).toBeDisabled()
+    }
+    await expect(guest.locator('.cell.highlighted').first()).toBeVisible()
+    await cell(page, 0).click()
+    for (const who of [page, guest]) {
+      await expect(apply(who)).toHaveCount(0)
+      await expect(who.locator('.cell.highlighted')).toHaveCount(0)
+      await expect(who.getByRole('button', { name: '給我一點提示', exact: true })).toBeEnabled()
+    }
   } finally {
     await context.close()
   }

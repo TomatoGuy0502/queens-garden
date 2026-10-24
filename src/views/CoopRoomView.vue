@@ -14,6 +14,7 @@ import GameResult from '../components/GameResult.vue'
 import GameRules from '../components/GameRules.vue'
 import GameShare from '../components/GameShare.vue'
 import { DIFFICULTY_LABELS } from '../queens/levels'
+import { HINT_LEVELS, hintView } from '../queens/strategies'
 import { useRoomStore } from '../stores/room'
 import { useCoopGameStore } from '../stores/game'
 import { useGamePreferences } from '../composables/useGamePreferences'
@@ -34,6 +35,16 @@ const confirmation = shallowRef<{ kind: 'restart' | 'new'; gameId: string } | nu
 const labels = DIFFICULTY_LABELS
 const blocked = computed(() => !room.connected || game.state?.phase !== 'playing')
 const canResume = computed(() => room.connected)
+// The shared hint is revealed in levels; the whole room sees the same level.
+const hintInfo = computed(() => {
+  const shared = game.state?.hint
+  return shared?.step && game.state?.puzzle
+    ? hintView(shared.step, shared.level, game.state.puzzle.regions)
+    : null
+})
+const hintLevel = computed(() => (hintInfo.value ? game.state!.hint!.level : 0))
+const hintRevealed = computed(() => hintLevel.value >= HINT_LEVELS)
+const feedback = computed(() => hintInfo.value?.text ?? game.state?.message ?? '')
 const mistakes = computed(() => [...new Set([...game.conflicts, ...(game.state?.mistakes ?? [])])])
 const timer = setInterval(() => room.clock(), 200)
 watch(
@@ -251,7 +262,7 @@ async function reset() {
               :pending-cells="room.pendingCells"
               :points="room.points"
               :hovers="room.peerHovers"
-              :highlighted="game.state.hint?.step?.cells ?? []"
+              :highlighted="hintInfo?.cells ?? []"
               :mistakes="mistakes"
               @end-review="reviewing = false"
               @hover="room.hover"
@@ -297,6 +308,8 @@ async function reset() {
                 ['playing', 'completed'].includes(game.state.phase)
               "
               :can-restart="room.isHost && room.connected && !room.pending"
+              :hint-level="hintLevel"
+              :hint-revealed="hintRevealed"
               @undo="undo"
               @redo="redo"
               @restart="confirmRound('restart')"
@@ -312,12 +325,11 @@ async function reset() {
               更換關卡
             </button>
             <div class="coop-feedback" role="status" aria-live="polite">
-              <p v-if="game.state.message">{{ game.state.message }}</p>
-              <button
-                v-if="game.state.hint?.step && !blocked"
-                class="text-button"
-                @click="applyHint"
-              >
+              <p v-if="feedback">
+                <span v-if="hintInfo" class="hint-level">邏輯提示 {{ hintLevel }} / 3　</span
+                >{{ feedback }}
+              </p>
+              <button v-if="hintRevealed && !blocked" class="text-button" @click="applyHint">
                 套用這一步 →
               </button>
               <p v-if="game.conflicts.length">皇冠有衝突，請檢查斜紋格子。</p>
@@ -489,6 +501,10 @@ async function reset() {
 }
 .coop-feedback p {
   margin: 16px 0;
+}
+.hint-level {
+  color: var(--accent);
+  font-weight: 600;
 }
 .coop-footer {
   font:

@@ -29,6 +29,18 @@ const compute = (): Compute => ({
   hint: (regions, cells) => Promise.resolve(logicalHint(regions, cells)),
   close: () => Promise.resolve(),
 })
+async function deepen(
+  manager: RoomManager,
+  who: Parameters<RoomManager['command']>[0],
+  gameId: string,
+  times: number,
+  start?: Awaited<ReturnType<RoomManager['command']>>,
+) {
+  let snapshot = start
+  for (let i = 0; i < times; i++)
+    snapshot = await manager.command(who, { type: 'hint', actionId: randomUUID(), gameId })
+  return snapshot!
+}
 async function game(repository = memory(), engine = compute()) {
   const manager = new RoomManager(repository, engine)
   const host = await manager.create('Alice', { size: 6, difficulty: 'easy' }),
@@ -207,13 +219,17 @@ it('invalid positions do not win; a valid solution completes for the team; undo 
 })
 it('shared hints and batch application support undo without revealing the solution', async () => {
   const { manager, host, guest, state } = await game()
-  const hinted = await manager.command(host, {
+  const first = await manager.command(host, {
     type: 'hint',
     actionId: randomUUID(),
     gameId: state.game.id,
   })
-  expect(hinted.game.hint?.step).toBeTruthy()
-  expect(hinted.game.hints).toBe(1)
+  expect(first.game.hint?.step).toBeTruthy()
+  expect(first.game.hint?.level).toBe(1)
+  expect(first.game.hints).toBe(1)
+  const hinted = await deepen(manager, host, state.game.id, 2)
+  expect(hinted.game.hint?.level).toBe(3)
+  expect(hinted.game.hints).toBe(3)
   const applied = await manager.command(guest, {
     type: 'applyHint',
     actionId: randomUUID(),
@@ -221,6 +237,48 @@ it('shared hints and batch application support undo without revealing the soluti
     hintId: hinted.game.hint!.id,
   })
   expect(applied.game.cells.filter((c) => c === 'marked').length).toBeGreaterThan(0)
+})
+it('a shared hint is revealed one level at a time for the whole room and counted per level', async () => {
+  const { manager, host, guest, state } = await game()
+  const send = (who: typeof host) =>
+    manager.command(who, { type: 'hint', actionId: randomUUID(), gameId: state.game.id })
+  const first = await send(host)
+  const id = first.game.hint!.id
+  const second = await send(guest)
+  expect(second.game.hint).toMatchObject({ id, level: 2 })
+  expect(second.game.hints).toBe(2)
+  await expect(
+    manager.command(guest, {
+      type: 'applyHint',
+      actionId: randomUUID(),
+      gameId: state.game.id,
+      hintId: id,
+    }),
+  ).rejects.toMatchObject({ code: 'HINT_NOT_REVEALED' })
+  const third = await send(host)
+  expect(third.game.hint).toMatchObject({ id, level: 3 })
+  // The answer is already shown: asking again changes and counts nothing.
+  const again = await send(guest)
+  expect(again.game.hint).toMatchObject({ id, level: 3 })
+  expect(again.game.hints).toBe(3)
+  await manager.command(guest, {
+    type: 'applyHint',
+    actionId: randomUUID(),
+    gameId: state.game.id,
+    hintId: id,
+  })
+})
+it('editing the board starts the next shared hint from the first level again', async () => {
+  const { manager, host, state } = await game()
+  const send = () =>
+    manager.command(host, { type: 'hint', actionId: randomUUID(), gameId: state.game.id })
+  await send()
+  expect((await send()).game.hint?.level).toBe(2)
+  const edited = await manager.command(host, cell(state, 35))
+  expect(edited.game.hint).toBeNull()
+  const fresh = await send()
+  expect(fresh.game.hint?.level).toBe(1)
+  expect(fresh.game.hints).toBe(3)
 })
 it('failed persistence never broadcasts or applies an uncommitted command', async () => {
   const repository = memory(),
@@ -344,11 +402,13 @@ it('host restart preserves the puzzle and team, clears the attempt atomically an
   await expect(
     manager.command(guest, { type: 'restart', actionId: randomUUID(), gameId: state.game.id }),
   ).rejects.toMatchObject({ code: 'HOST_ONLY' })
-  const hinted = await manager.command(host, {
-    type: 'hint',
-    actionId: randomUUID(),
-    gameId: state.game.id,
-  })
+  const hinted = await deepen(
+    manager,
+    host,
+    state.game.id,
+    2,
+    await manager.command(host, { type: 'hint', actionId: randomUUID(), gameId: state.game.id }),
+  )
   await manager.command(guest, {
     type: 'applyHint',
     actionId: randomUUID(),
