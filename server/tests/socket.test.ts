@@ -184,3 +184,21 @@ it('compiled workers ignore watch dependency messages and do not inherit develop
   )
   expect(stdout).toContain('generated:6')
 })
+
+it('foreground computation preempts background generation on a single worker', async () => {
+  const pool = workerPool(1)
+  try {
+    const background = pool
+      .generateValidated({ size: 12, difficulty: 'hard', seed: 42 }, 'background')
+      .catch((error: unknown) => error)
+    const puzzle = await pool.generate({ size: 6, difficulty: 'easy', seed: 42 })
+    expect(puzzle.size).toBe(6)
+    expect(await background).toMatchObject({ code: 'BACKGROUND_PREEMPTED' })
+    expect(pool.isIdle()).toBe(true)
+    await expect(
+      pool.validate({ ...puzzle, difficultyScore: -1 }, { size: 6, difficulty: 'easy', seed: 42 }),
+    ).rejects.toMatchObject({ code: 'CATALOG_INVALID' })
+  } finally {
+    await pool.close()
+  }
+})

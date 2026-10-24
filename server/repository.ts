@@ -1,6 +1,7 @@
 import { mkdir, readFile, rename, writeFile } from 'node:fs/promises'
 import { dirname } from 'node:path'
 import { randomUUID } from 'node:crypto'
+import { databaseCatalogRepository } from './puzzleCatalogRepository'
 import { Pool } from 'pg'
 import { databaseUrl } from './databaseUrl'
 import { drizzle } from 'drizzle-orm/node-postgres'
@@ -58,7 +59,12 @@ export function postgresRepository(url: string) {
     idleTimeoutMillis: 30000,
   })
   pool.on('error', (error) => console.error('PostgreSQL pool connection error:', error.message))
-  return { repository: databaseRepository(drizzle(pool, { schema })), close: () => pool.end() }
+  const db = drizzle(pool, { schema })
+  return {
+    repository: databaseRepository(db),
+    catalog: databaseCatalogRepository(db),
+    close: () => pool.end(),
+  }
 }
 /** Explicit local-development storage. Production requires PostgreSQL. */
 export async function fileRepository(path: string): Promise<RoomRepository> {

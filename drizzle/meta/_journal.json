@@ -15,6 +15,13 @@
       "when": 1792843121273,
       "tag": "0001_wild_dreadnoughts",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1792869046139,
+      "tag": "0002_strange_the_renegades",
+      "breakpoints": true
     }
   ]
 }

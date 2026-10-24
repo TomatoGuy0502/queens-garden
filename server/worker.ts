@@ -1,3 +1,4 @@
+import { validateCatalogPuzzle, CatalogValidationError } from './puzzleValidation'
 import { parentPort } from 'node:worker_threads'
 import { generatePuzzle } from '../src/queens/generator'
 import { logicalHint } from '../src/queens/difficulty'
@@ -6,10 +7,19 @@ import { solve } from '../src/queens/solver'
 import type { ComputeJob, ComputeReply } from './compute'
 parentPort!.on('message', (job: ComputeJob) => {
   try {
-    if (job.type === 'generate') {
+    if (job.type === 'generate' || job.type === 'generate-validated') {
+      const puzzle = generatePuzzle(job.options)
       parentPort!.postMessage({
         type: 'queens:compute-result',
-        result: generatePuzzle(job.options),
+        result:
+          job.type === 'generate-validated' ? validateCatalogPuzzle(puzzle, job.options) : puzzle,
+      } satisfies ComputeReply)
+      return
+    }
+    if (job.type === 'validate') {
+      parentPort!.postMessage({
+        type: 'queens:compute-result',
+        result: validateCatalogPuzzle(job.puzzle, job.options),
       } satisfies ComputeReply)
       return
     }
@@ -23,6 +33,7 @@ parentPort!.on('message', (job: ComputeJob) => {
     parentPort!.postMessage({
       type: 'queens:compute-result',
       error: error instanceof Error ? error.message : '運算失敗。',
+      code: error instanceof CatalogValidationError ? error.code : 'COMPUTE_ERROR',
     } satisfies ComputeReply)
   }
 })
