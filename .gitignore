@@ -4,3 +4,6 @@ playwright-report/
 test-results/
 *.local
 .DS_Store
+dist-server/
+.data/
+.env

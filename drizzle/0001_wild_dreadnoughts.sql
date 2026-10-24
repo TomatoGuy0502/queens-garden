@@ -1,0 +1,1 @@
+ALTER TABLE "coop_rooms" ADD COLUMN "revision" integer NOT NULL;

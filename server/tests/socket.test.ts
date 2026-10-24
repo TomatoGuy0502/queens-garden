@@ -1,0 +1,108 @@
+import { expect, it } from 'vitest'
+import { io, type Socket } from 'socket.io-client'
+import { randomUUID } from 'node:crypto'
+import { createApp } from '../app'
+import { generatePuzzle } from '../../src/queens/generator'
+import type {
+  ClientEvents,
+  Credentials,
+  RoomReply,
+  RoomSnapshot,
+  ServerEvents,
+} from '../../shared/coop'
+import type { StoredRoom } from '../model'
+import { logicalHint } from '../../src/queens/difficulty'
+import { workerPool } from '../compute'
+
+it('real Socket.IO clients receive shared state, authorized operations and transient pointers', async () => {
+  const records = new Map<string, StoredRoom>()
+  const { app } = await createApp({
+    repository: {
+      get: (id) => Promise.resolve(structuredClone(records.get(id) ?? null)),
+      save: (room) => {
+        records.set(room.id, structuredClone(room))
+        return Promise.resolve()
+      },
+      deleteExpired: () => Promise.resolve(),
+    },
+    compute: {
+      generate: () => Promise.resolve(generatePuzzle({ size: 6, seed: 42, difficulty: 'easy' })),
+      hint: (regions, cells) => Promise.resolve(logicalHint(regions, cells)),
+      close: () => Promise.resolve(),
+    },
+  })
+  const address = await app.listen({ port: 0, host: '127.0.0.1' })
+  const created = await app.inject({
+    method: 'POST',
+    url: '/api/rooms',
+    payload: { name: 'A', size: 6, difficulty: 'easy' },
+  })
+  const host = created.json<{ credentials: Credentials }>().credentials
+  const joined = await app.inject({
+    method: 'POST',
+    url: `/api/rooms/${host.roomId}/join`,
+    payload: { name: 'B' },
+  })
+  const guest = joined.json<{ credentials: Credentials }>().credentials
+  function connect(auth: Credentials) {
+    const socket: Socket<ServerEvents, ClientEvents> = io(address, {
+      auth,
+      transports: ['websocket'],
+      forceNew: true,
+      autoConnect: false,
+    })
+    return new Promise<Socket<ServerEvents, ClientEvents>>((resolve, reject) => {
+      socket.once('connect', () => resolve(socket))
+      socket.once('connect_error', reject)
+      socket.connect()
+    })
+  }
+  const a = await connect(host),
+    b = await connect(guest)
+  let current: RoomSnapshot | undefined
+  b.on('room:state', (state) => {
+    current = state
+  })
+  const send = (socket: typeof a, command: Parameters<ClientEvents['room:command']>[0]) =>
+    new Promise<RoomReply>((resolve) => socket.emit('room:command', command, resolve))
+  try {
+    await send(a, { type: 'ready', actionId: randomUUID(), ready: true })
+    await send(b, { type: 'ready', actionId: randomUUID(), ready: true })
+    expect((await send(b, { type: 'start', actionId: randomUUID() })).ok).toBe(false)
+    await send(a, { type: 'start', actionId: randomUUID() })
+    await expect.poll(() => current?.game.phase).toBe('playing')
+    const action = {
+      type: 'setCell' as const,
+      actionId: randomUUID(),
+      gameId: current!.game.id,
+      expectedVersion: 0,
+      index: 0,
+      nextState: 'queen' as const,
+    }
+    expect((await send(a, action)).ok).toBe(true)
+    await expect.poll(() => current?.game.cells[0]).toBe('queen')
+    expect((await send(a, action)).ok).toBe(true)
+    expect((await send(b, { ...action, actionId: randomUUID() })).ok).toBe(false)
+    const point = new Promise<number>((resolve) =>
+      b.once('room:point', (value) => resolve(value.index)),
+    )
+    a.emit('room:point', { gameId: current!.game.id, index: 7 })
+    expect(await point).toBe(7)
+    expect(JSON.stringify(current)).not.toMatch(/tokenHash|"solution"/)
+  } finally {
+    a.disconnect()
+    b.disconnect()
+    await app.close()
+  }
+})
+it('runs the actual generator and deduction engine in a Node worker', async () => {
+  const pool = workerPool(1)
+  try {
+    const puzzle = await pool.generate({ size: 6, seed: 42, difficulty: 'easy' })
+    expect(puzzle.solution).toHaveLength(6)
+    const hint = await pool.hint(puzzle.regions, Array(36).fill('empty'))
+    expect(hint.step).toBeTruthy()
+  } finally {
+    await pool.close()
+  }
+})

@@ -1,0 +1,54 @@
+import type { BoardAction, GameSnapshot, RoomSettings, SharedHint } from '../shared/coop'
+import type { CellState, QueensPuzzle } from '../src/queens/types'
+export interface StoredPlayer {
+  id: string
+  name: string
+  tokenHash: string
+  ready: boolean
+  lastSeenAt: number
+}
+export interface StoredRoom {
+  id: string
+  hostId: string
+  settings: RoomSettings
+  players: StoredPlayer[]
+  revision: number
+  expiresAt: number
+  checkpointAt: number
+  gameId: string
+  phase: GameSnapshot['phase']
+  puzzle: QueensPuzzle | null
+  cells: CellState[]
+  versions: number[]
+  boardRevision: number
+  actions: BoardAction[]
+  startedAt: number | null
+  pausedAt: number | null
+  pausedMs: number
+  finishedAt: number | null
+  moves: number
+  hints: number
+  hint: SharedHint | null
+  message: string
+  mistakes: number[]
+  receipts: Record<string, { playerId: string; fingerprint: string }>
+}
+export interface RoomEvent {
+  type: string
+  playerId: string
+  actionId?: string
+  changes?: BoardAction['changes']
+}
+export interface RoomRepository {
+  get(id: string): Promise<StoredRoom | null>
+  save(room: StoredRoom, event: RoomEvent): Promise<void>
+  deleteExpired(now: number): Promise<void>
+}
+export class RoomError extends Error {
+  constructor(
+    message: string,
+    public code = 'INVALID_ACTION',
+  ) {
+    super(message)
+  }
+}
