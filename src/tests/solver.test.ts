@@ -76,3 +76,27 @@ describe('independent solver', () => {
     ).toBe(false)
   })
 })
+
+it('matches an independent permutation oracle on twenty irregular boards', async () => {
+  const { random, generatePlacement } = await import('../queens/random')
+  const { growRegions } = await import('../queens/regionGrower')
+  function permutations(values: number[]): number[][] {
+    if (!values.length) return [[]]
+    return values.flatMap((v, i) =>
+      permutations(values.filter((_, j) => i !== j)).map((tail) => [v, ...tail]),
+    )
+  }
+  const all = permutations([0, 1, 2, 3, 4, 5])
+  for (let seed = 0; seed < 20; seed++) {
+    const rng = random(seed),
+      board = growRegions(generatePlacement(6, rng), rng)
+    const expected = all.filter((p) => {
+      if (p.some((c, r) => r > 0 && Math.abs(c - p[r - 1]) <= 1)) return false
+      return new Set(p.map((c, r) => board[r][c])).size === 6
+    })
+    const result = solve(board, 1000)
+    expect(result.exhausted).toBe(false)
+    expect(result.solutionCount).toBe(expected.length)
+    expect(result.solutions).toEqual(expected)
+  }
+})

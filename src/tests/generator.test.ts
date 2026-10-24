@@ -17,6 +17,25 @@ describe('bounded seeded generation', () => {
   it('reproduces identical serialized puzzles', () => {
     expect(generatePuzzle({ size: 8, seed: 734 })).toEqual(generatePuzzle({ size: 8, seed: 734 }))
   })
+  it('serializes its complete replay recipe, including custom work budgets', () => {
+    const puzzle = generatePuzzle({
+      size: 6,
+      seed: 42,
+      difficulty: 'medium',
+      maxAttempts: 200,
+      mutationBudget: 40,
+    })
+    const restored = JSON.parse(JSON.stringify(puzzle)) as typeof puzzle
+    expect(
+      generatePuzzle({
+        size: restored.size,
+        seed: restored.seed,
+        difficulty: restored.generation.requestedDifficulty,
+        maxAttempts: restored.generation.maxAttempts,
+        mutationBudget: restored.generation.mutationBudget,
+      }),
+    ).toEqual(puzzle)
+  })
   it('fails explicitly under a tiny budget, never returns an unchecked board', () => {
     expect(() => generatePuzzle({ size: 12, seed: 1, maxAttempts: 1, mutationBudget: 0 })).toThrow(
       /預算/,

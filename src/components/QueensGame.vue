@@ -8,7 +8,7 @@ import GameToolbar from './GameToolbar.vue'
 import GameRules from './GameRules.vue'
 import GameResult from './GameResult.vue'
 import { useQueensGame } from '../composables/useQueensGame'
-import { GENERATOR_VERSION } from '../queens/generator'
+import { GENERATOR_VERSION } from '../queens/version'
 import type { Difficulty } from '../queens/types'
 const game = useQueensGame()
 const {
@@ -182,6 +182,12 @@ onMounted(() => {
             <template v-if="message"
               ><span class="feedback-label">{{ hint ? '邏輯提示' : '遊戲訊息' }}</span>
               <p>{{ message }}</p>
+              <details v-if="hint?.evidence?.length" class="hint-evidence">
+                <summary>展開假設推理的 {{ hint.evidence.length }} 個步驟</summary>
+                <ol>
+                  <li v-for="(step, index) in hint.evidence" :key="index">{{ step.reason }}</li>
+                </ol>
+              </details>
               <button
                 v-if="hint && !blocked"
                 class="text-button apply-hint"
@@ -384,6 +390,20 @@ onMounted(() => {
 }
 .feedback p {
   margin: 5px 0;
+}
+.hint-evidence {
+  margin: 12px 0;
+  font-size: 11px;
+  color: var(--muted);
+}
+.hint-evidence summary {
+  cursor: pointer;
+}
+.hint-evidence ol {
+  padding-left: 20px;
+}
+.hint-evidence li {
+  margin: 8px 0;
 }
 .feedback-label {
   font-size: 10px;

@@ -4,11 +4,14 @@ import { growRegions, mutateRegions } from './regionGrower'
 import { solve, uniqueSolution } from './solver'
 import { validRegions } from './validator'
 import type { GenerateOptions, QueensPuzzle } from './types'
-export const GENERATOR_VERSION = '1.0.0'
+import { GENERATOR_VERSION } from './version'
+export { GENERATOR_VERSION } from './version'
 /** Fixed work budget, not wall-clock cutoffs: identical inputs reproduce identical output. */
 export function generatePuzzle(options: GenerateOptions): QueensPuzzle {
   const { size, seed, maxAttempts = 160, mutationBudget = 100 } = options
   if (
+    (options.difficulty !== undefined &&
+      !['easy', 'medium', 'hard'].includes(options.difficulty)) ||
     !Number.isInteger(size) ||
     size < 6 ||
     size > 12 ||
@@ -36,7 +39,7 @@ export function generatePuzzle(options: GenerateOptions): QueensPuzzle {
           (!options.difficulty || options.difficulty === analysis.difficulty)
         ) {
           return {
-            id: `${GENERATOR_VERSION}-${size}-${seed}-${options.difficulty ?? 'any'}`,
+            id: `${GENERATOR_VERSION}-${size}-${seed}-${options.difficulty ?? 'any'}-${mutationBudget}`,
             version: GENERATOR_VERSION,
             size,
             seed,
@@ -44,11 +47,13 @@ export function generatePuzzle(options: GenerateOptions): QueensPuzzle {
             solution,
             difficulty: analysis.difficulty,
             difficultyScore: analysis.score,
+            generation: { maxAttempts, mutationBudget, requestedDifficulty: options.difficulty },
             analysis,
           }
         }
         break
       }
+      if (mutation === mutationBudget) break
       const candidate = mutateRegions(regions, solution, rng)
       if (!candidate) continue
       const result = solve(candidate, 24)

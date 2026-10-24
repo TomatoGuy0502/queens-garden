@@ -53,50 +53,73 @@ async function navigate(index: number, event: KeyboardEvent) {
 }
 </script>
 <template>
-  <div class="board-wrap" :class="{ complete: won }">
-    <div
-      ref="board"
-      class="board"
-      role="grid"
-      aria-label="Queens 棋盤；方向鍵移動、空白鍵放皇冠、X 鍵標記"
-      :aria-rowcount="puzzle.size"
-      :aria-colcount="puzzle.size"
-      :class="{ concealed: paused }"
-      :inert="paused || busy"
-    >
+  <div class="board-scroll" :style="{ '--minimum-size': `${puzzle.size * 40 + 4}px` }">
+    <div class="board-wrap" :class="{ complete: won }">
       <div
-        v-for="(row, r) in rows"
-        :key="r"
-        role="row"
-        class="board-row"
-        :style="{ gridTemplateColumns: `repeat(${puzzle.size}, 1fr)` }"
+        ref="board"
+        class="board"
+        role="grid"
+        aria-label="Queens 棋盤；方向鍵移動、空白鍵放皇冠、X 鍵標記"
+        :aria-rowcount="puzzle.size"
+        :aria-colcount="puzzle.size"
+        :class="{ concealed: paused }"
+        :inert="paused || busy"
       >
-        <QueensCell
-          v-for="cell in row"
-          :key="cell.index"
-          v-bind="cell"
-          :size="puzzle.size"
-          :state="cells[cell.index]"
-          :active="focusIndex === cell.index"
-          :disabled="won || paused || busy"
-          :highlighted="highlighted.includes(cell.index)"
-          :mistake="mistakes.includes(cell.index)"
-          @play="emit('play', $event)"
-          @mark="emit('mark', $event)"
-          @navigate="navigate"
-          @focus="focusIndex = $event"
-        />
+        <div
+          v-for="(row, r) in rows"
+          :key="r"
+          role="row"
+          class="board-row"
+          :style="{ gridTemplateColumns: `repeat(${puzzle.size}, 1fr)` }"
+        >
+          <QueensCell
+            v-for="cell in row"
+            :key="cell.index"
+            v-bind="cell"
+            :size="puzzle.size"
+            :state="cells[cell.index]"
+            :active="focusIndex === cell.index"
+            :disabled="won || paused || busy"
+            :highlighted="highlighted.includes(cell.index)"
+            :mistake="mistakes.includes(cell.index)"
+            @play="emit('play', $event)"
+            @mark="emit('mark', $event)"
+            @navigate="navigate"
+            @focus="focusIndex = $event"
+          />
+        </div>
+      </div>
+      <div v-if="paused" class="pause-cover">
+        <Pause :size="28" />
+        <h2>休息一下也很好</h2>
+        <p>棋盤和計時都已暫停。</p>
+        <button class="primary" @click="emit('resume')"><Play :size="16" /> 繼續遊戲</button>
       </div>
     </div>
-    <div v-if="paused" class="pause-cover">
-      <Pause :size="28" />
-      <h2>休息一下也很好</h2>
-      <p>棋盤和計時都已暫停。</p>
-      <button class="primary" @click="emit('resume')"><Play :size="16" /> 繼續遊戲</button>
-    </div>
   </div>
+  <p v-if="puzzle.size >= 8" class="scroll-note">較大的棋盤可左右滑動，保留舒適的點擊空間。</p>
 </template>
 <style scoped>
+.board-scroll {
+  width: 100%;
+  overflow-x: auto;
+  border-radius: 5px;
+}
+.scroll-note {
+  display: none;
+}
+@media (max-width: 650px) {
+  .board-wrap {
+    min-width: var(--minimum-size);
+  }
+  .scroll-note {
+    display: block;
+    color: var(--muted);
+    font-size: 10px;
+    margin: 10px 0 0;
+  }
+}
+
 .board-wrap {
   position: relative;
   width: 100%;

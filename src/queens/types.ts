@@ -13,6 +13,7 @@ export interface PuzzleDefinition {
   seed: number
   difficulty: Difficulty
   difficultyScore: number
+  generation: { maxAttempts: number; mutationBudget: number; requestedDifficulty?: Difficulty }
 }
 export interface QueensPuzzle extends PuzzleDefinition {
   solution: QueenPlacement
@@ -31,6 +32,7 @@ export interface DeductionStep {
   action: 'place' | 'eliminate'
   cells: number[]
   reason: string
+  evidence?: DeductionStep[]
 }
 export interface DifficultyReport {
   difficulty: Difficulty | 'unrated'
