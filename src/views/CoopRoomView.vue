@@ -110,10 +110,9 @@ async function join() {
   }
 }
 function play(index: number) {
-  if (pointMode.value) {
-    room.point(index)
-    pointMode.value = false
-  } else void room.edit(index)
+  // Pointing is a mode the player switches off again, so several cells can be shown in a row.
+  if (pointMode.value) room.point(index)
+  else void room.edit(index)
 }
 function pause() {
   if (game.state)
@@ -287,9 +286,11 @@ async function reset() {
                 :disabled="blocked"
                 @click="pointMode = !pointMode"
               >
-                <MousePointer2 :size="16" />{{ pointMode ? '取消指示' : '指示格子' }}</button
+                <MousePointer2 :size="16" />{{ pointMode ? '結束指示' : '指示格子' }}</button
               ><span>{{
-                pointMode ? '點選一格，向隊友指出位置。' : '指示不會改變皇冠或 X。'
+                pointMode
+                  ? '指示中：點選任何格子向隊友指出位置，可連續指示，完成後按「結束指示」。'
+                  : '指示不會改變皇冠或 X。'
               }}</span>
             </div>
             <GameToolbar

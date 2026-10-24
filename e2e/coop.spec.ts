@@ -76,10 +76,25 @@ test('two players share cells, personal undo, markers, hints and team completion
     await guest.getByRole('button', { name: '重做', exact: true }).click()
     await expect(cell(page, 0)).toHaveAttribute('data-state', 'marked')
     await page.getByRole('button', { name: '指示格子', exact: true }).click()
+    await expect(page.getByRole('button', { name: '結束指示', exact: true })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    )
     await cell(page, 7).click()
     await expect(cell(guest, 7)).toHaveAttribute('data-pointed', 'true')
     await expect(cell(guest, 7)).toContainText('Alice')
     await expect(cell(guest, 7)).toHaveAttribute('data-state', 'empty')
+    // Pointing stays on, so another cell can be shown without switching it on again. The server
+    // drops pointers sent closer than 250ms apart, so wait past that like a real second tap.
+    await page.waitForTimeout(300)
+    await cell(page, 8).click()
+    await expect(cell(guest, 8)).toHaveAttribute('data-pointed', 'true')
+    await expect(cell(guest, 8)).toHaveAttribute('data-state', 'empty')
+    await page.getByRole('button', { name: '結束指示', exact: true }).click()
+    await expect(page.getByRole('button', { name: '指示格子', exact: true })).toHaveAttribute(
+      'aria-pressed',
+      'false',
+    )
     // Clear our shared mark, then request a safe explanatory team hint.
     await cell(page, 0).click()
     await expect(cell(guest, 0)).toHaveAttribute('data-state', 'empty')
@@ -241,6 +256,7 @@ test('three players join freely, synchronize edits and pointers, reconnect and f
     await guests[1].getByRole('button', { name: '指示格子', exact: true }).click()
     await cell(guests[1], 7).click()
     for (const p of [page, guests[0]]) await expect(cell(p, 7)).toContainText('Charlie')
+    await guests[1].getByRole('button', { name: '結束指示', exact: true }).click()
     await contexts[1].setOffline(true)
     for (const p of [page, guests[0]]) {
       await expect(p.locator('.presence-bar')).toContainText('離線', { timeout: 25000 })
