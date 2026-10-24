@@ -302,3 +302,76 @@ test('sharing allows manual copying when clipboard access is denied', async ({ p
   await page.keyboard.press('Escape')
   await expect(dialog).not.toBeVisible()
 })
+
+test('visual guidance is configurable, preserves marks, tracks undo and persists across reload', async ({
+  page,
+}) => {
+  await start(page)
+  await cell(page, 14).click()
+  await cell(page, 7).click()
+  await cell(page, 7).click()
+  const originalColor = await cell(page, 12).evaluate(
+    (element) => getComputedStyle(element).backgroundColor,
+  )
+  await expect(page.locator('[data-guided="true"]')).toHaveCount(0)
+  await page.getByRole('button', { name: '遊玩設定', exact: true }).click()
+  const dialog = page.getByRole('dialog', { name: '遊玩設定' })
+  await expect(dialog.getByRole('switch', { name: '顯示皇冠排除範圍' })).not.toBeChecked()
+  await dialog.getByRole('switch', { name: '顯示皇冠排除範圍' }).check()
+  await dialog.getByRole('button', { name: '完成', exact: true }).click()
+  await expect(cell(page, 14)).toHaveAttribute('data-guided', 'false')
+  await expect(cell(page, 12)).toHaveAttribute('data-guided', 'true')
+  await expect(cell(page, 7)).toHaveAttribute('data-state', 'marked')
+  expect(
+    await cell(page, 12).evaluate((element) => getComputedStyle(element).backgroundColor),
+  ).toBe(originalColor)
+  expect(
+    await cell(page, 12).evaluate((element) => getComputedStyle(element).backgroundImage),
+  ).toContain('linear-gradient')
+  await expect(cell(page, 12)).toHaveAccessibleName(/皇冠排除範圍/)
+  await page.getByRole('button', { name: '遊玩設定', exact: true }).click()
+  for (const name of ['同一欄', '同一色區', '周圍八格'])
+    await dialog.getByRole('checkbox', { name, exact: true }).uncheck()
+  await page.keyboard.press('Escape')
+  const guided = () =>
+    page
+      .locator('[data-guided="true"]')
+      .evaluateAll((elements) =>
+        elements.map((element) => Number(element.getAttribute('data-index'))),
+      )
+  expect(await guided()).toEqual([12, 13, 15, 16, 17])
+  await cell(page, 14).click()
+  await expect(page.locator('[data-guided="true"]')).toHaveCount(0)
+  await page.getByRole('button', { name: '復原', exact: true }).click()
+  expect(await guided()).toEqual([12, 13, 15, 16, 17])
+  await page.getByRole('button', { name: '重做', exact: true }).click()
+  await expect(page.locator('[data-guided="true"]')).toHaveCount(0)
+  await page.reload()
+  await expect(page.getByRole('grid')).toBeVisible({ timeout: 30000 })
+  await cell(page, 14).click()
+  expect(await guided()).toEqual([12, 13, 15, 16, 17])
+  await page.getByRole('button', { name: '遊玩設定', exact: true }).click()
+  await expect(dialog.getByRole('switch', { name: '顯示皇冠排除範圍' })).toBeChecked()
+  await dialog.getByRole('switch', { name: '顯示皇冠排除範圍' }).uncheck()
+  await dialog.getByRole('button', { name: '完成', exact: true }).click()
+  await expect(page.locator('[data-guided="true"]')).toHaveCount(0)
+  await expect(cell(page, 14)).toHaveAttribute('data-state', 'queen')
+})
+
+test('visual guidance still works when browser storage is unavailable', async ({ page }) => {
+  await page.addInitScript(() => {
+    Object.defineProperty(window, 'localStorage', {
+      get() {
+        throw new DOMException('Denied', 'SecurityError')
+      },
+    })
+  })
+  await start(page)
+  await cell(page, 14).click()
+  await page.getByRole('button', { name: '遊玩設定', exact: true }).click()
+  const dialog = page.getByRole('dialog', { name: '遊玩設定' })
+  await dialog.getByRole('switch', { name: '顯示皇冠排除範圍' }).check()
+  await expect(dialog.getByRole('status')).toContainText('本次遊戲仍會套用')
+  await dialog.getByRole('button', { name: '完成', exact: true }).click()
+  await expect(cell(page, 12)).toHaveAttribute('data-guided', 'true')
+})

@@ -2,6 +2,7 @@
 import { computed, shallowRef, nextTick, useTemplateRef } from 'vue'
 import { Pause, Play } from '@lucide/vue'
 import QueensCell from './QueensCell.vue'
+import { guidedCells, type BoardGuidance } from '../queens/guidance'
 import type { CellState, PuzzleDefinition } from '../queens/types'
 const props = defineProps<{
   puzzle: PuzzleDefinition
@@ -11,6 +12,7 @@ const props = defineProps<{
   highlighted: number[]
   mistakes: number[]
   busy: boolean
+  guidance: BoardGuidance
 }>()
 const emit = defineEmits<{ play: [index: number]; mark: [index: number]; resume: [] }>()
 const focusIndex = shallowRef(0),
@@ -23,6 +25,7 @@ const rows = computed(() =>
     })),
   ),
 )
+const exclusions = computed(() => guidedCells(props.puzzle.regions, props.cells, props.guidance))
 // Draw each shared boundary once. Square caps overlap at vertices, closing every corner.
 const boundaryPath = computed(() => {
   const { size: n, regions } = props.puzzle
@@ -89,6 +92,7 @@ async function navigate(index: number, event: KeyboardEvent) {
               v-bind="cell"
               :size="puzzle.size"
               :state="cells[cell.index]"
+              :guidance-reasons="exclusions.get(cell.index) ?? []"
               :active="focusIndex === cell.index"
               :disabled="won || paused || busy"
               :highlighted="highlighted.includes(cell.index)"

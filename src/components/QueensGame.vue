@@ -8,10 +8,13 @@ import GameToolbar from './GameToolbar.vue'
 import GameRules from './GameRules.vue'
 import GameResult from './GameResult.vue'
 import GameShare from './GameShare.vue'
+import GamePreferences from './GamePreferences.vue'
+import { useGamePreferences } from '../composables/useGamePreferences'
 import { useQueensGame } from '../composables/useQueensGame'
 import { GENERATOR_VERSION } from '../queens/version'
 import type { Difficulty } from '../queens/types'
 const game = useQueensGame()
+const { guidance, storageAvailable } = useGamePreferences()
 const {
   puzzle,
   cells,
@@ -75,7 +78,14 @@ onMounted(() => {
       <a href="/" class="brand" aria-label="Queens 首頁"
         ><span class="brand-icon"><CrownIcon /></span
         ><span>queens<span class="brand-dot">.</span></span></a
-      ><a class="how-to" href="#rules">玩法說明 <ArrowUpRight :size="14" /></a>
+      >
+      <div class="header-actions">
+        <GamePreferences v-model="guidance" :storage-available="storageAvailable" /><a
+          class="how-to"
+          href="#rules"
+          >玩法說明 <ArrowUpRight :size="14"
+        /></a>
+      </div>
     </header>
     <main>
       <div class="page-intro"><h1>Queens 益智遊戲</h1></div>
@@ -124,6 +134,7 @@ onMounted(() => {
             :key="puzzle.id"
             :puzzle="puzzle"
             :cells="cells"
+            :guidance="guidance"
             :paused="paused"
             :won="won"
             :highlighted="highlighted"
@@ -242,11 +253,16 @@ onMounted(() => {
 .brand-dot {
   color: #9573a8;
 }
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  margin-left: auto;
+}
 .how-to {
   display: flex;
   align-items: center;
   gap: 8px;
-  margin-left: auto;
   font-size: 11px;
   text-decoration: none;
   color: var(--muted);
@@ -509,7 +525,11 @@ onMounted(() => {
   .app-shell {
     padding: 0 18px;
   }
+  .header-actions {
+    gap: 12px;
+  }
   .site-header {
+    gap: 12px;
     height: 78px;
   }
   .brand {

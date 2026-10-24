@@ -44,6 +44,7 @@ npm run build
 - 點擊或觸控依序切換「空格 → 皇冠 → X → 空格」，不需要切換操作模式。桌面右鍵可直接切換 X 標記。
 - 方向鍵移動焦點，Home/End 到列首尾，空白鍵/Enter 循環皇冠、X、空格，X 鍵標記。
 - Undo/Redo、重新開始、暫停/繼續、計時、檢查錯誤、提示。完成摘要會直接疊在棋盤中央，顯示時間、操作次數、提示次數與下一局按鈕，並移動鍵盤焦點；手機橫向捲動大棋盤時仍完整顯示。分享視窗直接顯示 QR Code，支援複製連結與瀏覽器提供的系統分享；無剪貼簿權限時可手動複製。分享內容取自目前關卡，不受未套用的表單值影響。
+- 頁首「遊玩設定」可開啟皇冠排除範圍引導，分別選擇同列、同欄、同色區與周圍八格。以淺色斜線保留色區底色，不會自動新增 X 或禁止點擊；移除皇冠與 Undo/Redo 即時更新。預設關閉，設定儲存於此瀏覽器，儲存被拒絕時仍可於本次遊戲套用。
 - 切換瀏覽器分頁自動暫停。大棋盤在手機可橫向滑動，格子至少 40px 寬。
 - 區域除了色彩也有字母與實線邊界；具 ARIA 格子描述、roving tabindex、可見焦點、狀態宣告與 reduced-motion 支援。
 - 「開始新遊戲」會自動換成不同 Seed；手動輸入 Seed 後按「載入此種子」可重現指定關卡。生成過程可取消；生成失敗時顯示錯誤，請調整 Seed 或設定再試，不會偷偷降級難度。
@@ -59,11 +60,13 @@ src/
     regionGrower.ts        連通區域生長與安全邊界變異
     solver.ts              獨立計數 Solver、唯一解驗證
     validator.ts           連通性、配置合法性、直接衝突
+    guidance.ts            由玩家已放皇冠計算視覺引導範圍，無解答相依
     generator.ts           有限預算生成、變異、驗證與精確難度篩選
     deductions/            每種推理策略一個函式
     difficulty.ts          策略順序、權重、完整推理評估與提示
     protocol.ts / worker.ts 生成、提示與檢查的 Worker 通訊
   composables/useQueensGame.ts 遊戲生命週期、Worker、history、timer、操作
+  composables/useGamePreferences.ts 視覺引導設定、儲存與安全預設值
   components/
     QueensGame.vue         薄的功能組合、網址與設定協調
     QueensBoard.vue        區域邊界、棋盤與鍵盤焦點；傳入定義與狀態，傳出操作
@@ -73,6 +76,7 @@ src/
     GameRules.vue          規則與操作說明
     GameResult.vue         接收時間、操作與提示次數，顯示摘要
     GameShare.vue          目前關卡的重現連結、QR Code、複製與系統分享
+    GamePreferences.vue    遊玩設定 Modal 與視覺引導範圍開關
   tests/                   核心 Vitest 測試
  e2e/                      桌面 Chromium 與 Pixel 7 模擬的 Playwright 測試
 ```
@@ -120,9 +124,9 @@ console.log(puzzle.analysis.steps) // strategy、level、place/eliminate、cells
 
 ## 驗證與限制
 
-最終驗證：51 個 Vitest 核心測試、20 個 Playwright E2E 全數通過；TypeScript、Oxlint＋ESLint、Oxfmt format check 與 production build 通過。E2E 每局監聽 browser console errors 與 uncaught page errors。
+最終驗證：59 個 Vitest 核心測試、24 個 Playwright E2E 全數通過；TypeScript、Oxlint＋ESLint、Oxfmt format check 與 production build 通過。E2E 每局監聽 browser console errors 與 uncaught page errors。
 
-測試包含：獨立 permutation oracle 與 Solver 的全解對照、無解/多解/唯一解、遠距對角線、跨 Seed/大小批次生成、250 次邊界變異的連通性、各難度最小面積與變異下限、完整 recipe 序列化重現、所有難度標籤與最低層級驗證、提示/排除的解保留、Hall sets 與基礎相鄰排除的多解安全性，以及預算耗盡的明確失敗。E2E 另驗證自動換 Seed、指定 Seed 重現、分享連結、實際解碼畫面上的 QR Code、剪貼簿拒絕時的備用操作與提示區間距。
+測試包含：獨立 permutation oracle 與 Solver 的全解對照、無解/多解/唯一解、遠距對角線、跨 Seed/大小批次生成、250 次邊界變異的連通性、各難度最小面積與變異下限、完整 recipe 序列化重現、所有難度標籤與最低層級驗證、提示/排除的解保留、Hall sets 與基礎相鄰排除的多解安全性，以及預算耗盡的明確失敗。E2E 另驗證自動換 Seed、指定 Seed 重現、分享連結、實際解碼畫面上的 QR Code、剪貼簿拒絕時的備用操作與提示區間距。另測試視覺引導各範圍、標記保留、Undo/Redo 更新、重新載入後的偏好設定與儲存權限被拒絕時的行為。
 
 18 種大小（6/7/8/9/10/12）與難度組合皆以 Seed 42 在預設預算下成功；2026-10-24 本機單獨執行矩陣測試，6～9 格約 2～140ms、10 格約 36～899ms、12 格約 1.9～6.6s。這是單一 Seed 的樣本測量，不代表每一個 Seed 都會成功，也不是裝置效能保證。可重跑：
 

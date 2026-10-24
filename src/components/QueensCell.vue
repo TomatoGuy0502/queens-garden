@@ -1,16 +1,27 @@
 <script setup lang="ts">
+import { computed } from 'vue'
 import CrownIcon from './CrownIcon.vue'
+import { GUIDANCE_LABELS, type GuidanceReason } from '../queens/guidance'
 import type { CellState } from '../queens/types'
-defineProps<{
+const props = defineProps<{
   index: number
   size: number
   region: number
   state: CellState
+  guidanceReasons: GuidanceReason[]
   active: boolean
   highlighted: boolean
   mistake: boolean
   disabled: boolean
 }>()
+const cellLabel = computed(() => {
+  const { index, size, region, state, guidanceReasons } = props
+  const stateLabel = state === 'queen' ? '皇冠' : state === 'marked' ? 'X 標記' : '空格'
+  const guidanceLabel = guidanceReasons.length
+    ? `，皇冠排除範圍：${guidanceReasons.map((reason) => GUIDANCE_LABELS[reason]).join('、')}`
+    : ''
+  return `第 ${Math.floor(index / size) + 1} 列，第 ${(index % size) + 1} 欄，區域 ${String.fromCharCode(65 + region)}，${stateLabel}${guidanceLabel}`
+})
 const emit = defineEmits<{
   play: [index: number]
   mark: [index: number]
@@ -39,15 +50,17 @@ const colors = [
     :data-index="index"
     :data-region="region"
     :data-state="state"
+    :data-guided="guidanceReasons.length > 0"
     :class="{
       queen: state === 'queen',
+      guided: guidanceReasons.length > 0,
       highlighted,
       mistake,
     }"
     :style="{ backgroundColor: colors[region] }"
     :tabindex="active ? 0 : -1"
     :disabled="disabled"
-    :aria-label="`第 ${Math.floor(index / size) + 1} 列，第 ${(index % size) + 1} 欄，區域 ${String.fromCharCode(65 + region)}，${state === 'queen' ? '皇冠' : state === 'marked' ? 'X 標記' : '空格'}`"
+    :aria-label="cellLabel"
     :aria-selected="state === 'queen'"
     @click="emit('play', index)"
     @contextmenu.prevent="emit('mark', index)"
@@ -85,6 +98,11 @@ const colors = [
 .cell:disabled {
   opacity: 1;
   cursor: default;
+}
+.guided {
+  background-image:
+    repeating-linear-gradient(135deg, transparent, transparent 5px, #39333b28 5px, #39333b28 7px),
+    linear-gradient(#f8f7f344, #f8f7f344);
 }
 .cell-crown {
   width: 57%;
