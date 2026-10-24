@@ -84,73 +84,89 @@ async function navigate(index: number, event: KeyboardEvent) {
 <template>
   <div class="board-stage">
     <div class="board-scroll" :style="{ '--minimum-size': `${puzzle.size * 40 + 4}px` }">
-      <div class="board-wrap" :class="{ complete: won }">
+      <div class="board-frame">
         <div
-          ref="board"
-          class="board"
-          role="grid"
-          aria-label="Queens 棋盤；方向鍵移動、空白鍵或 Enter 循環皇冠、X、空格；X 鍵直接標記"
-          :aria-rowcount="puzzle.size"
-          :aria-colcount="puzzle.size"
-          :class="{ concealed: paused }"
-          :inert="paused || busy"
-          @pointerleave="emit('hover', null)"
+          class="column-axis"
+          :style="{ gridTemplateColumns: `repeat(${puzzle.size}, 1fr)` }"
+          aria-hidden="true"
         >
-          <div
-            v-for="(row, r) in rows"
-            :key="r"
-            role="row"
-            class="board-row"
-            :style="{ gridTemplateColumns: `repeat(${puzzle.size}, 1fr)` }"
-          >
-            <QueensCell
-              v-for="cell in row"
-              :key="cell.index"
-              v-bind="cell"
-              :size="puzzle.size"
-              :state="cells[cell.index]"
-              :guidance-reasons="exclusions.get(cell.index) ?? []"
-              :active="focusIndex === cell.index"
-              :disabled="won || paused || busy || !!pendingCells?.includes(cell.index)"
-              :point-names="
-                points?.filter((point) => point.index === cell.index).map((point) => point.name)
-              "
-              :hover-names="
-                hovers.filter((hover) => hover.index === cell.index).map((hover) => hover.name)
-              "
-              :highlighted="highlighted.includes(cell.index)"
-              :mistake="mistakes.includes(cell.index)"
-              @play="emit('play', $event)"
-              @mark="emit('mark', $event)"
-              @navigate="navigate"
-              @focus="focus"
-              @hover="emit('hover', $event)"
-            />
-          </div>
-          <svg
-            class="region-boundaries"
-            :viewBox="`0 0 ${puzzle.size} ${puzzle.size}`"
-            preserveAspectRatio="none"
-            aria-hidden="true"
-          >
-            <path
-              :d="boundaryPath"
-              fill="none"
-              stroke="#39333b"
-              stroke-width="4"
-              stroke-linecap="square"
-              stroke-linejoin="miter"
-              vector-effect="non-scaling-stroke"
-            />
-          </svg>
+          <span v-for="n in puzzle.size" :key="n">{{ n }}</span>
         </div>
-        <div v-if="paused" class="pause-cover">
-          <Pause :size="28" />
-          <h2>遊戲已暫停</h2>
-          <p>棋盤和計時都已暫停。</p>
-          <button class="primary" :disabled="canResume === false" @click="emit('resume')">
-            <Play :size="16" /> 繼續遊戲
-          </button>
+        <div
+          class="row-axis"
+          :style="{ gridTemplateRows: `repeat(${puzzle.size}, 1fr)` }"
+          aria-hidden="true"
+        >
+          <span v-for="n in puzzle.size" :key="n">{{ n }}</span>
+        </div>
+        <div class="board-wrap" :class="{ complete: won }">
+          <div
+            ref="board"
+            class="board"
+            role="grid"
+            aria-label="Queens 棋盤；方向鍵移動、空白鍵或 Enter 循環皇冠、X、空格；X 鍵直接標記"
+            :aria-rowcount="puzzle.size"
+            :aria-colcount="puzzle.size"
+            :class="{ concealed: paused }"
+            :inert="paused || busy"
+            @pointerleave="emit('hover', null)"
+          >
+            <div
+              v-for="(row, r) in rows"
+              :key="r"
+              role="row"
+              class="board-row"
+              :style="{ gridTemplateColumns: `repeat(${puzzle.size}, 1fr)` }"
+            >
+              <QueensCell
+                v-for="cell in row"
+                :key="cell.index"
+                v-bind="cell"
+                :size="puzzle.size"
+                :state="cells[cell.index]"
+                :guidance-reasons="exclusions.get(cell.index) ?? []"
+                :active="focusIndex === cell.index"
+                :disabled="won || paused || busy || !!pendingCells?.includes(cell.index)"
+                :point-names="
+                  points?.filter((point) => point.index === cell.index).map((point) => point.name)
+                "
+                :hover-names="
+                  hovers.filter((hover) => hover.index === cell.index).map((hover) => hover.name)
+                "
+                :highlighted="highlighted.includes(cell.index)"
+                :mistake="mistakes.includes(cell.index)"
+                @play="emit('play', $event)"
+                @mark="emit('mark', $event)"
+                @navigate="navigate"
+                @focus="focus"
+                @hover="emit('hover', $event)"
+              />
+            </div>
+            <svg
+              class="region-boundaries"
+              :viewBox="`0 0 ${puzzle.size} ${puzzle.size}`"
+              preserveAspectRatio="none"
+              aria-hidden="true"
+            >
+              <path
+                :d="boundaryPath"
+                fill="none"
+                stroke="#39333b"
+                stroke-width="4"
+                stroke-linecap="square"
+                stroke-linejoin="miter"
+                vector-effect="non-scaling-stroke"
+              />
+            </svg>
+          </div>
+          <div v-if="paused" class="pause-cover">
+            <Pause :size="28" />
+            <h2>遊戲已暫停</h2>
+            <p>棋盤和計時都已暫停。</p>
+            <button class="primary" :disabled="canResume === false" @click="emit('resume')">
+              <Play :size="16" /> 繼續遊戲
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -182,9 +198,6 @@ async function navigate(index: number, event: KeyboardEvent) {
   display: none;
 }
 @media (max-width: 650px) {
-  .board-wrap {
-    min-width: var(--minimum-size);
-  }
   .scroll-note {
     display: block;
     color: var(--muted);
@@ -193,7 +206,40 @@ async function navigate(index: number, event: KeyboardEvent) {
   }
 }
 
+.board-frame {
+  display: grid;
+  grid-template-columns: 24px minmax(0, 1fr);
+  grid-template-rows: 24px auto;
+  width: 100%;
+  min-width: calc(var(--minimum-size) + 24px);
+}
+.column-axis,
+.row-axis {
+  display: grid;
+  align-items: center;
+  text-align: center;
+  color: var(--muted);
+  font:
+    10px ui-monospace,
+    monospace;
+}
+.column-axis {
+  grid-column: 2;
+  grid-row: 1;
+  padding-inline: 2px;
+}
+.row-axis {
+  grid-column: 1;
+  grid-row: 2;
+  padding-block: 2px;
+  position: sticky;
+  left: 0;
+  z-index: 4;
+  background: #f8f7f3;
+}
 .board-wrap {
+  grid-column: 2;
+  grid-row: 2;
   position: relative;
   width: 100%;
   border: 2px solid #39333b;

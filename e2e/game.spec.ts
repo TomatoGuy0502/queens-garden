@@ -19,8 +19,9 @@ async function start(page: Page) {
   await page.goto(`/?size=6&difficulty=easy&seed=42&v=${GENERATOR_VERSION}`)
   await expect(page.getByRole('grid')).toBeVisible({ timeout: 30000 })
   await expect(page.getByRole('gridcell')).toHaveCount(36)
-  await expect(cell(page, 0).locator('.coordinate-label')).toHaveText('1,1')
-  await expect(cell(page, 35).locator('.coordinate-label')).toHaveText('6,6')
+  await expect(page.locator('.column-axis > span')).toHaveText(['1', '2', '3', '4', '5', '6'])
+  await expect(page.locator('.row-axis > span')).toHaveText(['1', '2', '3', '4', '5', '6'])
+  await expect(page.locator('.coordinate-label')).toHaveCount(0)
 }
 const cell = (page: Page, i: number) => page.locator(`[data-index="${i}"]`)
 async function readRegions(page: Page) {
@@ -167,8 +168,9 @@ test('canceling generation recovers cleanly and an obsolete version can start a 
   await page.getByRole('button', { name: '輕鬆', exact: true }).click()
   await page.getByRole('button', { name: '開始新遊戲', exact: true }).click()
   await expect(page.getByRole('gridcell')).toHaveCount(36)
-  await expect(cell(page, 0).locator('.coordinate-label')).toHaveText('1,1')
-  await expect(cell(page, 35).locator('.coordinate-label')).toHaveText('6,6')
+  await expect(page.locator('.column-axis > span')).toHaveText(['1', '2', '3', '4', '5', '6'])
+  await expect(page.locator('.row-axis > span')).toHaveText(['1', '2', '3', '4', '5', '6'])
+  await expect(page.locator('.coordinate-label')).toHaveCount(0)
   await expect(page.getByRole('alert')).not.toBeVisible()
 })
 
@@ -184,7 +186,14 @@ test('contradictory placements get contradiction feedback before any hint', asyn
 test('large boards retain touch targets without widening the document', async ({ page }) => {
   await page.goto(`/?size=12&difficulty=easy&seed=42&v=${GENERATOR_VERSION}`)
   await expect(page.getByRole('gridcell')).toHaveCount(144, { timeout: 30000 })
-  await expect(cell(page, 143).locator('.coordinate-label')).toHaveText('12,12')
+  await expect(page.locator('.column-axis > span').last()).toHaveText('12')
+  await expect(page.locator('.row-axis > span').last()).toHaveText('12')
+  const column = (await page.locator('.column-axis > span').first().boundingBox())!
+  const first = (await cell(page, 0).boundingBox())!
+  expect(column.x + column.width / 2).toBeCloseTo(first.x + first.width / 2, 0)
+  const row = (await page.locator('.row-axis > span').last().boundingBox())!
+  const last = (await cell(page, 143).boundingBox())!
+  expect(row.y + row.height / 2).toBeCloseTo(last.y + last.height / 2, 0)
   expect((await cell(page, 0).boundingBox())!.width).toBeGreaterThanOrEqual(40)
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
   await cell(page, 143).click()
