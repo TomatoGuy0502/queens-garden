@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Crown, Users, ArrowRight } from '@lucide/vue'
+import { Crown, Users, GraduationCap, ArrowRight } from '@lucide/vue'
 import AppHeader from '../components/AppHeader.vue'
 import DailyChallenge from '../components/DailyChallenge.vue'
 </script>
@@ -19,7 +19,12 @@ import DailyChallenge from '../components/DailyChallenge.vue'
         ><Users :size="28" />
         <h2>多人合作</h2>
         <p>邀請朋友，同時操作棋盤、分享推理與指示格子。</p>
-        <span>建立或加入房間 <ArrowRight :size="16" /></span
+        <span>建立或加入房間 <ArrowRight :size="16" /></span></RouterLink
+      ><RouterLink to="/tutorial" class="mode-card"
+        ><GraduationCap :size="28" />
+        <h2>新手教學</h2>
+        <p>用幾個互動練習學會規則、X 標記與三個基本推理技巧。</p>
+        <span>開始學習 <ArrowRight :size="16" /></span
       ></RouterLink>
     </div>
   </main>
@@ -35,7 +40,7 @@ h1 {
 }
 .mode-cards {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
   gap: 24px;
   margin-top: 24px;
 }

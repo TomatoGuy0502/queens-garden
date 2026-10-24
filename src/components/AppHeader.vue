@@ -11,7 +11,7 @@ const { guidance, storageAvailable } = useGamePreferences()
     >
     <nav>
       <RouterLink to="/solo">單人遊戲</RouterLink><RouterLink to="/rooms/new">多人合作</RouterLink
-      ><RouterLink to="/stats">我的成績</RouterLink
+      ><RouterLink to="/stats">我的成績</RouterLink><RouterLink to="/tutorial">新手教學</RouterLink
       ><GamePreferences v-model="guidance" :storage-available="storageAvailable" />
     </nav>
   </header>

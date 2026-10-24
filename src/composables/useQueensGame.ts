@@ -2,6 +2,7 @@ import { computed, onMounted, onUnmounted, shallowRef } from 'vue'
 import { useRouter } from 'vue-router'
 import type { CellState, DeductionStep, Difficulty, PuzzleDefinition } from '../queens/types'
 import type { WorkerRequest, WorkerResponse } from '../queens/protocol'
+import { nextCell } from '../queens/cells'
 import { conflictCells } from '../queens/validator'
 
 export function useQueensGame() {
@@ -156,17 +157,7 @@ export function useQueensGame() {
     if (blocked.value || !puzzle.value || index < 0 || index >= cells.value.length) return
     history.value = [...history.value, [...cells.value]].slice(-1000)
     future.value = []
-    const current = cells.value[index]
-    const next: CellState =
-      action === 'mark'
-        ? current === 'marked'
-          ? 'empty'
-          : 'marked'
-        : current === 'empty'
-          ? 'queen'
-          : current === 'queen'
-            ? 'marked'
-            : 'empty'
+    const next = nextCell(cells.value[index], action)
     cells.value = cells.value.map((cell, i) => (i === index ? next : cell))
     moves.value++
     clearFeedback()
