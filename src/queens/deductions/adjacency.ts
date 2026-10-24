@@ -30,6 +30,7 @@ export function adjacentExclusion(state: LogicState): DeductionStep | null {
         level: 1,
         action: 'eliminate',
         cells: eliminated,
+        units: [index],
         reason: `${unitName(index, n)} 必須有一頂皇冠；框選格與它的每個候選位置都直接相鄰，放皇冠一定會造成接觸，因此可標記 X。`,
       }
   }

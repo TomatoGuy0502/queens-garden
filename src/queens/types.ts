@@ -31,6 +31,8 @@ export interface DeductionStep {
   level: 1 | 2 | 3
   action: 'place' | 'eliminate'
   cells: number[]
+  /** Rows (0..n-1), columns (n..2n-1) and regions (2n..3n-1) the reasoning is about. */
+  units: number[]
   reason: string
   evidence?: DeductionStep[]
 }

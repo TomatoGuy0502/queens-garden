@@ -22,6 +22,7 @@ export function lockedCandidates(state: LogicState): DeductionStep | null {
           level: 2,
           action: 'eliminate',
           cells: eliminated,
+          units: [a, b],
           reason: `${unitName(a, state.n)} 的所有候選格都位於${unitName(b, state.n)}，這頂皇冠會占用兩者，因此可排除${unitName(b, state.n)} 的其他候選格。`,
         }
     }

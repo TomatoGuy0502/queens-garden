@@ -160,6 +160,8 @@ test('pause conceals board and freezes timer; hint explains and safely applies',
   await expect(page.getByRole('grid')).not.toBeVisible()
   await page.getByRole('button', { name: '繼續遊戲', exact: true }).last().click()
   await page.getByRole('button', { name: '給我一點提示', exact: true }).click()
+  await page.getByRole('button', { name: '再多一點提示', exact: true }).click()
+  await page.getByRole('button', { name: '告訴我答案', exact: true }).click()
   await expect(page.getByRole('button', { name: '套用這一步 →' })).toBeVisible()
   await expect(page.locator('.feedback')).toContainText('相鄰')
   await page.getByRole('button', { name: '套用這一步 →' }).click()

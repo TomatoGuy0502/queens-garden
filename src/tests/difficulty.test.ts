@@ -105,6 +105,7 @@ const step = (strategy: DeductionStep['strategy']): DeductionStep => ({
   level: strategy === 'hall' || strategy === 'contradiction' ? 3 : 1,
   action: 'eliminate',
   cells: [],
+  units: [],
   reason: '',
 })
 const steps = (hall: number, contradiction: number) => [

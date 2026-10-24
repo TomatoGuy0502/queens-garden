@@ -1,12 +1,22 @@
 <script setup lang="ts">
 import { Undo2, Redo2, RotateCcw, Lightbulb, ScanLine } from '@lucide/vue'
-defineProps<{
-  blocked: boolean
-  assisting: boolean
-  canUndo: boolean
-  canRedo: boolean
-  canRestart: boolean
-}>()
+import { computed } from 'vue'
+const props = withDefaults(
+  defineProps<{
+    blocked: boolean
+    assisting: boolean
+    /** Solo games reveal hints in three steps; shared rooms show the whole hint at once. */
+    hintLevel?: number
+    hintRevealed?: boolean
+    canUndo: boolean
+    canRedo: boolean
+    canRestart: boolean
+  }>(),
+  { hintLevel: 0, hintRevealed: false },
+)
+const hintLabel = computed(
+  () => ['給我一點提示', '再多一點提示', '告訴我答案', '答案已顯示'][Math.min(props.hintLevel, 3)],
+)
 const emit = defineEmits<{
   undo: []
   redo: []
@@ -48,8 +58,8 @@ const emit = defineEmits<{
     </div>
   </div>
   <div class="assist-tools">
-    <button :disabled="blocked || assisting" @click="emit('hint')">
-      <Lightbulb :size="17" />{{ assisting ? '推理中…' : '給我一點提示' }}</button
+    <button :disabled="blocked || assisting || hintRevealed" @click="emit('hint')">
+      <Lightbulb :size="17" />{{ assisting ? '推理中…' : hintLabel }}</button
     ><button :disabled="blocked || assisting" @click="emit('check')">
       <ScanLine :size="17" />檢查錯誤
     </button>

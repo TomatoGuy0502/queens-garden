@@ -3,6 +3,7 @@ import { useRouter } from 'vue-router'
 import type { CellState, DeductionStep, Difficulty, PuzzleDefinition } from '../queens/types'
 import type { WorkerRequest, WorkerResponse } from '../queens/protocol'
 import { nextCell } from '../queens/cells'
+import { HINT_LEVELS, hintView } from '../queens/strategies'
 import { conflictCells } from '../queens/validator'
 
 export function useQueensGame() {
@@ -24,6 +25,8 @@ export function useQueensGame() {
   const message = shallowRef(''),
     error = shallowRef('')
   const hint = shallowRef<DeductionStep | null>(null),
+    // 0 = no hint; 1 = where to look; 2 = which technique; 3 = the full answer.
+    hintLevel = shallowRef(0),
     mistakes = shallowRef<number[]>([])
   let worker: Worker | null = null,
     requestId = 0,
@@ -54,6 +57,14 @@ export function useQueensGame() {
       `${String(Math.floor(seconds.value / 60)).padStart(2, '0')}:${String(seconds.value % 60).padStart(2, '0')}`,
   )
   const blocked = computed(() => busy.value || paused.value || won.value)
+  const hintInfo = computed(() =>
+    hint.value && puzzle.value && hintLevel.value
+      ? hintView(hint.value, hintLevel.value, puzzle.value.regions)
+      : null,
+  )
+  const feedback = computed(() => hintInfo.value?.text ?? message.value)
+  const hintCells = computed(() => hintInfo.value?.cells ?? [])
+  const hintRevealed = computed(() => !!hint.value && hintLevel.value >= HINT_LEVELS)
 
   function stopWorker(reason = '運算已取消。') {
     worker?.terminate()
@@ -91,6 +102,7 @@ export function useQueensGame() {
   function clearFeedback() {
     revision++
     hint.value = null
+    hintLevel.value = 0
     mistakes.value = []
     message.value = ''
   }
@@ -180,6 +192,14 @@ export function useQueensGame() {
   }
   async function assist(type: 'hint' | 'check') {
     if (blocked.value || assisting.value || !puzzle.value) return
+    // Asking again on an unchanged board only reveals more of the same hint.
+    if (type === 'hint' && hint.value) {
+      if (hintLevel.value < HINT_LEVELS) {
+        hintLevel.value++
+        hints.value++
+      }
+      return
+    }
     assisting.value = true
     const atRevision = revision
     try {
@@ -188,7 +208,10 @@ export function useQueensGame() {
       message.value = response.message ?? ''
       hint.value = response.step ?? null
       mistakes.value = response.mistakes ?? []
-      if (type === 'hint') hints.value++
+      if (type === 'hint') {
+        hints.value++
+        hintLevel.value = response.step ? 1 : 0
+      }
     } catch (reason) {
       if (atRevision === revision) message.value = (reason as Error).message
     } finally {
@@ -251,6 +274,10 @@ export function useQueensGame() {
     message,
     error,
     hint,
+    hintLevel,
+    hintRevealed,
+    hintCells,
+    feedback,
     mistakes,
     blocked,
     newGame,

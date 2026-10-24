@@ -47,9 +47,12 @@ const {
   future,
   moves,
   hints,
-  message,
   error,
   hint,
+  hintLevel,
+  hintRevealed,
+  hintCells,
+  feedback,
   mistakes,
   blocked,
 } = storeToRefs(game)
@@ -118,7 +121,7 @@ watch(
   },
 )
 const difficulties = DIFFICULTY_LABELS
-const highlighted = computed(() => (paused.value ? [] : (hint.value?.cells ?? [])))
+const highlighted = computed(() => (paused.value ? [] : hintCells.value))
 const allMistakes = computed(() => [...new Set([...conflicts.value, ...mistakes.value])])
 // The daily challenge is a fixed board, so its page offers no settings until the player leaves it.
 const inDaily = shallowRef(false)
@@ -253,6 +256,8 @@ onMounted(() => {
           <GameToolbar
             :blocked="blocked || !puzzle"
             :assisting="assisting"
+            :hint-level="hintLevel"
+            :hint-revealed="hintRevealed"
             :can-restart="!!puzzle && !busy"
             :can-undo="!!history.length && !busy && !paused && !reviewing"
             :can-redo="!!future.length && !busy && !paused && !reviewing"
@@ -270,23 +275,25 @@ onMounted(() => {
             </div>
           </div>
           <div
-            :class="{ 'has-feedback': message || conflicts.length }"
+            :class="{ 'has-feedback': feedback || conflicts.length }"
             class="feedback"
             role="status"
             aria-live="polite"
             aria-atomic="true"
           >
-            <template v-if="message"
-              ><span class="feedback-label">{{ hint ? '邏輯提示' : '遊戲訊息' }}</span>
-              <p>{{ message }}</p>
-              <details v-if="hint?.evidence?.length" class="hint-evidence">
+            <template v-if="feedback"
+              ><span class="feedback-label">{{
+                hint ? `邏輯提示 ${hintLevel} / 3` : '遊戲訊息'
+              }}</span>
+              <p>{{ feedback }}</p>
+              <details v-if="hintRevealed && hint?.evidence?.length" class="hint-evidence">
                 <summary>展開假設推理的 {{ hint.evidence.length }} 個步驟</summary>
                 <ol>
                   <li v-for="(step, index) in hint.evidence" :key="index">{{ step.reason }}</li>
                 </ol>
               </details>
               <button
-                v-if="hint && !blocked"
+                v-if="hintRevealed && !blocked"
                 class="text-button apply-hint"
                 @click="game.applyHint"
               >

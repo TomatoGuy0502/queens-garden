@@ -60,6 +60,7 @@ export function hallSets(state: LogicState): DeductionStep | null {
       level: 3,
       action: 'eliminate',
       cells: eliminated,
+      units: selected,
       reason: `${selected.map((i) => unitName(i, n)).join('、')} 的 ${size} 頂皇冠被限制在 ${targetIds.map((id) => unitName(target * n + id, n)).join('、')}，必須各占一個，因此這些單位中的其他候選格可以排除。`,
     }
   }

@@ -29,6 +29,7 @@ export function contradictionReasoning(state: LogicState): DeductionStep | null 
         level: 3,
         action: 'eliminate',
         cells: [cell],
+        units: [],
         evidence,
         reason: `假設第 ${Math.floor(cell / state.n) + 1} 列、第 ${(cell % state.n) + 1} 欄有皇冠，經 ${evidence.length} 步單一候選、相鄰排除與交集推理後，會造成${consequence}。這個假設矛盾，因此可排除此格。`,
       }

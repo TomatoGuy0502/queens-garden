@@ -9,6 +9,7 @@ export function singleCandidate(state: LogicState): DeductionStep | null {
         level: 1,
         action: 'place',
         cells: choices,
+        units: [i],
         reason: `${unitName(i, state.n)} 排除已占用的列、欄、區域及皇冠相鄰格後，只剩一個候選格。可在第 ${Math.floor(choices[0] / state.n) + 1} 列、第 ${(choices[0] % state.n) + 1} 欄放皇冠。`,
       }
     }
