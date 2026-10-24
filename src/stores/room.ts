@@ -77,6 +77,12 @@ export const useRoomStore = defineStore('room', () => {
         (snapshot.revision === room.value.revision && snapshot.serverNow < room.value.serverNow))
     )
       return
+    if (game.state?.id !== snapshot.game.id) {
+      pending.value = 0
+      pendingCells.value = []
+      assisting.value = false
+      notice.value = null
+    }
     if (game.state?.id !== snapshot.game.id || snapshot.game.phase !== 'playing') {
       points.value = []
       hovers.value = []
@@ -197,6 +203,7 @@ export const useRoomStore = defineStore('room', () => {
       return false
     }
     const currentClient = client
+    const operationEpoch = game.state?.id
     pending.value++
     try {
       const actionId = crypto.randomUUID()
@@ -218,7 +225,8 @@ export const useRoomStore = defineStore('room', () => {
       }
       return false
     } finally {
-      if (client === currentClient) pending.value = Math.max(0, pending.value - 1)
+      if (client === currentClient && game.state?.id === operationEpoch)
+        pending.value = Math.max(0, pending.value - 1)
     }
   }
   async function edit(index: number, mark = false) {
@@ -251,10 +259,11 @@ export const useRoomStore = defineStore('room', () => {
   async function assist(type: 'hint' | 'check') {
     if (!game.state || assisting.value) return
     assisting.value = true
+    const operationEpoch = game.state.id
     try {
       await send({ type, gameId: game.state.id })
     } finally {
-      assisting.value = false
+      if (game.state?.id === operationEpoch) assisting.value = false
     }
   }
   function point(index: number) {

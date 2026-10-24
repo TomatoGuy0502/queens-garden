@@ -362,6 +362,20 @@ export class RoomManager {
           room.message = ''
           launch = true
           break
+        case 'restart': {
+          this.host(room, member.id)
+          if (!room.puzzle || !['playing', 'paused', 'completed'].includes(room.phase))
+            throw new RoomError('目前沒有可以重新開始的棋盤。')
+          const puzzle = room.puzzle
+          freshGame(room)
+          room.puzzle = puzzle
+          room.cells = Array<CellState>(puzzle.size ** 2).fill('empty')
+          room.versions = Array<number>(puzzle.size ** 2).fill(0)
+          room.phase = 'playing'
+          room.startedAt = Date.now()
+          room.message = '房主已重新開始本關。'
+          break
+        }
         case 'reset':
           this.host(room, member.id)
           freshGame(room)

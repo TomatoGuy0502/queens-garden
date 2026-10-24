@@ -426,3 +426,82 @@ test('peer hover and keyboard focus show names and coordinates without edits or 
     await context.close()
   }
 })
+
+test('host restarts the same shared puzzle with confirmation while guests cannot restart', async ({
+  page,
+  browser,
+  isMobile,
+}) => {
+  let heldAck: (() => void) | undefined
+  const { guest, context } = await pair(page, browser, isMobile, async (p) => {
+    if (p === page) return
+    await p.routeWebSocket('**/socket.io/**', (route) => {
+      const server = route.connectToServer()
+      let ackId: string | undefined
+      let captured = false
+      route.onMessage((message) => {
+        if (!captured && typeof message === 'string' && message.includes('"setCell"')) {
+          ackId = /^42(\d+)\[/.exec(message)?.[1]
+          captured = true
+        }
+        server.send(message)
+      })
+      server.onMessage((message) => {
+        if (
+          ackId !== undefined &&
+          typeof message === 'string' &&
+          message.startsWith(`43${ackId}[`)
+        ) {
+          heldAck = () => route.send(message)
+          ackId = undefined
+        } else route.send(message)
+      })
+    })
+  })
+  try {
+    const regions = await page
+      .getByRole('gridcell')
+      .evaluateAll((cells) => cells.map((cell) => cell.getAttribute('data-region')))
+    const seed = await page.locator('.coop-footer').innerText()
+    await expect(guest.getByRole('button', { name: '重新開始', exact: true })).toBeDisabled()
+    await page.getByRole('button', { name: '給我一點提示', exact: true }).click()
+    await guest.getByRole('button', { name: '套用這一步 →' }).click()
+    await expect(page.locator('[data-state="marked"]')).not.toHaveCount(0)
+    await cell(guest, 0).click()
+    await expect.poll(() => !!heldAck).toBe(true)
+    await page.getByRole('button', { name: '暫停合作', exact: true }).click()
+    await page.getByRole('button', { name: '重新開始', exact: true }).click()
+    let dialog = page.getByRole('dialog', { name: '重新開始本關？' })
+    await dialog.getByRole('button', { name: '取消', exact: true }).click()
+    await expect(page.getByRole('button', { name: '繼續合作', exact: true })).toBeVisible()
+    await page.getByRole('button', { name: '重新開始', exact: true }).click()
+    dialog = page.getByRole('dialog', { name: '重新開始本關？' })
+    await dialog.getByRole('button', { name: '確認重新開始', exact: true }).click()
+    for (const p of [page, guest]) {
+      await expect(p.getByRole('grid')).toBeVisible()
+      await expect(p.locator('[data-state="empty"]')).toHaveCount(36)
+      await expect(p.getByRole('button', { name: '復原', exact: true })).toBeDisabled()
+      await expect(p.getByRole('button', { name: '重做', exact: true })).toBeDisabled()
+      await expect(p.locator('.coop-footer')).toHaveText(seed)
+    }
+    expect(
+      await page
+        .getByRole('gridcell')
+        .evaluateAll((cells) => cells.map((cell) => cell.getAttribute('data-region'))),
+    ).toEqual(regions)
+    await expect(page.locator('.coop-meta > div:last-child > span')).toHaveText('00:00')
+    await expect(cell(guest, 0)).toBeEnabled()
+    await cell(guest, 0).click()
+    heldAck?.()
+    await expect(cell(page, 0)).toHaveAttribute('data-state', 'queen')
+    await page.getByRole('button', { name: '更換關卡', exact: true }).click()
+    await page
+      .getByRole('dialog', { name: '更換關卡？' })
+      .getByRole('button', { name: '回到等待室', exact: true })
+      .click()
+    for (const p of [page, guest])
+      await expect(p.getByRole('heading', { name: /等待室/ })).toBeVisible()
+  } finally {
+    await context.close()
+  }
+})

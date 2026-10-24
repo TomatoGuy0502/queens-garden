@@ -331,3 +331,81 @@ it('five-character codes retry collisions with a bound and never replace an exis
   ).create('Race', { size: 6, difficulty: 'easy' })
   expect(raced.state.id).toBe('RACE2')
 })
+
+it('host restart preserves the puzzle and team, clears the attempt atomically and rejects old-round edits', async () => {
+  let generations = 0
+  const engine = compute(),
+    generate = engine.generate.bind(engine)
+  engine.generate = (options) => {
+    generations++
+    return generate(options)
+  }
+  const { manager, host, guest, state } = await game(memory(), engine)
+  await expect(
+    manager.command(guest, { type: 'restart', actionId: randomUUID(), gameId: state.game.id }),
+  ).rejects.toMatchObject({ code: 'HOST_ONLY' })
+  const hinted = await manager.command(host, {
+    type: 'hint',
+    actionId: randomUUID(),
+    gameId: state.game.id,
+  })
+  await manager.command(guest, {
+    type: 'applyHint',
+    actionId: randomUUID(),
+    gameId: state.game.id,
+    hintId: hinted.game.hint!.id,
+  })
+  await manager.command(host, {
+    type: 'pause',
+    actionId: randomUUID(),
+    gameId: state.game.id,
+    paused: true,
+  })
+  const action = { type: 'restart' as const, actionId: randomUUID(), gameId: state.game.id }
+  const restarted = await manager.command(host, action)
+  expect(restarted.game.id).not.toBe(state.game.id)
+  expect(restarted.game.puzzle).toEqual(state.game.puzzle)
+  expect(restarted.players).toEqual(state.players)
+  expect(restarted.game).toMatchObject({
+    phase: 'playing',
+    moves: 0,
+    hints: 0,
+    hint: null,
+    mistakes: [],
+    actions: [],
+    boardRevision: 0,
+  })
+  expect(restarted.game.cells).toEqual(Array(36).fill('empty'))
+  expect(restarted.game.versions).toEqual(Array(36).fill(0))
+  expect(restarted.game.elapsedMs).toBeLessThan(1000)
+  expect((await manager.command(host, action)).game.id).toBe(restarted.game.id)
+  await expect(manager.command(guest, cell(state, 0))).rejects.toMatchObject({ code: 'STALE_GAME' })
+  expect(generations).toBe(1)
+})
+it('restarting a completed board retains the old result and records a new attempt independently', async () => {
+  const repository = memory(),
+    events: RoomEvent[] = [],
+    save = repository.save.bind(repository)
+  repository.save = async (room, event) => {
+    await save(room, event)
+    events.push(structuredClone(event))
+  }
+  const { manager, host, state } = await game(repository)
+  let current = state
+  for (let attempt = 0; attempt < 2; attempt++) {
+    for (const [row, col] of puzzle.solution.entries())
+      current = await manager.command(host, cell(current, row * 6 + col))
+    expect(current.game.phase).toBe('completed')
+    if (!attempt)
+      current = await manager.command(host, {
+        type: 'restart',
+        gameId: current.game.id,
+        actionId: randomUUID(),
+      })
+  }
+  const results = events.flatMap((event) => (event.result ? [event.result] : []))
+  expect(results).toHaveLength(2)
+  expect(results[0].gameId).not.toBe(results[1].gameId)
+  expect(results[0].puzzleId).toBe(results[1].puzzleId)
+  expect(results.map((result) => result.moves)).toEqual([6, 6])
+})

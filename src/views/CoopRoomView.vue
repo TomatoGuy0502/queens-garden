@@ -5,6 +5,7 @@ import { useRouter } from 'vue-router'
 import { Clock3, Pause, Play, MousePointer2, LoaderCircle, LogOut } from '@lucide/vue'
 import AppHeader from '../components/AppHeader.vue'
 import PlayerPresence from '../components/coop/PlayerPresence.vue'
+import RoundConfirmation from '../components/coop/RoundConfirmation.vue'
 import RoomToast from '../components/coop/RoomToast.vue'
 import RoomLobby from '../components/coop/RoomLobby.vue'
 import QueensBoard from '../components/QueensBoard.vue'
@@ -24,8 +25,8 @@ const { guidance, storageAvailable } = useGamePreferences()
 const name = usePlayerName()
 const joining = shallowRef(false),
   joinError = shallowRef(''),
-  pointMode = shallowRef(false),
-  resetConfirm = shallowRef(false)
+  pointMode = shallowRef(false)
+const confirmation = shallowRef<{ kind: 'restart' | 'new'; gameId: string } | null>(null)
 const labels = { easy: '輕鬆', medium: '適中', hard: '挑戰' }
 const blocked = computed(() => !room.connected || game.state?.phase !== 'playing')
 const canResume = computed(() => room.connected)
@@ -40,6 +41,32 @@ watch(
   },
   { immediate: true },
 )
+watch(
+  () => game.state?.id,
+  () => {
+    confirmation.value = null
+    pointMode.value = false
+  },
+)
+watch(
+  () => room.isHost && room.connected,
+  (allowed) => {
+    if (!allowed) confirmation.value = null
+  },
+)
+function confirmRound(kind: 'restart' | 'new') {
+  if (game.state && room.isHost && room.connected && !room.pending)
+    confirmation.value = { kind, gameId: game.state.id }
+}
+async function applyRoundAction() {
+  const context = confirmation.value
+  if (!context) return
+  const applied = await room.send({
+    type: context.kind === 'restart' ? 'restart' : 'reset',
+    gameId: context.gameId,
+  })
+  if (applied && confirmation.value === context) confirmation.value = null
+}
 function clearHover() {
   room.hover(null)
 }
@@ -94,13 +121,19 @@ async function leave() {
   await router.push('/')
 }
 async function reset() {
-  resetConfirm.value = false
   pointMode.value = false
   await room.send({ type: 'reset' })
 }
 </script>
 <template>
   <RoomToast :notice="room.notice" @dismiss="room.dismissNotice" />
+  <RoundConfirmation
+    v-if="confirmation"
+    :kind="confirmation.kind"
+    :busy="!!room.pending"
+    @confirm="applyRoundAction"
+    @cancel="confirmation = null"
+  />
   <main class="page-shell coop-page">
     <AppHeader
       ><GamePreferences v-model="guidance" :storage-available="storageAvailable"
@@ -259,15 +292,18 @@ async function reset() {
               :can-restart="room.isHost && room.connected && !room.pending"
               @undo="undo"
               @redo="redo"
-              @restart="resetConfirm = true"
+              @restart="confirmRound('restart')"
               @hint="room.assist('hint')"
               @check="room.assist('check')"
             />
-            <div v-if="resetConfirm" class="reset-confirm">
-              <p>結束這一局並回到等待室？房主可以直接開始下一局。</p>
-              <button class="text-button" @click="resetConfirm = false">取消</button
-              ><button class="primary" @click="reset">回到等待室</button>
-            </div>
+            <button
+              v-if="room.isHost"
+              class="text-button change-round"
+              :disabled="!room.connected || !!room.pending"
+              @click="confirmRound('new')"
+            >
+              更換關卡
+            </button>
             <div class="coop-feedback" role="status" aria-live="polite">
               <p v-if="game.state.message">{{ game.state.message }}</p>
               <button
@@ -455,18 +491,8 @@ async function reset() {
   padding: 18px 0;
   border-top: 1px solid var(--line);
 }
-.reset-confirm {
-  padding: 16px;
-  background: #eee7f3;
-  font-size: 12px;
-  line-height: 1.8;
-}
-.reset-confirm button {
-  margin: 6px 12px 0 0;
-}
-.reset-confirm .primary {
-  font-size: 12px;
-  padding: 8px 12px;
+.change-round {
+  margin-top: 14px;
 }
 @keyframes spin {
   to {

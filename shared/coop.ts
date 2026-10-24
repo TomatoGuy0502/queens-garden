@@ -33,6 +33,7 @@ export const commandSchema = z.discriminatedUnion('type', [
   z.object({ ...round, type: z.literal('configure'), settings: settingsSchema }),
   z.object({ ...round, type: z.literal('start') }),
   z.object({ ...round, type: z.literal('reset') }),
+  z.object({ ...round, type: z.literal('restart') }),
   z.object({ ...envelope, type: z.literal('leave') }),
   z.object({
     ...round,
