@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { MIN_ROOM_PLAYERS, MAX_ROOM_PLAYERS } from '../../../shared/coop'
+import { MAX_ROOM_PLAYERS } from '../../../shared/coop'
 import type { Player, RoomSettings } from '../../../shared/coop'
 import type { Difficulty } from '../../queens/types'
 const props = defineProps<{
@@ -10,7 +10,7 @@ const props = defineProps<{
   canStart: boolean
   pending: boolean
 }>()
-const emit = defineEmits<{ ready: [value: boolean]; start: []; configure: [value: RoomSettings] }>()
+const emit = defineEmits<{ start: []; configure: [value: RoomSettings] }>()
 function size(event: Event) {
   emit('configure', {
     ...props.settings,
@@ -29,10 +29,7 @@ function difficulty(event: Event) {
     <h2 id="lobby-title">
       等待室 <span class="player-count">{{ players.length }} / {{ MAX_ROOM_PLAYERS }} 人</span>
     </h2>
-    <p class="page-description">
-      至少 {{ MIN_ROOM_PLAYERS }} 人即可開始，最多
-      {{ MAX_ROOM_PLAYERS }} 人。所有玩家連線並準備完成後，由房主開始。
-    </p>
+    <p class="page-description">最多 {{ MAX_ROOM_PLAYERS }} 人。房主可直接開始，隊友可隨時加入。</p>
     <div class="players">
       <div v-for="player in players" :key="player.id" class="player-row">
         <span class="avatar">{{ Array.from(player.name)[0] }}</span>
@@ -41,7 +38,6 @@ function difficulty(event: Event) {
           ><span v-if="player.id === hostId" class="host-label">房主</span
           ><small>{{ player.connected ? '已連線' : '等待連線' }}</small>
         </div>
-        <span class="ready-state">{{ player.ready ? '已準備' : '尚未準備' }}</span>
       </div>
       <div v-if="players.length < MAX_ROOM_PLAYERS" class="empty-seat">可繼續邀請隊友加入</div>
     </div>
@@ -70,12 +66,6 @@ function difficulty(event: Event) {
     </div>
     <div class="lobby-actions">
       <button
-        class="secondary"
-        :disabled="pending"
-        @click="emit('ready', !players.find((p) => p.id === meId)?.ready)"
-      >
-        {{ players.find((p) => p.id === meId)?.ready ? '取消準備' : '準備好了' }}</button
-      ><button
         v-if="meId === hostId"
         class="primary"
         :disabled="!canStart || pending"
@@ -84,7 +74,7 @@ function difficulty(event: Event) {
         開始合作
       </button>
     </div>
-    <p class="setting-note">變更關卡設定後，所有玩家需要重新準備。</p>
+    <p v-if="meId !== hostId" class="setting-note">等待房主開始，或分享房間連結邀請其他隊友。</p>
   </section>
 </template>
 <style scoped>
@@ -146,12 +136,7 @@ function difficulty(event: Event) {
   color: var(--accent);
   margin-left: 9px;
 }
-.ready-state {
-  flex-shrink: 0;
-  margin-left: auto;
-  color: var(--muted);
-  font-size: 11px;
-}
+
 .empty-seat {
   padding: 20px 0;
   color: var(--muted);

@@ -5,6 +5,11 @@ export type HintResult = { step: DeductionStep | null; message: string }
 export type ComputeJob =
   | { type: 'generate'; options: GenerateOptions }
   | { type: 'hint'; regions: number[][]; cells: CellState[] }
+export interface ComputeReply {
+  type: 'queens:compute-result'
+  result?: unknown
+  error?: string
+}
 export interface Compute {
   generate(options: GenerateOptions): Promise<QueensPuzzle>
   hint(regions: number[][], cells: CellState[]): Promise<HintResult>
@@ -21,7 +26,7 @@ export function workerPool(concurrency = 2, timeoutMs = 120000): Compute {
   function drain() {
     while (!closed && queue.length && running.size < concurrency) {
       const task = queue.shift()!
-      const worker = new Worker(resolve('dist-server/worker.js'))
+      const worker = new Worker(resolve('dist-server/worker.js'), { execArgv: [] })
       running.add(worker)
       let finished = false
       const finish = (error?: Error, result?: unknown) => {
@@ -35,9 +40,18 @@ export function workerPool(concurrency = 2, timeoutMs = 120000): Compute {
         drain()
       }
       const timer = setTimeout(() => finish(new Error('運算逾時，請更換設定後再試。')), timeoutMs)
-      worker.once('message', (value: { result?: unknown; error?: string }) =>
-        finish(value.error ? new Error(value.error) : undefined, value.result),
-      )
+      // Node --watch also reports dependency imports through worker message events.
+      worker.on('message', (value: unknown) => {
+        if (
+          !value ||
+          typeof value !== 'object' ||
+          !('type' in value) ||
+          value.type !== 'queens:compute-result'
+        )
+          return
+        const reply = value as ComputeReply
+        finish(reply.error ? new Error(reply.error) : undefined, reply.result)
+      })
       worker.once('error', (error) =>
         finish(error instanceof Error ? error : new Error('運算失敗。')),
       )

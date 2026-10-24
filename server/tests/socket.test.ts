@@ -68,8 +68,6 @@ it('real Socket.IO clients receive shared state, authorized operations and trans
   const send = (socket: typeof a, command: Parameters<ClientEvents['room:command']>[0]) =>
     new Promise<RoomReply>((resolve) => socket.emit('room:command', command, resolve))
   try {
-    await send(a, { type: 'ready', actionId: randomUUID(), ready: true, gameId })
-    await send(b, { type: 'ready', actionId: randomUUID(), ready: true, gameId })
     expect((await send(b, { type: 'start', actionId: randomUUID(), gameId })).ok).toBe(false)
     await send(a, { type: 'start', actionId: randomUUID(), gameId })
     await expect.poll(() => current?.game.phase).toBe('playing')
@@ -149,4 +147,28 @@ it('static assets do not consume API limits and rate-limit errors remain HTTP 42
   } finally {
     await app.close()
   }
+})
+
+it('compiled workers ignore watch dependency messages and do not inherit development loaders or CLI-only flags', async () => {
+  const { execFile } = await import('node:child_process')
+  const { promisify } = await import('node:util')
+  const { stdout } = await promisify(execFile)(
+    process.execPath,
+    [
+      '--import',
+      'tsx',
+      '--input-type=module',
+      '--eval',
+      `
+    import { workerPool } from './server/compute.ts';
+    const pool = workerPool(1);
+    try {
+      const puzzle = await pool.generate({ size: 6, seed: 42, difficulty: 'easy' });
+      console.log('generated:' + puzzle.size);
+    } finally { await pool.close(); }
+  `,
+    ],
+    { timeout: 10000, env: { ...process.env, WATCH_REPORT_DEPENDENCIES: '1' } },
+  )
+  expect(stdout).toContain('generated:6')
 })

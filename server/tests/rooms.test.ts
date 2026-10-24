@@ -2,6 +2,7 @@ import { beforeAll, expect, it } from 'vitest'
 import { randomUUID } from 'node:crypto'
 import { RoomManager } from '../rooms'
 import type { Compute } from '../compute'
+import { RoomError } from '../model'
 import type { RoomEvent, RoomRepository, StoredRoom } from '../model'
 import { MAX_ROOM_PLAYERS } from '../../shared/coop'
 import type { Credentials, RoomCommand, RoomSnapshot } from '../../shared/coop'
@@ -28,23 +29,12 @@ const compute = (): Compute => ({
   hint: (regions, cells) => Promise.resolve(logicalHint(regions, cells)),
   close: () => Promise.resolve(),
 })
-function command(value: Omit<Extract<RoomCommand, { type: 'ready' }>, 'actionId'>): RoomCommand {
-  return { ...value, actionId: randomUUID() }
-}
 async function game(repository = memory(), engine = compute()) {
   const manager = new RoomManager(repository, engine)
   const host = await manager.create('Alice', { size: 6, difficulty: 'easy' }),
     guest = await manager.join(host.state.id, 'Bob')
   await manager.connect(host.credentials, 'a')
   await manager.connect(guest.credentials, 'b')
-  await manager.command(
-    host.credentials,
-    command({ type: 'ready', ready: true, gameId: host.state.game.id }),
-  )
-  await manager.command(
-    guest.credentials,
-    command({ type: 'ready', ready: true, gameId: host.state.game.id }),
-  )
   await manager.command(host.credentials, {
     type: 'start',
     actionId: randomUUID(),
@@ -139,28 +129,32 @@ it('undo and redo are personal and cannot overwrite a later edit by another play
     }),
   ).rejects.toMatchObject({ code: 'UNDO_CONFLICT' })
 })
-it('disconnect pauses; authenticated reconnect restores the board; both players must be online to resume', async () => {
+it('disconnect and reconnect preserve play, and manual pause can resume without absent teammates', async () => {
   const { manager, host, guest, state } = await game()
   await manager.command(host, cell(state, 0))
   await manager.disconnect(guest, 'b')
-  expect((await manager.state(host)).game.phase).toBe('paused')
-  await expect(
-    manager.command(host, {
-      type: 'pause',
-      actionId: randomUUID(),
-      gameId: state.game.id,
-      paused: false,
-    }),
-  ).rejects.toThrow()
-  await manager.connect(guest, 'b2')
-  const restored = await manager.command(host, {
+  expect((await manager.state(host)).game.phase).toBe('playing')
+  await manager.command(host, {
     type: 'pause',
     actionId: randomUUID(),
     gameId: state.game.id,
-    paused: false,
+    paused: true,
   })
-  expect(restored.game.cells[0]).toBe('queen')
-  expect(restored.game.phase).toBe('playing')
+  expect(
+    (
+      await manager.command(host, {
+        type: 'pause',
+        actionId: randomUUID(),
+        gameId: state.game.id,
+        paused: false,
+      })
+    ).game.phase,
+  ).toBe('playing')
+  await manager.connect(guest, 'b2')
+  expect((await manager.state(guest)).game.cells[0]).toBe('queen')
+  await manager.disconnect(host, 'a')
+  expect((await manager.state(guest)).hostId).toBe(guest.playerId)
+  expect((await manager.state(guest)).game.phase).toBe('playing')
 })
 it('rejects outsider credentials, full rooms and commands from the old game', async () => {
   const { manager, host, state } = await game()
@@ -237,7 +231,7 @@ it('failed persistence never broadcasts or applies an uncommitted command', asyn
   repository.save = oldSave
   expect((await manager.state(host)).game.cells[0]).toBe('empty')
 })
-it('a process restart restores room identity and board, paused for reconnection', async () => {
+it('a process restart restores room identity and a running board without automatic pause', async () => {
   const repository = memory(),
     { manager, host, guest, state } = await game(repository)
   await manager.command(host, cell(state, 0))
@@ -246,11 +240,11 @@ it('a process restart restores room identity and board, paused for reconnection'
   await restored.connect(guest, 'new-b')
   const next = await restored.state(host)
   expect(next.game.cells[0]).toBe('queen')
-  expect(next.game.phase).toBe('paused')
+  expect(next.game.phase).toBe('playing')
 })
 export type { Credentials }
 
-it('leaving transfers hosting and an empty room can be joined with a fresh round', async () => {
+it('leaving transfers hosting and an empty room preserves the current round for the next visitor', async () => {
   const { manager, host, guest } = await game()
   await manager.command(host, { type: 'leave', actionId: randomUUID() })
   const transferred = await manager.state(guest)
@@ -258,67 +252,82 @@ it('leaving transfers hosting and an empty room can be joined with a fresh round
   await manager.command(guest, { type: 'leave', actionId: randomUUID() })
   const replacement = await manager.join(host.roomId, 'New host')
   expect(replacement.state.hostId).toBe(replacement.credentials.playerId)
-  expect(replacement.state.game.phase).toBe('waiting')
-  expect(replacement.state.game.cells).toEqual([])
+  expect(replacement.state.game.phase).toBe('playing')
+  expect(replacement.state.game.cells).toHaveLength(36)
 })
 
-it('eight players can start together only when every member is online and ready', async () => {
+it('the host starts without readiness or waiting for all eight members to connect', async () => {
   const manager = new RoomManager(memory(), compute())
   const host = await manager.create('Host', { size: 6, difficulty: 'easy' })
-  const members = [host.credentials]
-  const gameId = host.state.game.id
   await manager.connect(host.credentials, 'host')
-  await manager.command(host.credentials, command({ type: 'ready', ready: true, gameId }))
-  const start = () =>
-    manager.command(host.credentials, { type: 'start', actionId: randomUUID(), gameId })
-  await expect(start()).rejects.toThrow()
+  const members = [host.credentials]
   for (let i = 1; i < MAX_ROOM_PLAYERS; i++) {
     const member = await manager.join(host.state.id, `Player ${i + 1}`)
     members.push(member.credentials)
-    await manager.connect(member.credentials, `socket-${i}`)
-    if (i < MAX_ROOM_PLAYERS - 1)
-      await manager.command(member.credentials, command({ type: 'ready', ready: true, gameId }))
   }
-  await expect(start()).rejects.toThrow()
-  const last = members.at(-1)!
-  await manager.command(last, command({ type: 'ready', ready: true, gameId }))
-  await manager.disconnect(last, `socket-${MAX_ROOM_PLAYERS - 1}`)
-  await expect(start()).rejects.toThrow()
-  await manager.connect(last, 'last-reconnected')
-  await start()
+  await manager.command(host.credentials, {
+    type: 'start',
+    actionId: randomUUID(),
+    gameId: host.state.game.id,
+  })
   await expect.poll(async () => (await manager.state(host.credentials)).game.phase).toBe('playing')
+  const last = members.at(-1)!
+  await manager.connect(last, 'last')
   const state = await manager.state(last)
   expect(state.players).toHaveLength(MAX_ROOM_PLAYERS)
   await manager.command(last, cell(state, 0))
-  expect((await manager.state(members[2])).game.cells[0]).toBe('queen')
+  expect((await manager.state(host.credentials)).game.cells[0]).toBe('queen')
 })
-it('joining an active game pauses it and any offline member blocks resume until reconnect or leave', async () => {
-  const { manager, host, guest, state } = await game()
-  const third = await manager.join(host.roomId, 'Charlie')
-  expect(third.state.game.phase).toBe('paused')
-  const resume = () =>
-    manager.command(host, {
-      type: 'pause',
-      actionId: randomUUID(),
-      gameId: state.game.id,
-      paused: false,
-    })
-  await expect(resume()).rejects.toThrow()
-  await manager.connect(third.credentials, 'c')
-  expect((await resume()).game.phase).toBe('playing')
-  await manager.disconnect(guest, 'b')
-  await expect(resume()).rejects.toThrow()
-  await manager.connect(guest, 'b-reconnected')
-  await manager.command(guest, { type: 'leave', actionId: randomUUID() })
-  expect((await resume()).game.phase).toBe('playing')
-  await manager.command(host, { type: 'leave', actionId: randomUUID() })
-  expect((await manager.state(third.credentials)).hostId).toBe(third.credentials.playerId)
+it('solo hosting, joining and leaving never interrupt the running round or clock', async () => {
+  const manager = new RoomManager(memory(), compute())
+  const host = await manager.create('Host', { size: 6, difficulty: 'easy' })
+  await manager.connect(host.credentials, 'host')
+  await manager.command(host.credentials, {
+    type: 'start',
+    actionId: randomUUID(),
+    gameId: host.state.game.id,
+  })
+  await expect.poll(async () => (await manager.state(host.credentials)).game.phase).toBe('playing')
+  const third = await manager.join(host.state.id, 'Guest')
+  expect(third.state.game.phase).toBe('playing')
+  await manager.connect(third.credentials, 'guest')
+  await manager.command(host.credentials, { type: 'leave', actionId: randomUUID() })
+  const after = await manager.state(third.credentials)
+  expect(after.hostId).toBe(third.credentials.playerId)
+  expect(after.game.phase).toBe('playing')
+  expect(after.game.id).toBe(third.state.game.id)
+  expect(after.game.elapsedMs).toBeGreaterThanOrEqual(third.state.game.elapsedMs)
+})
+it('five-character codes retry collisions with a bound and never replace an existing room', async () => {
+  const repository = memory()
+  const first = await new RoomManager(repository, compute(), () => 'ABCDE').create('First', {
+    size: 6,
+    difficulty: 'easy',
+  })
+  let count = 0
+  const next = await new RoomManager(repository, compute(), () =>
+    ++count === 1 ? 'ABCDE' : '12345',
+  ).create('Next', { size: 6, difficulty: 'easy' })
+  expect(next.state.id).toBe('12345')
+  expect((await repository.get('ABCDE'))?.hostId).toBe(first.credentials.playerId)
   await expect(
-    manager.command(third.credentials, {
-      type: 'pause',
-      actionId: randomUUID(),
-      gameId: state.game.id,
-      paused: false,
+    new RoomManager(repository, compute(), () => 'ABCDE').create('Blocked', {
+      size: 6,
+      difficulty: 'easy',
     }),
-  ).rejects.toThrow()
+  ).rejects.toMatchObject({ code: 'ROOM_CODE_EXHAUSTED' })
+  const original = repository.save.bind(repository)
+  let conflicted = false
+  repository.save = (room, event) => {
+    if (!conflicted) {
+      conflicted = true
+      return Promise.reject(new RoomError('Concurrent insert', 'STATE_CONFLICT'))
+    }
+    return original(room, event)
+  }
+  let attempt = 0
+  const raced = await new RoomManager(repository, compute(), () =>
+    ++attempt === 1 ? 'RACE1' : 'RACE2',
+  ).create('Race', { size: 6, difficulty: 'easy' })
+  expect(raced.state.id).toBe('RACE2')
 })

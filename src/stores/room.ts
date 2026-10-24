@@ -2,7 +2,6 @@ import { computed, shallowRef } from 'vue'
 import { defineStore } from 'pinia'
 import {
   credentialsSchema,
-  MIN_ROOM_PLAYERS,
   type Credentials,
   type Point,
   type RoomAccess,
@@ -34,12 +33,7 @@ export const useRoomStore = defineStore('room', () => {
   )
   const me = computed(() => room.value?.players.find((p) => p.id === credentials.value?.playerId))
   const canStart = computed(
-    () =>
-      isHost.value &&
-      connected.value &&
-      (room.value?.players.length ?? 0) >= MIN_ROOM_PLAYERS &&
-      (room.value?.players.every((p) => p.ready && p.connected) ?? false) &&
-      game.state?.phase === 'waiting',
+    () => isHost.value && connected.value && game.state?.phase === 'waiting',
   )
   const myActions = computed(
     () => game.state?.actions.filter((a) => a.playerId === credentials.value?.playerId) ?? [],

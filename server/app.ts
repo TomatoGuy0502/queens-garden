@@ -10,6 +10,7 @@ import {
   credentialsSchema,
   joinRoomSchema,
   pointSchema,
+  roomCodeSchema,
   type ClientEvents,
   type Credentials,
   type RoomReply,
@@ -74,9 +75,8 @@ export async function createApp(options: {
     '/api/rooms/:roomId/join',
     { config: { rateLimit: { max: 60, timeWindow: '1 minute' } } },
     async (request) => {
-      if (!/^[a-f0-9]{12}$/.test(request.params.roomId))
-        throw new RoomError('房間連結不正確。', 'NOT_FOUND')
-      return manager.join(request.params.roomId, joinRoomSchema.parse(request.body).name)
+      const id = roomCodeSchema.parse(request.params.roomId)
+      return manager.join(id, joinRoomSchema.parse(request.body).name)
     },
   )
   io.use((socket, next) => {

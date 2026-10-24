@@ -11,9 +11,9 @@ export const router = createRouter({
     { path: '/solo', component: () => import('./components/QueensGame.vue') },
     { path: '/rooms/new', component: () => import('./views/CreateRoomView.vue') },
     {
-      path: '/rooms/:roomId([a-f0-9]{12})',
+      path: '/rooms/:roomId([A-Za-z0-9]{5})',
       component: () => import('./views/CoopRoomView.vue'),
-      props: true,
+      props: (route) => ({ roomId: String(route.params.roomId).toUpperCase() }),
     },
     { path: '/:pathMatch(.*)*', component: () => import('./views/NotFoundView.vue') },
   ],

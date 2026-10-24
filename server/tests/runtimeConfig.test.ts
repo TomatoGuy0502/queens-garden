@@ -29,6 +29,9 @@ it('production requires a database while isolated E2E mode always uses files', (
       LOCAL_TEST_MODE: '1',
     }).url,
   ).toBeUndefined()
+  expect(() =>
+    migrationUrl({ ...production, NODE_ENV: 'production', LOCAL_TEST_MODE: '1' }),
+  ).toThrow('disabled')
   expect(migrationUrl({ ...production, NODE_ENV: 'production' })).toBe(
     production.DATABASE_URL_UNPOOLED,
   )

@@ -7,6 +7,7 @@ export function storageConfig(env: NodeJS.ProcessEnv) {
   return { production, url, file: env.ROOM_FILE ?? '.data/rooms.json' }
 }
 export function migrationUrl(env: NodeJS.ProcessEnv) {
+  if (env.LOCAL_TEST_MODE === '1') throw new Error('Migrations are disabled in LOCAL_TEST_MODE.')
   const production = env.NODE_ENV === 'production' || env.DATABASE_TARGET === 'production'
   const url = production
     ? (env.DATABASE_URL_UNPOOLED ?? env.DATABASE_URL)

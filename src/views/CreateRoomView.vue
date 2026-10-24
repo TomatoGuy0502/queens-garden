@@ -1,14 +1,17 @@
 <script setup lang="ts">
 import { shallowRef } from 'vue'
 import { useRouter } from 'vue-router'
+import { usePlayerName } from '../composables/usePlayerName'
+import RoomCodeInput from '../components/coop/RoomCodeInput.vue'
+import { parseRoomCode } from '../../shared/roomCode'
 import AppHeader from '../components/AppHeader.vue'
 import { useRoomStore } from '../stores/room'
 import type { RoomSettings } from '../../shared/coop'
 import type { Difficulty } from '../queens/types'
 const room = useRoomStore(),
   router = useRouter()
-const name = shallowRef(''),
-  size = shallowRef<RoomSettings['size']>(8),
+const name = usePlayerName()
+const size = shallowRef<RoomSettings['size']>(8),
   difficulty = shallowRef<Difficulty>('easy'),
   code = shallowRef(''),
   busy = shallowRef(false),
@@ -29,15 +32,9 @@ async function create() {
   }
 }
 async function join() {
-  const value = code.value.trim()
-  let id = value
-  try {
-    id = new URL(value).pathname.split('/').at(-1) ?? ''
-  } catch {
-    /* Accept a bare room code. */
-  }
-  if (!/^[a-f0-9]{12}$/.test(id)) {
-    error.value = '請輸入 12 位房間代碼或房間連結。'
+  const id = parseRoomCode(code.value)
+  if (!id) {
+    error.value = '請輸入 5 碼英數字房間代碼。'
     return
   }
   await router.push(`/rooms/${id}`)
@@ -50,7 +47,7 @@ async function join() {
     <div class="room-forms">
       <section>
         <h2>建立房間</h2>
-        <p class="page-description">支援 2～8 人，所有玩家準備完成後，由房主開始。</p>
+        <p class="page-description">最多 8 人。房主可直接開始，隊友隨時加入。</p>
         <form class="room-form" @submit.prevent="create">
           <label for="player-name">你的暱稱</label
           ><input
@@ -77,13 +74,8 @@ async function join() {
       <section>
         <h2>加入房間</h2>
         <form class="room-form" @submit.prevent="join">
-          <label for="room-code">房間代碼或連結</label
-          ><input id="room-code" v-model="code" required autocomplete="off" /><button
-            class="secondary"
-            :disabled="!code.trim()"
-          >
-            前往房間
-          </button>
+          <RoomCodeInput v-model="code" />
+          <button class="secondary" :disabled="!parseRoomCode(code)">前往房間</button>
         </form>
       </section>
     </div>

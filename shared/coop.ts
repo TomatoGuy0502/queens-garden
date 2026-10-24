@@ -1,6 +1,6 @@
 import { z } from 'zod'
+import { ROOM_CODE_PATTERN } from './roomCode'
 import type { CellState, DeductionStep, PuzzleDefinition } from '../src/queens/types'
-export const MIN_ROOM_PLAYERS = 2
 export const MAX_ROOM_PLAYERS = 8
 
 export const sizeSchema = z.union([
@@ -15,8 +15,9 @@ export const difficultySchema = z.enum(['easy', 'medium', 'hard'])
 export const settingsSchema = z.object({ size: sizeSchema, difficulty: difficultySchema })
 export const createRoomSchema = settingsSchema.extend({ name: z.string().trim().min(1).max(24) })
 export const joinRoomSchema = z.object({ name: z.string().trim().min(1).max(24) })
+export const roomCodeSchema = z.string().trim().toUpperCase().regex(ROOM_CODE_PATTERN)
 export const credentialsSchema = z.object({
-  roomId: z.string().regex(/^[a-f0-9]{12}$/),
+  roomId: roomCodeSchema,
   playerId: z.uuid(),
   token: z.string().regex(/^[a-f0-9]{64}$/),
 })
@@ -25,7 +26,6 @@ export type RoomSettings = z.infer<typeof settingsSchema>
 const envelope = { actionId: z.uuid() }
 const round = { ...envelope, gameId: z.uuid() }
 export const commandSchema = z.discriminatedUnion('type', [
-  z.object({ ...round, type: z.literal('ready'), ready: z.boolean() }),
   z.object({ ...round, type: z.literal('configure'), settings: settingsSchema }),
   z.object({ ...round, type: z.literal('start') }),
   z.object({ ...round, type: z.literal('reset') }),
@@ -61,7 +61,6 @@ export interface BoardAction {
 export interface Player {
   id: string
   name: string
-  ready: boolean
   connected: boolean
 }
 export interface SharedHint {

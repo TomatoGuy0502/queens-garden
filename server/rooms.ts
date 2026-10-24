@@ -1,5 +1,5 @@
-import { createHash, randomBytes, randomUUID, timingSafeEqual } from 'node:crypto'
-import { MIN_ROOM_PLAYERS, MAX_ROOM_PLAYERS } from '../shared/coop'
+import { createHash, randomBytes, randomInt, randomUUID, timingSafeEqual } from 'node:crypto'
+import { MAX_ROOM_PLAYERS } from '../shared/coop'
 import type {
   BoardAction,
   Change,
@@ -9,6 +9,7 @@ import type {
   RoomSettings,
   RoomSnapshot,
 } from '../shared/coop'
+import { ROOM_CODE_ALPHABET, ROOM_CODE_LENGTH, ROOM_CODE_PATTERN } from '../shared/roomCode'
 import type { CellState, PuzzleDefinition } from '../src/queens/types'
 import { conflictCells } from '../src/queens/validator'
 import { RoomError, type RoomRepository, type StoredPlayer, type StoredRoom } from './model'
@@ -23,7 +24,6 @@ function player(name: string): { stored: StoredPlayer; token: string } {
       id: randomUUID(),
       name,
       tokenHash: hash(token),
-      ready: false,
       lastSeenAt: Date.now(),
     },
   }
@@ -46,9 +46,6 @@ function freshGame(room: StoredRoom) {
   room.hint = null
   room.message = ''
   room.mistakes = []
-  room.players.forEach((p) => {
-    p.ready = false
-  })
 }
 export class RoomManager {
   private queues = new Map<string, Promise<void>>()
@@ -58,6 +55,11 @@ export class RoomManager {
   constructor(
     private repository: RoomRepository,
     private compute: Compute,
+    private makeCode = () =>
+      Array.from(
+        { length: ROOM_CODE_LENGTH },
+        () => ROOM_CODE_ALPHABET[randomInt(ROOM_CODE_ALPHABET.length)],
+      ).join(''),
   ) {}
   private serial<T>(id: string, work: () => Promise<T>): Promise<T> {
     const result = (this.queues.get(id) ?? Promise.resolve()).then(work)
@@ -72,6 +74,7 @@ export class RoomManager {
     return result
   }
   private async load(id: string) {
+    if (!ROOM_CODE_PATTERN.test(id)) throw new RoomError('房間代碼格式不正確。', 'NOT_FOUND')
     const room = await this.repository.get(id)
     if (!room || room.expiresAt < Date.now())
       throw new RoomError('房間不存在或已過期。', 'NOT_FOUND')
@@ -91,12 +94,6 @@ export class RoomManager {
   }
   private online(id: string, playerId: string) {
     return !!this.connections.get(id)?.get(playerId)?.size
-  }
-  private allOnline(room: StoredRoom) {
-    return (
-      room.players.length >= MIN_ROOM_PLAYERS &&
-      room.players.every((p) => this.online(room.id, p.id))
-    )
   }
   snapshot(room: StoredRoom): RoomSnapshot {
     const now = Date.now()
@@ -121,7 +118,6 @@ export class RoomManager {
       players: room.players.map((p) => ({
         id: p.id,
         name: p.name,
-        ready: p.ready,
         connected: this.online(room.id, p.id),
       })),
       game: {
@@ -175,18 +171,31 @@ export class RoomManager {
     return state
   }
   async create(name: string, settings: RoomSettings): Promise<RoomAccess> {
-    const { stored, token } = player(name)
-    const room = {
-      id: randomBytes(6).toString('hex'),
-      hostId: stored.id,
-      settings,
-      players: [stored],
-      revision: 0,
-      expiresAt: Date.now() + ROOM_TTL,
-    } as StoredRoom
-    freshGame(room)
-    const state = await this.commit(room, 'created', stored.id)
-    return { credentials: { roomId: room.id, playerId: stored.id, token }, state }
+    for (let attempt = 0; attempt < 16; attempt++) {
+      const id = this.makeCode()
+      const access = await this.serial(id, async () => {
+        if (await this.repository.get(id)) return null
+        const { stored, token } = player(name)
+        const room = {
+          id,
+          hostId: stored.id,
+          settings,
+          players: [stored],
+          revision: 0,
+          expiresAt: Date.now() + ROOM_TTL,
+        } as StoredRoom
+        freshGame(room)
+        try {
+          const state = await this.commit(room, 'created', stored.id)
+          return { credentials: { roomId: id, playerId: stored.id, token }, state }
+        } catch (error) {
+          if (error instanceof RoomError && error.code === 'STATE_CONFLICT') return null
+          throw error
+        }
+      })
+      if (access) return access
+    }
+    throw new RoomError('暫時無法取得房間代碼，請稍後再試。', 'ROOM_CODE_EXHAUSTED')
   }
   async join(id: string, name: string): Promise<RoomAccess> {
     return this.serial(id, async () => {
@@ -199,15 +208,7 @@ export class RoomManager {
         throw new RoomError(`房間已滿，最多 ${MAX_ROOM_PLAYERS} 人合作。`, 'ROOM_FULL')
       const { stored, token } = player(name)
       room.players.push(stored)
-      if (room.phase === 'playing') {
-        room.phase = 'paused'
-        room.pausedAt = Date.now()
-        room.message = '新隊友已加入，所有玩家連線後即可繼續。'
-      }
-      if (!room.hostId) {
-        room.hostId = stored.id
-        freshGame(room)
-      }
+      if (!room.hostId) room.hostId = stored.id
       const state = await this.commit(room, 'joined', stored.id)
       return { credentials: { roomId: id, playerId: stored.id, token }, state }
     })
@@ -223,7 +224,6 @@ export class RoomManager {
     return this.serial(credentials.roomId, async () => {
       const room = await this.load(credentials.roomId),
         member = this.authorize(room, credentials)
-      const firstConnection = !this.connections.get(room.id)?.size
       let members = this.connections.get(room.id)
       if (!members) {
         members = new Map()
@@ -236,18 +236,10 @@ export class RoomManager {
       }
       sockets.add(socketId)
       member.lastSeenAt = Date.now()
-      // A process restart has no active socket sessions. Preserve elapsed time from the last durable snapshot.
-      if (room.phase === 'playing' && !this.allOnline(room)) {
-        room.phase = 'paused'
-        room.pausedAt = firstConnection ? room.checkpointAt : Date.now()
-        room.message = '等待所有玩家連線後繼續。'
-      }
+      if (!this.online(room.id, room.hostId)) room.hostId = member.id
       if (room.phase === 'generating' && !this.generating.has(room.gameId)) {
         room.phase = 'waiting'
-        room.players.forEach((p) => {
-          p.ready = false
-        })
-        room.message = '服務已重新啟動，請重新準備並產生關卡。'
+        room.message = '服務已重新啟動，房主可重新產生關卡。'
       }
       try {
         return await this.commit(room, 'connected', member.id)
@@ -269,10 +261,9 @@ export class RoomManager {
       const member = room.players.find((p) => p.id === credentials.playerId)
       if (!member) return
       member.lastSeenAt = Date.now()
-      if (!this.online(room.id, member.id) && room.phase === 'playing') {
-        room.phase = 'paused'
-        room.pausedAt = Date.now()
-        room.message = `${member.name} 已離線，遊戲已暫停。`
+      if (!this.online(room.id, member.id) && room.hostId === member.id) {
+        const next = room.players.find((p) => this.online(room.id, p.id))
+        if (next) room.hostId = next.id
       }
       await this.commit(room, 'disconnected', member.id)
     })
@@ -320,8 +311,8 @@ export class RoomManager {
     } else if (!solved && room.phase === 'completed') {
       room.pausedMs += Date.now() - room.finishedAt!
       room.finishedAt = null
-      room.phase = this.allOnline(room) ? 'playing' : 'paused'
-      room.pausedAt = room.phase === 'paused' ? Date.now() : null
+      room.phase = 'playing'
+      room.pausedAt = null
     }
   }
   private apply(room: StoredRoom, memberId: string, id: string, changes: BoardAction['changes']) {
@@ -356,26 +347,14 @@ export class RoomManager {
       if (this.receipt(room, credentials, command)) return this.snapshot(room)
       if ('gameId' in command) this.round(room, command.gameId)
       switch (command.type) {
-        case 'ready':
-          if (room.phase !== 'waiting') throw new RoomError('目前不在等待室。')
-          member.ready = command.ready
-          break
         case 'configure':
           this.host(room, member.id)
           if (room.phase !== 'waiting') throw new RoomError('只能在等待室調整關卡。')
           room.settings = command.settings
-          room.players.forEach((p) => {
-            p.ready = false
-          })
           break
         case 'start':
           this.host(room, member.id)
-          if (
-            room.phase !== 'waiting' ||
-            !this.allOnline(room) ||
-            !room.players.every((p) => p.ready)
-          )
-            throw new RoomError('至少需要兩位玩家，且所有玩家都需連線並準備完成。')
+          if (room.phase !== 'waiting') throw new RoomError('目前無法開始新局。')
           room.phase = 'generating'
           room.gameId = randomUUID()
           room.message = ''
@@ -387,11 +366,9 @@ export class RoomManager {
           break
         case 'leave':
           room.players = room.players.filter((p) => p.id !== member.id)
-          if (room.hostId === member.id) room.hostId = room.players[0]?.id ?? ''
-          if (room.phase === 'playing') {
-            room.phase = 'paused'
-            room.pausedAt = Date.now()
-          }
+          if (room.hostId === member.id)
+            room.hostId =
+              room.players.find((p) => this.online(room.id, p.id))?.id ?? room.players[0]?.id ?? ''
           room.message = `${member.name} 已離開房間。`
           break
         case 'pause':
@@ -401,8 +378,6 @@ export class RoomManager {
             room.phase = 'paused'
             room.pausedAt = Date.now()
           } else if (!command.paused && room.phase === 'paused') {
-            if (!this.allOnline(room))
-              throw new RoomError('至少需要兩位玩家，並等待所有隊友重新連線。')
             room.pausedMs += Date.now() - room.pausedAt!
             room.pausedAt = null
             room.phase = 'playing'
@@ -484,8 +459,8 @@ export class RoomManager {
         room.cells = Array<CellState>(puzzle.size ** 2).fill('empty')
         room.versions = Array<number>(puzzle.size ** 2).fill(0)
         room.startedAt = Date.now()
-        room.phase = this.allOnline(room) ? 'playing' : 'paused'
-        room.pausedAt = room.phase === 'paused' ? Date.now() : null
+        room.phase = 'playing'
+        room.pausedAt = null
         await this.commit(room, 'generated', room.hostId)
       })
     } catch (error) {
@@ -493,9 +468,6 @@ export class RoomManager {
         const room = await this.load(id)
         if (room.gameId !== gameId || room.phase !== 'generating') return
         room.phase = 'waiting'
-        room.players.forEach((p) => {
-          p.ready = false
-        })
         room.message = error instanceof Error ? error.message : '生成失敗，請重試。'
         await this.commit(room, 'generation_failed', room.hostId)
       }).catch(() => {})

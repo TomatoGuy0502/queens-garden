@@ -4,7 +4,6 @@ export interface StoredPlayer {
   id: string
   name: string
   tokenHash: string
-  ready: boolean
   lastSeenAt: number
 }
 export interface StoredRoom {

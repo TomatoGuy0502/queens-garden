@@ -13,24 +13,17 @@ export default defineConfig({
   ],
   webServer: process.env.PLAYWRIGHT_BASE_URL
     ? undefined
-    : [
-        {
-          command: 'npm run dev:web -- --port 5174 --strictPort',
-          env: { API_PROXY_TARGET: 'http://127.0.0.1:3004' },
-          url: 'http://127.0.0.1:5174',
-          reuseExistingServer: false,
+    : {
+        command: 'npm run build && npm start',
+        url: 'http://127.0.0.1:5174/api/health',
+        reuseExistingServer: false,
+        timeout: 120000,
+        env: {
+          NODE_ENV: 'production',
+          PORT: '5174',
+          LOCAL_TEST_MODE: '1',
+          PUBLIC_ORIGIN: 'http://127.0.0.1:5174',
+          ROOM_FILE: '.data/e2e-rooms-v2.json',
         },
-        {
-          command: 'npm run dev:server',
-          url: 'http://127.0.0.1:3004/api/health',
-          reuseExistingServer: false,
-          timeout: 30000,
-          env: {
-            PORT: '3004',
-            LOCAL_TEST_MODE: '1',
-            PUBLIC_ORIGIN: 'http://127.0.0.1:5174',
-            ROOM_FILE: '.data/e2e-rooms-v2.json',
-          },
-        },
-      ],
+      },
 })
