@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { usePlayerName } from '../composables/usePlayerName'
 import { computed, onMounted, onUnmounted, shallowRef, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 import { Clock3, Pause, Play, MousePointer2, LoaderCircle, LogOut } from '@lucide/vue'
 import AppHeader from '../components/AppHeader.vue'
@@ -13,13 +14,13 @@ import GameToolbar from '../components/GameToolbar.vue'
 import GameResult from '../components/GameResult.vue'
 import GameRules from '../components/GameRules.vue'
 import GameShare from '../components/GameShare.vue'
-import { DIFFICULTY_LABELS } from '../queens/levels'
 import { HINT_LEVELS, hintView } from '../queens/strategies'
 import { useLeaveGuard } from '../composables/useLeaveGuard'
 import { useRoomStore } from '../stores/room'
 import { useCoopGameStore } from '../stores/game'
 import { useGamePreferences } from '../composables/useGamePreferences'
 const props = defineProps<{ roomId: string }>()
+const { t } = useI18n()
 const room = useRoomStore(),
   game = useCoopGameStore(),
   router = useRouter()
@@ -33,7 +34,6 @@ watch([() => game.state?.id, () => game.state?.phase], () => {
   reviewing.value = false
 })
 const confirmation = shallowRef<{ kind: 'restart' | 'new'; gameId: string } | null>(null)
-const labels = DIFFICULTY_LABELS
 const blocked = computed(() => !room.connected || game.state?.phase !== 'playing')
 const canResume = computed(() => room.connected)
 // The shared hint is revealed in levels; the whole room sees the same level.
@@ -134,7 +134,7 @@ function applyHint() {
 // A joined player who closes the page cannot come back as the same player, so ask first.
 const guard = useLeaveGuard(
   () => !!room.me,
-  '確定要離開這個房間嗎？離開後需要重新加入，目前的進度由其他玩家繼續。',
+  () => t('coop.room.leaveConfirm'),
 )
 async function leave() {
   if (!guard.confirmLeave()) return
@@ -159,10 +159,10 @@ async function reset() {
     <AppHeader />
     <div class="room-heading">
       <div>
-        <h1>多人合作</h1>
+        <h1>{{ $t('coop.title') }}</h1>
         <p>
-          房間
-          <span class="room-code" role="group" :aria-label="`房間代碼 ${roomId}`"
+          {{ $t('coop.room.label') }}
+          <span class="room-code" role="group" :aria-label="$t('coop.code.group', { code: roomId })"
             ><span v-for="(digit, index) in roomId" :key="index" aria-hidden="true">{{
               digit
             }}</span></span
@@ -175,14 +175,14 @@ async function reset() {
           class="text-button leave-button"
           @click="leave"
         >
-          <LogOut :size="15" />離開
+          <LogOut :size="15" />{{ $t('coop.room.leave') }}
         </button>
       </div>
     </div>
     <section v-if="!room.room" class="join-panel">
-      <h2>{{ room.connecting ? '正在重新連線…' : '加入合作房間' }}</h2>
+      <h2>{{ room.connecting ? $t('coop.join.reconnecting') : $t('coop.join.panel') }}</h2>
       <form v-if="!room.connecting" class="room-form" @submit.prevent="join">
-        <label for="guest-name">你的暱稱</label
+        <label for="guest-name">{{ $t('coop.create.name') }}</label
         ><input
           id="guest-name"
           v-model="name"
@@ -190,7 +190,7 @@ async function reset() {
           maxlength="24"
           autocomplete="nickname"
         /><button class="primary" :disabled="joining || !name.trim()">
-          {{ joining ? '加入中…' : '加入房間' }}
+          {{ joining ? $t('coop.join.submitting') : $t('coop.join.submit') }}
         </button>
       </form>
       <p v-if="joinError || room.error" role="alert" class="error-notice">
@@ -204,8 +204,8 @@ async function reset() {
         :hovers="room.hovers"
         :size="game.state?.puzzle?.size ?? 0" />
       <p v-if="!room.connected" class="connection-notice" role="status">
-        連線中斷，正在重新連線。重新連線後會同步最新棋盤。
-        <button class="text-button" @click="room.reconnect">重新連線</button>
+        {{ $t('coop.room.disconnected') }}
+        <button class="text-button" @click="room.reconnect">{{ $t('coop.room.reconnect') }}</button>
       </p>
       <p v-if="room.error" class="error-notice" role="alert">{{ room.error }}</p>
       <div class="coop-layout" :class="{ expanded: expandedBoard }">
@@ -227,15 +227,22 @@ async function reset() {
             role="status"
           >
             <LoaderCircle :size="30" class="spinner" />
-            <h2>正在產生合作關卡</h2>
-            <p>驗證唯一解、區域大小與邏輯難度。</p>
+            <h2>{{ $t('coop.room.generating.title') }}</h2>
+            <p>{{ $t('coop.room.generating.body') }}</p>
           </div>
           <template v-else-if="game.state?.puzzle"
             ><div class="coop-meta">
               <div>
-                <span class="difficulty-badge">{{ labels[game.state.puzzle.difficulty] }}</span
+                <span class="difficulty-badge">{{
+                  $t(`difficulty.${game.state.puzzle.difficulty}`)
+                }}</span
                 ><span>{{ game.state.puzzle.size }} × {{ game.state.puzzle.size }}</span
-                ><span>{{ game.queens.length }} / {{ game.state.puzzle.size }} 皇冠</span>
+                ><span>{{
+                  $t('coop.room.crowns', {
+                    count: game.queens.length,
+                    size: game.state.puzzle.size,
+                  })
+                }}</span>
               </div>
               <div>
                 <Clock3 :size="15" /><span>{{ game.time }}</span
@@ -246,7 +253,9 @@ async function reset() {
                     game.state.phase === 'completed' ||
                     (game.state.phase === 'paused' && !canResume)
                   "
-                  :aria-label="game.state.phase === 'paused' ? '繼續合作' : '暫停合作'"
+                  :aria-label="
+                    game.state.phase === 'paused' ? $t('coop.room.resume') : $t('coop.room.pause')
+                  "
                   @click="pause"
                 >
                   <Play v-if="game.state.phase === 'paused'" :size="16" /><Pause
@@ -281,7 +290,7 @@ async function reset() {
                   :moves="game.state.moves"
                   :hints="game.state.hints"
                   :next-disabled="!room.isHost || !room.connected"
-                  :next-label="room.isHost ? '開啟下一局 →' : '等待房主開啟下一局'"
+                  :next-label="room.isHost ? $t('coop.room.next') : $t('coop.room.waitHost')"
                   @review="reviewing = true"
                   @next="reset" /></template
             ></QueensBoard>
@@ -293,12 +302,10 @@ async function reset() {
                 :disabled="blocked"
                 @click="pointMode = !pointMode"
               >
-                <MousePointer2 :size="16" />{{ pointMode ? '結束指示' : '指示格子' }}</button
-              ><span>{{
-                pointMode
-                  ? '指示中：點選任何格子向隊友指出位置，可連續指示，完成後按「結束指示」。'
-                  : '指示不會改變皇冠或 X。'
-              }}</span>
+                <MousePointer2 :size="16" />{{
+                  pointMode ? $t('coop.point.end') : $t('coop.point.start')
+                }}</button
+              ><span>{{ $t(pointMode ? 'coop.point.active' : 'coop.point.idle') }}</span>
             </div>
             <GameToolbar
               :blocked="blocked"
@@ -330,21 +337,23 @@ async function reset() {
               :disabled="!room.connected || !!room.pending"
               @click="confirmRound('new')"
             >
-              更換關卡
+              {{ $t('coop.room.changeRound') }}
             </button>
             <div class="coop-feedback" role="status" aria-live="polite">
               <p v-if="feedback">
-                <span v-if="hintInfo" class="hint-level">邏輯提示 {{ hintLevel }} / 3　</span
+                <span v-if="hintInfo" class="hint-level">{{
+                  $t('game.feedback.hint', { level: hintLevel })
+                }}</span
                 >{{ feedback }}
               </p>
               <button v-if="hintRevealed && !blocked" class="text-button" @click="applyHint">
-                套用這一步 →
+                {{ $t('game.feedback.apply') }}
               </button>
-              <p v-if="game.conflicts.length">皇冠有衝突，請檢查斜紋格子。</p>
+              <p v-if="game.conflicts.length">{{ $t('coop.room.conflict') }}</p>
             </div>
             <div class="coop-footer">
-              SEED {{ game.state.puzzle.seed }} · v{{ game.state.puzzle.version }} · 難度分數
-              {{ game.state.puzzle.difficultyScore }}
+              SEED {{ game.state.puzzle.seed }} · v{{ game.state.puzzle.version }} ·
+              {{ $t('game.score', { score: game.state.puzzle.difficultyScore }) }}
             </div>
           </template>
           <p
@@ -356,10 +365,10 @@ async function reset() {
           </p>
         </section>
         <aside class="coop-aside">
-          <h2>合作操作</h2>
-          <p>皇冠與 X 即時同步。Undo／Redo 只處理自己的操作，已有後續修改的格子不能覆蓋。</p>
-          <p>隊友隨時可加入或離開，不會中斷棋盤或計時。</p>
-          <p>視覺引導各自設定，不會改動隊友的偏好。</p>
+          <h2>{{ $t('coop.room.aside.title') }}</h2>
+          <p>{{ $t('coop.room.aside.sync') }}</p>
+          <p>{{ $t('coop.room.aside.join') }}</p>
+          <p>{{ $t('coop.room.aside.guidance') }}</p>
           <GameRules />
         </aside></div
     ></template>
@@ -513,6 +522,7 @@ async function reset() {
 .hint-level {
   color: var(--accent);
   font-weight: 600;
+  margin-right: 0.8em;
 }
 .coop-footer {
   font:

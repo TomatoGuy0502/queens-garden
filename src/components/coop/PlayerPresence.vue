@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import type { Hover, Player } from '../../../shared/coop'
+const { t } = useI18n()
 const props = defineProps<{ players: Player[]; meId?: string; hovers: Hover[]; size: number }>()
 const positions = computed(
   () =>
@@ -13,15 +15,20 @@ const positions = computed(
 function position(id: string) {
   const index = positions.value.get(id)
   return index === undefined || !props.size
-    ? '位置 —'
-    : `停在 ${Math.floor(index / props.size) + 1},${(index % props.size) + 1}`
+    ? t('coop.presence.unknown')
+    : t('coop.presence.at', {
+        row: Math.floor(index / props.size) + 1,
+        col: (index % props.size) + 1,
+      })
 }
 </script>
 <template>
-  <div class="presence-bar" aria-label="房間玩家">
+  <div class="presence-bar" :aria-label="$t('coop.presence.label')">
     <span v-for="player in players" :key="player.id" :class="{ offline: !player.connected }">
-      <i aria-hidden="true"></i>{{ player.name }}{{ player.id === meId ? '（你）' : '' }}
-      <small>{{ player.connected ? '已連線' : '離線' }}</small>
+      <i aria-hidden="true"></i>{{ player.name }}{{ player.id === meId ? $t('coop.you') : '' }}
+      <small>{{
+        player.connected ? $t('coop.presence.online') : $t('coop.presence.offline')
+      }}</small>
       <small class="hover-position" :data-player-id="player.id">{{ position(player.id) }}</small>
     </span>
   </div>

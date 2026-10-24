@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { MAX_ROOM_PLAYERS } from '../../../shared/coop'
 import type { Player, RoomSettings } from '../../../shared/coop'
-import { DIFFICULTIES, DIFFICULTY_LABELS } from '../../queens/levels'
+import { DIFFICULTIES } from '../../queens/levels'
 import type { Difficulty } from '../../queens/types'
 const props = defineProps<{
   players: Player[]
@@ -28,22 +28,29 @@ function difficulty(event: Event) {
 <template>
   <section class="lobby" aria-labelledby="lobby-title">
     <h2 id="lobby-title">
-      等待室 <span class="player-count">{{ players.length }} / {{ MAX_ROOM_PLAYERS }} 人</span>
+      {{ $t('coop.lobby.title') }}
+      <span class="player-count">{{
+        $t('coop.lobby.count', { count: players.length, max: MAX_ROOM_PLAYERS })
+      }}</span>
     </h2>
-    <p class="page-description">最多 {{ MAX_ROOM_PLAYERS }} 人。房主可直接開始，隊友可隨時加入。</p>
+    <p class="page-description">{{ $t('coop.lobby.intro', { max: MAX_ROOM_PLAYERS }) }}</p>
     <div class="players">
       <div v-for="player in players" :key="player.id" class="player-row">
         <span class="avatar">{{ Array.from(player.name)[0] }}</span>
         <div>
-          <strong>{{ player.name }}{{ player.id === meId ? '（你）' : '' }}</strong
-          ><span v-if="player.id === hostId" class="host-label">房主</span
-          ><small>{{ player.connected ? '已連線' : '等待連線' }}</small>
+          <strong>{{ player.name }}{{ player.id === meId ? $t('coop.you') : '' }}</strong
+          ><span v-if="player.id === hostId" class="host-label">{{ $t('coop.lobby.host') }}</span
+          ><small>{{
+            player.connected ? $t('coop.lobby.connected') : $t('coop.lobby.waiting')
+          }}</small>
         </div>
       </div>
-      <div v-if="players.length < MAX_ROOM_PLAYERS" class="empty-seat">可繼續邀請隊友加入</div>
+      <div v-if="players.length < MAX_ROOM_PLAYERS" class="empty-seat">
+        {{ $t('coop.lobby.invite') }}
+      </div>
     </div>
     <div class="lobby-settings room-form">
-      <label for="coop-size">棋盤大小</label
+      <label for="coop-size">{{ $t('coop.create.size') }}</label
       ><select
         id="coop-size"
         :value="settings.size"
@@ -53,7 +60,7 @@ function difficulty(event: Event) {
         <option v-for="n in [6, 7, 8, 9, 10, 12]" :key="n" :value="n">
           {{ n }} × {{ n }}
         </option></select
-      ><label for="coop-difficulty">難度</label
+      ><label for="coop-difficulty">{{ $t('coop.create.difficulty') }}</label
       ><select
         id="coop-difficulty"
         :value="settings.difficulty"
@@ -61,7 +68,7 @@ function difficulty(event: Event) {
         @change="difficulty"
       >
         <option v-for="item in DIFFICULTIES" :key="item" :value="item">
-          {{ DIFFICULTY_LABELS[item] }}
+          {{ $t(`difficulty.${item}`) }}
         </option>
       </select>
     </div>
@@ -72,10 +79,10 @@ function difficulty(event: Event) {
         :disabled="!canStart || pending"
         @click="emit('start')"
       >
-        開始合作
+        {{ $t('coop.lobby.start') }}
       </button>
     </div>
-    <p v-if="meId !== hostId" class="setting-note">等待房主開始，或分享房間連結邀請其他隊友。</p>
+    <p v-if="meId !== hostId" class="setting-note">{{ $t('coop.lobby.waitingHost') }}</p>
   </section>
 </template>
 <style scoped>

@@ -20,18 +20,22 @@ onMounted(() => {
     aria-describedby="round-confirm-description"
     @cancel.prevent="cancel"
   >
-    <h2 id="round-confirm-title">{{ kind === 'restart' ? '重新開始本關？' : '更換關卡？' }}</h2>
+    <h2 id="round-confirm-title">
+      {{ $t(kind === 'restart' ? 'coop.round.restartTitle' : 'coop.round.newTitle') }}
+    </h2>
     <p id="round-confirm-description">
-      {{
-        kind === 'restart'
-          ? '保留相同盤面，清除所有玩家的皇冠、X、操作歷史、提示與計時。'
-          : '結束目前這局，所有玩家回到等待室，由房主選擇新關卡。'
-      }}
+      {{ $t(kind === 'restart' ? 'coop.round.restartBody' : 'coop.round.newBody') }}
     </p>
     <div class="confirmation-actions">
-      <button ref="cancelButton" class="secondary" :disabled="busy" @click="cancel">取消</button>
+      <button ref="cancelButton" class="secondary" :disabled="busy" @click="cancel">
+        {{ $t('coop.round.cancel') }}
+      </button>
       <button class="primary" :disabled="busy" @click="emit('confirm')">
-        {{ busy ? '處理中…' : kind === 'restart' ? '確認重新開始' : '回到等待室' }}
+        {{
+          busy
+            ? $t('coop.round.processing')
+            : $t(kind === 'restart' ? 'coop.round.confirmRestart' : 'coop.round.confirmNew')
+        }}
       </button>
     </div>
   </dialog>

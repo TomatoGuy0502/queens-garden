@@ -28,7 +28,7 @@ onUnmounted(stop)
           @focusout="schedule"
         >
           <span>{{ notice.message }}</span>
-          <button class="icon-button" aria-label="關閉通知" @click="emit('dismiss')">
+          <button class="icon-button" :aria-label="$t('coop.toast.close')" @click="emit('dismiss')">
             <X :size="17" />
           </button>
         </div>

@@ -1,4 +1,5 @@
 import { io, type Socket } from 'socket.io-client'
+import { i18n } from '../i18n'
 import type {
   ClientEvents,
   Credentials,
@@ -48,12 +49,13 @@ export function connectRoom(
   socket.connect()
   return {
     command(command: RoomCommand): Promise<RoomReply> {
-      if (!socket.connected) return Promise.reject(new Error('連線中斷，請等待重新連線。'))
+      if (!socket.connected)
+        return Promise.reject(new Error(i18n.global.t('coop.errors.disconnected')))
       return new Promise((resolve, reject) =>
         socket
           .timeout(150000)
           .emit('room:command', command, (error: Error | null, response: RoomReply) =>
-            error ? reject(new Error('等待伺服器回應逾時，請重新連線同步。')) : resolve(response),
+            error ? reject(new Error(i18n.global.t('coop.errors.timeout'))) : resolve(response),
           ),
       )
     },

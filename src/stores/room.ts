@@ -1,5 +1,6 @@
 import { computed, shallowRef } from 'vue'
 import { defineStore } from 'pinia'
+import { i18n } from '../i18n'
 import {
   credentialsSchema,
   type Credentials,
@@ -179,7 +180,7 @@ export const useRoomStore = defineStore('room', () => {
       body: JSON.stringify(body),
     })
     const data = (await response.json()) as RoomAccess & { error?: string }
-    if (!response.ok) throw new Error(data.error ?? '無法加入房間。')
+    if (!response.ok) throw new Error(data.error ?? i18n.global.t('coop.join.failed'))
     return data
   }
   async function create(name: string, settings: RoomSettings) {
@@ -194,12 +195,12 @@ export const useRoomStore = defineStore('room', () => {
   }
   async function send(input: CommandInput) {
     if (!client || !connected.value) {
-      notify('請等待重新連線後操作。')
+      notify(i18n.global.t('coop.errors.waitReconnect'))
       return false
     }
     const gameId = input.gameId ?? game.state?.id
     if (!gameId) {
-      notify('正在同步房間，請稍後再試。')
+      notify(i18n.global.t('coop.errors.syncing'))
       return false
     }
     const currentClient = client

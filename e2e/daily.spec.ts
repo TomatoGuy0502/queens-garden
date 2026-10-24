@@ -1,7 +1,7 @@
 import { test, expect, type Page } from '@playwright/test'
 import { dailyConfig } from '../src/queens/daily'
 import { solve } from '../src/queens/solver'
-import { DIFFICULTY_LABELS } from '../src/queens/levels'
+import zhHant from '../src/i18n/messages/zh-Hant'
 
 test.use({ timezoneId: 'Asia/Taipei' })
 const errors = new WeakMap<Page, string[]>()
@@ -30,7 +30,7 @@ async function playToday(page: Page, key: string) {
   await page.getByRole('link', { name: /開始今日挑戰|再玩一次/ }).click()
   await expect(page.getByRole('gridcell')).toHaveCount(size * size, { timeout: 60000 })
   await expect(page.locator('.daily-badge')).toHaveText('每日挑戰')
-  await expect(page.locator('.puzzle-meta')).toContainText(DIFFICULTY_LABELS[difficulty])
+  await expect(page.locator('.puzzle-meta')).toContainText(zhHant.difficulty[difficulty])
   await expect(page).toHaveURL(new RegExp(`daily=${key}`))
   await solvePuzzle(page)
 }
@@ -45,7 +45,7 @@ test('everyone gets the same daily board, and finishing it builds a streak acros
   const config = dailyConfig(first)
   await expect(page.locator('.daily')).toContainText(first)
   await expect(page.locator('.daily')).toContainText(
-    `${config.size} × ${config.size} · ${DIFFICULTY_LABELS[config.difficulty]}`,
+    `${config.size} × ${config.size} · ${zhHant.difficulty[config.difficulty]}`,
   )
   await expect(page.locator('.daily')).toContainText('今天還沒完成')
   await playToday(page, first)

@@ -5,7 +5,7 @@ import { onBeforeRouteLeave } from 'vue-router'
  * Asks the browser to confirm before the page goes away while `active()` is true: closing or
  * reloading the tab uses the browser's own prompt, and in-app navigation uses a confirm window.
  */
-export function useLeaveGuard(active: () => boolean, message: string) {
+export function useLeaveGuard(active: () => boolean, message: () => string) {
   let allowed = false
   const guarded = () => active() && !allowed
   function beforeUnload(event: BeforeUnloadEvent) {
@@ -16,11 +16,11 @@ export function useLeaveGuard(active: () => boolean, message: string) {
   }
   onMounted(() => window.addEventListener('beforeunload', beforeUnload))
   onBeforeUnmount(() => window.removeEventListener('beforeunload', beforeUnload))
-  onBeforeRouteLeave(() => !guarded() || window.confirm(message))
+  onBeforeRouteLeave(() => !guarded() || window.confirm(message()))
   return {
     /** Confirm now, so an explicit leave button does not ask a second time on navigation. */
     confirmLeave(): boolean {
-      if (!active() || window.confirm(message)) {
+      if (!active() || window.confirm(message())) {
         allowed = true
         return true
       }

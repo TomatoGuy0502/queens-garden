@@ -45,14 +45,14 @@ function key(index: number, event: KeyboardEvent) {
 </script>
 <template>
   <fieldset class="room-code-input">
-    <legend>房間代碼</legend>
+    <legend>{{ $t('coop.code.label') }}</legend>
     <div class="code-digits">
       <input
         v-for="(_, index) in digits"
         :key="index"
         ref="inputs"
         :value="digits[index]"
-        :aria-label="`房間代碼第 ${index + 1} 碼`"
+        :aria-label="$t('coop.code.digit', { index: index + 1 })"
         type="text"
         inputmode="text"
         maxlength="5"
@@ -67,7 +67,7 @@ function key(index: number, event: KeyboardEvent) {
         @focus="($event.target as HTMLInputElement).select()"
       />
     </div>
-    <p>輸入 5 碼英數字，也可以貼上房間連結。</p>
+    <p>{{ $t('coop.code.hint') }}</p>
   </fieldset>
 </template>
 <style scoped>
