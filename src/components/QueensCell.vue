@@ -15,6 +15,7 @@ const props = defineProps<{
   highlighted: boolean
   mistake: boolean
   disabled: boolean
+  readOnly?: boolean
 }>()
 const participantLabel = computed(() =>
   [
@@ -74,9 +75,10 @@ const colors = [
     :tabindex="active ? 0 : -1"
     :disabled="disabled"
     :aria-label="cellLabel"
+    :aria-readonly="readOnly || undefined"
     :aria-selected="state === 'queen'"
-    @click="emit('play', index)"
-    @contextmenu.prevent="emit('mark', index)"
+    @click="!readOnly && emit('play', index)"
+    @contextmenu.prevent="!readOnly && emit('mark', index)"
     @keydown="emit('navigate', index, $event)"
     @focus="emit('focus', index)"
     @blur="emit('hover', null)"

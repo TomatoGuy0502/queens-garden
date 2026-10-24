@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, shallowRef } from 'vue'
+import { computed, onMounted, onUnmounted, shallowRef, watch } from 'vue'
 import { Clock3, Pause, Play, LoaderCircle } from '@lucide/vue'
 import CrownIcon from './CrownIcon.vue'
 import QueensBoard from './QueensBoard.vue'
@@ -51,6 +51,10 @@ const initialSeed =
     : crypto.getRandomValues(new Uint32Array(1))[0]
 const versionMismatch = shallowRef(params.has('v') && params.get('v') !== GENERATOR_VERSION)
 const restartConfirm = shallowRef(false)
+const reviewing = shallowRef(false)
+watch([won, () => puzzle.value?.id], () => {
+  reviewing.value = false
+})
 const difficulties = { easy: '輕鬆', medium: '適中', hard: '挑戰' }
 const highlighted = computed(() => (paused.value ? [] : (hint.value?.cells ?? [])))
 const allMistakes = computed(() => [...new Set([...conflicts.value, ...mistakes.value])])
@@ -136,15 +140,23 @@ onMounted(() => {
             :guidance="guidance"
             :paused="paused"
             :won="won"
+            :reviewing="reviewing"
             :highlighted="highlighted"
             :mistakes="allMistakes"
             :busy="busy"
+            @end-review="reviewing = false"
             @play="game.edit($event)"
             @mark="game.edit($event, 'mark')"
             @resume="game.togglePause"
           >
             <template #result>
-              <GameResult :time="time" :moves="moves" :hints="hints" @next="nextGame" />
+              <GameResult
+                :time="time"
+                :moves="moves"
+                :hints="hints"
+                @next="nextGame"
+                @review="reviewing = true"
+              />
             </template>
           </QueensBoard>
           <div v-else class="empty-board">
@@ -157,8 +169,8 @@ onMounted(() => {
             :blocked="blocked || !puzzle"
             :assisting="assisting"
             :can-restart="!!puzzle && !busy"
-            :can-undo="!!history.length && !busy && !paused"
-            :can-redo="!!future.length && !busy && !paused"
+            :can-undo="!!history.length && !busy && !paused && !reviewing"
+            :can-redo="!!future.length && !busy && !paused && !reviewing"
             @undo="game.undo"
             @redo="game.redo"
             @restart="restartConfirm = true"

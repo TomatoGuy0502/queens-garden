@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, shallowRef, nextTick, useTemplateRef } from 'vue'
+import { computed, shallowRef, nextTick, useTemplateRef, watch, onMounted, onUnmounted } from 'vue'
 import { Pause, Play } from '@lucide/vue'
 import QueensCell from './QueensCell.vue'
 import { guidedCells, type BoardGuidance } from '../queens/guidance'
@@ -10,6 +10,7 @@ const props = withDefaults(
     cells: CellState[]
     paused: boolean
     won: boolean
+    reviewing?: boolean
     highlighted: number[]
     mistakes: number[]
     busy: boolean
@@ -19,12 +20,13 @@ const props = withDefaults(
     points?: { index: number; name: string }[]
     hovers?: { index: number | null; name: string }[]
   }>(),
-  { canResume: true, pendingCells: () => [], points: () => [], hovers: () => [] },
+  { reviewing: false, canResume: true, pendingCells: () => [], points: () => [], hovers: () => [] },
 )
 const emit = defineEmits<{
   play: [index: number]
   mark: [index: number]
   resume: []
+  endReview: []
   hover: [index: number | null]
 }>()
 const focusIndex = shallowRef(0),
@@ -37,6 +39,7 @@ const rows = computed(() =>
     })),
   ),
 )
+const readOnlyReview = computed(() => props.won && props.reviewing)
 const exclusions = computed(() => guidedCells(props.puzzle.regions, props.cells, props.guidance))
 // Draw each shared boundary once. Square caps overlap at vertices, closing every corner.
 const boundaryPath = computed(() => {
@@ -54,6 +57,30 @@ const boundaryPath = computed(() => {
   }
   return segments.join(' ')
 })
+watch(
+  () => props.won && props.reviewing,
+  async (active) => {
+    if (!active) return
+    await nextTick()
+    board.value
+      ?.querySelector<HTMLButtonElement>(`[data-index="${focusIndex.value}"]`)
+      ?.focus({ preventScroll: true })
+  },
+)
+function reviewKey(event: KeyboardEvent) {
+  if (
+    props.won &&
+    props.reviewing &&
+    event.key === 'Escape' &&
+    !event.defaultPrevented &&
+    !document.querySelector('dialog[open]')
+  ) {
+    event.preventDefault()
+    emit('endReview')
+  }
+}
+onMounted(() => window.addEventListener('keydown', reviewKey))
+onUnmounted(() => window.removeEventListener('keydown', reviewKey))
 function focus(index: number) {
   focusIndex.value = index
   emit('hover', index)
@@ -64,7 +91,7 @@ async function navigate(index: number, event: KeyboardEvent) {
     col = index % n
   if (event.key.toLowerCase() === 'x') {
     event.preventDefault()
-    emit('mark', index)
+    if (!props.won) emit('mark', index)
     return
   }
   let next = index
@@ -105,10 +132,11 @@ async function navigate(index: number, event: KeyboardEvent) {
             class="board"
             role="grid"
             aria-label="Queens 棋盤；方向鍵移動、空白鍵或 Enter 循環皇冠、X、空格；X 鍵直接標記"
+            :aria-readonly="won && reviewing"
             :aria-rowcount="puzzle.size"
             :aria-colcount="puzzle.size"
             :class="{ concealed: paused }"
-            :inert="paused || busy"
+            :inert="paused || (busy && !readOnlyReview)"
             @pointerleave="emit('hover', null)"
           >
             <div
@@ -126,7 +154,12 @@ async function navigate(index: number, event: KeyboardEvent) {
                 :state="cells[cell.index]"
                 :guidance-reasons="exclusions.get(cell.index) ?? []"
                 :active="focusIndex === cell.index"
-                :disabled="won || paused || busy || !!pendingCells?.includes(cell.index)"
+                :disabled="
+                  (won && !reviewing) ||
+                  paused ||
+                  (!readOnlyReview && (busy || !!pendingCells?.includes(cell.index)))
+                "
+                :read-only="won && reviewing"
                 :point-names="
                   points?.filter((point) => point.index === cell.index).map((point) => point.name)
                 "
@@ -135,8 +168,8 @@ async function navigate(index: number, event: KeyboardEvent) {
                 "
                 :highlighted="highlighted.includes(cell.index)"
                 :mistake="mistakes.includes(cell.index)"
-                @play="emit('play', $event)"
-                @mark="emit('mark', $event)"
+                @play="!won && emit('play', $event)"
+                @mark="!won && emit('mark', $event)"
                 @navigate="navigate"
                 @focus="focus"
                 @hover="emit('hover', $event)"
@@ -170,11 +203,42 @@ async function navigate(index: number, event: KeyboardEvent) {
         </div>
       </div>
     </div>
-    <div v-if="won" class="result-cover"><slot name="result" /></div>
+    <div v-if="won && !reviewing" class="result-cover"><slot name="result" /></div>
   </div>
+  <Teleport to="body">
+    <div v-if="won && reviewing" class="review-controls" role="region" aria-label="棋盤檢視工具">
+      <span>關卡已完成 · 唯讀檢視</span>
+      <button class="primary" @click="emit('endReview')">返回完成摘要</button>
+    </div>
+  </Teleport>
   <p v-if="puzzle.size >= 8" class="scroll-note">較大的棋盤可左右滑動，保留舒適的點擊空間。</p>
 </template>
 <style scoped>
+.review-controls {
+  position: fixed;
+  bottom: max(16px, env(safe-area-inset-bottom));
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 90;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  width: min(460px, calc(100vw - 32px));
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: #fffdfa;
+  box-shadow: 0 4px 20px #30263a18;
+}
+.review-controls > span {
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--muted);
+}
+.review-controls > button {
+  flex-shrink: 0;
+}
 .board-stage {
   position: relative;
 }

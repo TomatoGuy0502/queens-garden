@@ -1,19 +1,21 @@
 <script setup lang="ts">
 import { onMounted, useTemplateRef } from 'vue'
 import CrownIcon from './CrownIcon.vue'
-defineProps<{
+const props = defineProps<{
   time: string
   moves: number
   hints: number
   nextDisabled?: boolean
   nextLabel?: string
 }>()
-const emit = defineEmits<{ next: [] }>()
+const emit = defineEmits<{ next: []; review: [] }>()
 const result = useTemplateRef<HTMLElement>('result')
 const nextButton = useTemplateRef<HTMLButtonElement>('nextButton')
+const reviewButton = useTemplateRef<HTMLButtonElement>('reviewButton')
 onMounted(() => {
   result.value?.scrollIntoView({ block: 'nearest', inline: 'nearest' })
-  nextButton.value?.focus({ preventScroll: true })
+  const target = props.nextDisabled ? reviewButton.value : nextButton.value
+  target?.focus({ preventScroll: true })
 })
 </script>
 <template>
@@ -24,6 +26,7 @@ onMounted(() => {
     <button ref="nextButton" class="primary" :disabled="nextDisabled" @click="emit('next')">
       {{ nextLabel ?? '再來一局 →' }}
     </button>
+    <button ref="reviewButton" class="secondary" @click="emit('review')">查看棋盤</button>
   </section>
 </template>
 <style scoped>
@@ -72,11 +75,9 @@ onMounted(() => {
 }
 @keyframes result-in {
   from {
-    transform: translateY(6px);
     opacity: 0;
   }
   to {
-    transform: translateY(0);
     opacity: 1;
   }
 }

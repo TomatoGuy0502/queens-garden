@@ -26,6 +26,10 @@ const name = usePlayerName()
 const joining = shallowRef(false),
   joinError = shallowRef(''),
   pointMode = shallowRef(false)
+const reviewing = shallowRef(false)
+watch([() => game.state?.id, () => game.state?.phase], () => {
+  reviewing.value = false
+})
 const confirmation = shallowRef<{ kind: 'restart' | 'new'; gameId: string } | null>(null)
 const labels = { easy: '輕鬆', medium: '適中', hard: '挑戰' }
 const blocked = computed(() => !room.connected || game.state?.phase !== 'playing')
@@ -243,6 +247,7 @@ async function reset() {
               :guidance="guidance"
               :paused="game.state.phase === 'paused'"
               :won="game.state.phase === 'completed'"
+              :reviewing="reviewing"
               :busy="!room.connected"
               :can-resume="!!canResume"
               :pending-cells="room.pendingCells"
@@ -250,6 +255,7 @@ async function reset() {
               :hovers="room.peerHovers"
               :highlighted="game.state.hint?.step?.cells ?? []"
               :mistakes="mistakes"
+              @end-review="reviewing = false"
               @hover="room.hover"
               @play="play"
               @mark="room.edit($event, true)"
@@ -261,6 +267,7 @@ async function reset() {
                   :hints="game.state.hints"
                   :next-disabled="!room.isHost || !room.connected"
                   :next-label="room.isHost ? '開啟下一局 →' : '等待房主開啟下一局'"
+                  @review="reviewing = true"
                   @next="reset" /></template
             ></QueensBoard>
             <div class="point-tools">
@@ -280,11 +287,13 @@ async function reset() {
               :blocked="blocked"
               :assisting="room.assisting"
               :can-undo="
+                !reviewing &&
                 !!room.undoAction &&
                 room.connected &&
                 ['playing', 'completed'].includes(game.state.phase)
               "
               :can-redo="
+                !reviewing &&
                 !!room.redoAction &&
                 room.connected &&
                 ['playing', 'completed'].includes(game.state.phase)

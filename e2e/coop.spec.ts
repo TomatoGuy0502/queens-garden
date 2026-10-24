@@ -89,9 +89,35 @@ test('two players share cells, personal undo, markers, hints and team completion
     await expect(page.getByRole('heading', { name: '關卡完成' })).toBeVisible()
     await expect(guest.getByRole('heading', { name: '關卡完成' })).toBeVisible()
     await expect(guest.getByRole('button', { name: '等待房主開啟下一局' })).toBeDisabled()
+    await expect(guest.getByRole('button', { name: '查看棋盤', exact: true })).toBeFocused()
+    const summary = await page.locator('.result').innerText()
+    const finishedCells = await page
+      .getByRole('gridcell')
+      .evaluateAll((cells) => cells.map((cell) => cell.getAttribute('data-state')))
+    const time = await page.locator('.coop-meta > div:last-child > span').innerText()
+    await page.getByRole('button', { name: '查看棋盤', exact: true }).click()
+    await expect(page.getByRole('heading', { name: '關卡完成' })).not.toBeVisible()
+    await expect(guest.getByRole('heading', { name: '關卡完成' })).toBeVisible()
+    await expect(page.getByRole('grid')).toHaveAttribute('aria-readonly', 'true')
+    await cell(page, 0).click()
+    await cell(page, 0).press('x')
+    await cell(page, 0).press('Enter')
+    await page.waitForTimeout(1100)
+    await expect(page.locator('.coop-meta > div:last-child > span')).toHaveText(time)
+    expect(
+      await page
+        .getByRole('gridcell')
+        .evaluateAll((cells) => cells.map((cell) => cell.getAttribute('data-state'))),
+    ).toEqual(finishedCells)
+    await page.getByRole('button', { name: '返回完成摘要' }).click()
+    await expect(page.locator('.result')).toHaveText(summary, { useInnerText: true })
+    await guest.getByRole('button', { name: '查看棋盤', exact: true }).click()
+    await expect(guest.getByRole('button', { name: '返回完成摘要' })).toBeInViewport({ ratio: 1 })
+    await expect(page.getByRole('heading', { name: '關卡完成' })).toBeVisible()
     await page.getByRole('button', { name: '開啟下一局 →' }).click()
     await expect(page.getByRole('heading', { name: /等待室/ })).toBeVisible()
     await expect(guest.getByRole('heading', { name: /等待室/ })).toBeVisible()
+    await expect(guest.getByRole('button', { name: '返回完成摘要' })).not.toBeVisible()
     expect(errors).toEqual([])
     expect(await guest.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
       true,
