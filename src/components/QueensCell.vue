@@ -74,6 +74,9 @@ const colors = [
       pointNames.join('、')
     }}</span>
     <span class="region-label" aria-hidden="true">{{ String.fromCharCode(65 + region) }}</span>
+    <span class="coordinate-label" aria-hidden="true"
+      >{{ Math.floor(index / size) + 1 }},{{ (index % size) + 1 }}</span
+    >
     <CrownIcon v-if="state === 'queen'" filled class="cell-crown" />
     <span v-else-if="state === 'marked'" class="cell-mark" aria-hidden="true">×</span>
   </button>
@@ -150,6 +153,16 @@ const colors = [
     500 9px/1.1 ui-sans-serif,
     system-ui;
   opacity: 0.55;
+}
+.coordinate-label {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  font:
+    500 7px/1.1 ui-monospace,
+    monospace;
+  opacity: 0.65;
+  pointer-events: none;
 }
 .highlighted {
   box-shadow: inset 0 0 0 4px #774695;

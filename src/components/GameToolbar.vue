@@ -17,7 +17,7 @@ const emit = defineEmits<{
 </script>
 <template>
   <div class="toolbar" role="toolbar" aria-label="遊戲工具">
-    <p class="interaction-note">點擊格子：皇冠 → X → 清除</p>
+    <p class="interaction-note">點擊格子：皇冠 → X → 清除 · 座標：列,欄</p>
     <div class="history-tools">
       <button
         class="icon-button"
