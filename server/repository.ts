@@ -2,6 +2,7 @@ import { mkdir, readFile, rename, writeFile } from 'node:fs/promises'
 import { dirname } from 'node:path'
 import { randomUUID } from 'node:crypto'
 import { Pool } from 'pg'
+import { databaseUrl } from './databaseUrl'
 import { drizzle } from 'drizzle-orm/node-postgres'
 import { eq, lt } from 'drizzle-orm'
 import { type PgDatabase, type PgQueryResultHKT } from 'drizzle-orm/pg-core'
@@ -50,7 +51,13 @@ export function databaseRepository<T extends PgQueryResultHKT>(
   }
 }
 export function postgresRepository(url: string) {
-  const pool = new Pool({ connectionString: url, max: 5 })
+  const pool = new Pool({
+    connectionString: databaseUrl(url),
+    max: 5,
+    connectionTimeoutMillis: 10000,
+    idleTimeoutMillis: 30000,
+  })
+  pool.on('error', (error) => console.error('PostgreSQL pool connection error:', error.message))
   return { repository: databaseRepository(drizzle(pool, { schema })), close: () => pool.end() }
 }
 /** Explicit local-development storage. Production requires PostgreSQL. */

@@ -1,3 +1,4 @@
+import './env'
 import { createApp } from './app'
 import { workerPool } from './compute'
 import { fileRepository, postgresRepository } from './repository'

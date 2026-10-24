@@ -1,0 +1,22 @@
+services:
+  - type: web
+    name: queens
+    runtime: node
+    plan: starter
+    numInstances: 1
+    region: singapore
+    buildCommand: npm ci && npm run build
+    startCommand: npm run db:migrate && npm start
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: NODE_VERSION
+        value: '24'
+      - key: WORKER_CONCURRENCY
+        value: '1'
+      # Set both values from the Neon production branch in Render's environment settings.
+      - key: DATABASE_URL
+        sync: false
+      - key: DATABASE_URL_UNPOOLED
+        sync: false

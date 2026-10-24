@@ -1,4 +1,4 @@
-# Queens · 邏輯花園
+# Queens
 
 Vue 3、TypeScript、Vite 與 UnoCSS 建立的 Queens 邏輯遊戲。關卡由純 TypeScript 演算法即時生成，沒有固定題庫。所有交付給玩家的棋盤都通過連通性、唯一解與邏輯難度驗證。
 
@@ -11,7 +11,7 @@ npm ci
 npm run dev
 ```
 
-預設開啟 http://localhost:5173 。可直接使用以下網址重現一局：
+前端預設開啟 http://localhost:5173 ，Node API 與 Socket.IO 使用 3001，由 Vite 代理。未設定資料庫時，開發模式將房間儲存在忽略提交的 `.data/rooms.json`；若有 Neon `.env.local` 則使用該資料庫。正式環境必須設定 PostgreSQL。可直接使用以下網址重現一局：
 
 ```text
 http://localhost:5173/?size=8&difficulty=easy&seed=42&v=2.0.0
@@ -34,7 +34,7 @@ npm run build
 - `eslint-plugin-oxlint` 依實際 `.oxlintrc.json` 停用重複的 ESLint 規則，Vue template 檢查仍保留。僅為 `App.vue` 入口元件豁免多單字元件名稱規則。
 - `eslint-config-prettier` 只負責停用與格式化衝突的規則，不會執行 Prettier；格式化工具仍為 Oxfmt。型別檢查另由 `vue-tsc` 執行。
 
-圖示使用 `@lucide/vue`。無 Pinia，因為目前只有單一遊戲狀態擁有者，不需要跨頁 store。
+圖示使用 `@lucide/vue`。Vue Router 負責首頁、單人模式與合作房間；Pinia 分離單人遊戲、合作房間連線與共享棋盤狀態。
 
 套件均於建立時從 npm 的 `latest` 安裝，唯獨 TypeScript 使用 **6.0.3**：目前 npm latest TypeScript 7 的 package exports 與最新版 vue-tsc 3.3.13 不相容（`ERR_PACKAGE_PATH_NOT_EXPORTED: typescript/lib/tsc`）。沒有使用 force/legacy-peer-deps 隱藏此問題。package-lock.json 固定實際驗證過的版本；未來需與 vue-tsc 一起升級 TypeScript。
 
@@ -124,7 +124,7 @@ console.log(puzzle.analysis.steps) // strategy、level、place/eliminate、cells
 
 ## 驗證與限制
 
-最終驗證：59 個 Vitest 核心測試、24 個 Playwright E2E 全數通過；TypeScript、Oxlint＋ESLint、Oxfmt format check 與 production build 通過。E2E 每局監聽 browser console errors 與 uncaught page errors。
+測試涵蓋 59 個 Vitest 核心測試、15 個後端測試及 30 個 Playwright E2E（桌面與手機）；TypeScript、Oxlint＋ESLint、Oxfmt format check 與 production build 通過。E2E 每局監聽 browser console errors 與 uncaught page errors。
 
 測試包含：獨立 permutation oracle 與 Solver 的全解對照、無解/多解/唯一解、遠距對角線、跨 Seed/大小批次生成、250 次邊界變異的連通性、各難度最小面積與變異下限、完整 recipe 序列化重現、所有難度標籤與最低層級驗證、提示/排除的解保留、Hall sets 與基礎相鄰排除的多解安全性，以及預算耗盡的明確失敗。E2E 另驗證自動換 Seed、指定 Seed 重現、分享連結、實際解碼畫面上的 QR Code、剪貼簿拒絕時的備用操作與提示區間距。另測試視覺引導各範圍、標記保留、Undo/Redo 更新、重新載入後的偏好設定與儲存權限被拒絕時的行為。
 
@@ -140,8 +140,42 @@ npx vitest run src/tests/generation-matrix.test.ts --disableConsoleIntercept
 - 區域有連通性與軟性面積平衡，但沒有美觀最佳化目標，可能出現細長或較大的區域；最小面積依難度強制為 2/3/4 格。
 - Hall sets 限 2/3 組，反證限單層；不包含所有人類策略。Unrated 關卡不提供遊玩。
 - 分享連結使用目前開啟的網域；localhost 僅適用本機，跨裝置掃描請使用已部署網址或同一網路可存取的網址。
-- 遊戲進度與 Undo/Redo 不跨重新整理儲存；重載分享 URL 重開相同關卡。操作歷史保留最近 1,000 步。
+- 單人遊戲進度與 Undo/Redo 不跨重新整理儲存；重載分享 URL 重開相同關卡。合作進度儲存在資料庫，重載同分頁可恢復身份。操作歷史保留最近 1,000 步。
 - E2E 使用桌面 Chromium 與同引擎的 Pixel 7 模擬，尚未驗證實體手機、Safari 或 Firefox；可見焦點與 ARIA 已實作，但沒有實體螢幕閱讀器使用者測試。
 - TypeScript 7 與 vue-tsc 相容性例外如上；其餘依賴使用安裝時 npm latest。
 
 技術文件：[Vue](https://vuejs.org/guide/)、[Vite](https://vite.dev/guide/)、[UnoCSS Vite integration](https://unocss.dev/integrations/vite)。
+
+## 線上合作
+
+首頁可選單人或雙人合作。房主建立房間並分享連結／QR Code，另一位玩家輸入暱稱加入；兩人準備後，由房主開始新局。兩人直接操作同一盤棋，點擊仍是皇冠 → X → 清除。「指示格子」只傳送短暫的指示標籤，不修改格子。提示、錯誤檢查、計時與完成狀態由團隊共享，視覺引導設定則保留為各人的偏好。
+
+- 同一格同時修改時，由伺服器接受第一個符合格子版本的操作；另一位會收到衝突訊息與最新棋盤。不同格的操作可以一起接受。
+- Undo/Redo 只處理自己的操作；若格子已被隊友接續修改，不能覆寫隊友的進度。套用提示作為一次可復原的批次操作。
+- 任一玩家斷線會自動暫停；兩人都上線後才可繼續。瀏覽器同一分頁重整會使用 sessionStorage 的房間憑證恢復身份。邀請連結不包含憑證或答案。
+- 房主可變更下一局設定、重設並開始新局；設定改變後需要重新準備。離開房間會釋放自己的席位，房主離開時移交房主。離線訪客保留席位 5 分鐘，房主席位與房間最多保留到 24 小時閒置到期。
+
+新增架構：
+
+```text
+shared/coop.ts             Zod 協定、公開快照、Socket.IO 事件型別
+server/
+  app.ts / index.ts        Fastify API、Socket.IO、靜態前端與 graceful shutdown
+  rooms.ts / model.ts      房間權限、版本控制、去重、計時與合作操作
+  compute.ts / worker.ts   有上限的 Node Worker 生成與提示運算
+  repository.ts / schema.ts PostgreSQL 交易、revision CAS 與事件紀錄
+  env.ts / databaseUrl.ts  環境載入與 Neon TLS 驗證
+  tests/                  真實 socket、房間規則與 PGlite PostgreSQL 整合測試
+src/
+  router.ts               首頁、/solo、/rooms/new、/rooms/:roomId
+  stores/                 soloGame、room、game，分離連線與棋盤
+  services/roomClient.ts   Socket.IO 連線、ack、重連與快照同步
+  views/                  首頁、建立房間、等待室／合作棋盤
+  components/coop/         等待室與隊友狀態
+```
+
+每個已接受的房間操作都先在 PostgreSQL 交易寫入快照與事件，再廣播；revision 條件避免舊快照覆寫。完成事件另外保留團隊成績，因此開始下一局不會刪除上一局的結果。答案與完整推理只存在伺服器資料庫／Worker，公開快照不包含這些資料。提示運算在 Worker 中執行並檢查盤面版本，避免把舊提示套用到已變動的棋盤。
+
+目前限單一 Node instance，尚未實作跨 instance 的廣播與 presence adapter，也沒有帳號、公開配對或永久個人成績頁。重連憑證僅存在原分頁；新分頁／另一台裝置使用邀請連結會被視為新的加入者。房間與事件閒置 24 小時後清除，完成事件不是永久成績庫。非正常關機後恢復為暫停，計時停在最近持久化的 checkpoint。
+
+Neon 設定、Render 部署與正式服務驗證方式見 [部署說明](docs/DEPLOYMENT.md)。
