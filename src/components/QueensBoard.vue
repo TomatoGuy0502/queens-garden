@@ -63,69 +63,86 @@ async function navigate(index: number, event: KeyboardEvent) {
 }
 </script>
 <template>
-  <div class="board-scroll" :style="{ '--minimum-size': `${puzzle.size * 40 + 4}px` }">
-    <div class="board-wrap" :class="{ complete: won }">
-      <div
-        ref="board"
-        class="board"
-        role="grid"
-        aria-label="Queens 棋盤；方向鍵移動、空白鍵或 Enter 循環皇冠、X、空格；X 鍵直接標記"
-        :aria-rowcount="puzzle.size"
-        :aria-colcount="puzzle.size"
-        :class="{ concealed: paused }"
-        :inert="paused || busy"
-      >
+  <div class="board-stage">
+    <div class="board-scroll" :style="{ '--minimum-size': `${puzzle.size * 40 + 4}px` }">
+      <div class="board-wrap" :class="{ complete: won }">
         <div
-          v-for="(row, r) in rows"
-          :key="r"
-          role="row"
-          class="board-row"
-          :style="{ gridTemplateColumns: `repeat(${puzzle.size}, 1fr)` }"
+          ref="board"
+          class="board"
+          role="grid"
+          aria-label="Queens 棋盤；方向鍵移動、空白鍵或 Enter 循環皇冠、X、空格；X 鍵直接標記"
+          :aria-rowcount="puzzle.size"
+          :aria-colcount="puzzle.size"
+          :class="{ concealed: paused }"
+          :inert="paused || busy"
         >
-          <QueensCell
-            v-for="cell in row"
-            :key="cell.index"
-            v-bind="cell"
-            :size="puzzle.size"
-            :state="cells[cell.index]"
-            :active="focusIndex === cell.index"
-            :disabled="won || paused || busy"
-            :highlighted="highlighted.includes(cell.index)"
-            :mistake="mistakes.includes(cell.index)"
-            @play="emit('play', $event)"
-            @mark="emit('mark', $event)"
-            @navigate="navigate"
-            @focus="focusIndex = $event"
-          />
+          <div
+            v-for="(row, r) in rows"
+            :key="r"
+            role="row"
+            class="board-row"
+            :style="{ gridTemplateColumns: `repeat(${puzzle.size}, 1fr)` }"
+          >
+            <QueensCell
+              v-for="cell in row"
+              :key="cell.index"
+              v-bind="cell"
+              :size="puzzle.size"
+              :state="cells[cell.index]"
+              :active="focusIndex === cell.index"
+              :disabled="won || paused || busy"
+              :highlighted="highlighted.includes(cell.index)"
+              :mistake="mistakes.includes(cell.index)"
+              @play="emit('play', $event)"
+              @mark="emit('mark', $event)"
+              @navigate="navigate"
+              @focus="focusIndex = $event"
+            />
+          </div>
+          <svg
+            class="region-boundaries"
+            :viewBox="`0 0 ${puzzle.size} ${puzzle.size}`"
+            preserveAspectRatio="none"
+            aria-hidden="true"
+          >
+            <path
+              :d="boundaryPath"
+              fill="none"
+              stroke="#39333b"
+              stroke-width="4"
+              stroke-linecap="square"
+              stroke-linejoin="miter"
+              vector-effect="non-scaling-stroke"
+            />
+          </svg>
         </div>
-        <svg
-          class="region-boundaries"
-          :viewBox="`0 0 ${puzzle.size} ${puzzle.size}`"
-          preserveAspectRatio="none"
-          aria-hidden="true"
-        >
-          <path
-            :d="boundaryPath"
-            fill="none"
-            stroke="#39333b"
-            stroke-width="4"
-            stroke-linecap="square"
-            stroke-linejoin="miter"
-            vector-effect="non-scaling-stroke"
-          />
-        </svg>
-      </div>
-      <div v-if="paused" class="pause-cover">
-        <Pause :size="28" />
-        <h2>遊戲已暫停</h2>
-        <p>棋盤和計時都已暫停。</p>
-        <button class="primary" @click="emit('resume')"><Play :size="16" /> 繼續遊戲</button>
+        <div v-if="paused" class="pause-cover">
+          <Pause :size="28" />
+          <h2>遊戲已暫停</h2>
+          <p>棋盤和計時都已暫停。</p>
+          <button class="primary" @click="emit('resume')"><Play :size="16" /> 繼續遊戲</button>
+        </div>
       </div>
     </div>
+    <div v-if="won" class="result-cover"><slot name="result" /></div>
   </div>
   <p v-if="puzzle.size >= 8" class="scroll-note">較大的棋盤可左右滑動，保留舒適的點擊空間。</p>
 </template>
 <style scoped>
+.board-stage {
+  position: relative;
+}
+.result-cover {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  border-radius: 5px;
+  background: #f8f7f3d9;
+}
+
 .board-scroll {
   width: 100%;
   overflow-x: auto;

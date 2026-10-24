@@ -98,8 +98,22 @@ test('invalid placement never wins; valid solution completes with summary', asyn
   for (const [r, c] of result.solutions[0].entries()) await cell(page, r * 6 + c).click()
   await expect(page.getByRole('heading', { name: '關卡完成' })).toBeVisible()
   await expect(page.getByText(/次操作 · 0 次提示/)).toBeVisible()
+  const resultOverlay = page.locator('.board-stage .result')
+  await expect(resultOverlay).toBeInViewport({ ratio: 1 })
+  await expect(page.getByRole('button', { name: '再來一局 →' })).toBeFocused()
+  const boardBox = (await page.locator('.board-stage').boundingBox())!
+  const resultBox = (await resultOverlay.boundingBox())!
+  expect(resultBox.y).toBeGreaterThanOrEqual(boardBox.y)
+  expect(resultBox.y + resultBox.height).toBeLessThanOrEqual(boardBox.y + boardBox.height)
   await page.getByRole('button', { name: '復原', exact: true }).click()
   await expect(page.getByRole('heading', { name: '關卡完成' })).not.toBeVisible()
+  await page.getByRole('button', { name: '重做', exact: true }).click()
+  await expect(resultOverlay).toBeInViewport({ ratio: 1 })
+  const completedUrl = page.url()
+  await page.getByRole('button', { name: '再來一局 →' }).click()
+  await expect(page).not.toHaveURL(completedUrl)
+  await expect(page.locator('[data-state="empty"]')).toHaveCount(36)
+  await expect(resultOverlay).not.toBeVisible()
 })
 test('pause conceals board and freezes timer; hint explains and safely applies', async ({
   page,
@@ -170,6 +184,17 @@ test('large boards retain touch targets without widening the document', async ({
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
   await cell(page, 143).click()
   await expect(cell(page, 143)).toHaveAttribute('data-state', 'queen')
+  const solution = solve(await readRegions(page)).solutions[0]
+  if (solution[11] !== 11) {
+    await cell(page, 143).click()
+    await cell(page, 143).click()
+  }
+  for (const [row, col] of solution.entries()) {
+    if (row === 11 && col === 11) continue
+    await cell(page, row * 12 + col).click()
+  }
+  await expect(page.locator('.board-stage .result')).toBeInViewport({ ratio: 1 })
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
 })
 
 test('new game automatically changes the seed and keeps the displayed seed in sync', async ({

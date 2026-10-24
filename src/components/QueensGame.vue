@@ -132,7 +132,11 @@ onMounted(() => {
             @play="game.edit($event)"
             @mark="game.edit($event, 'mark')"
             @resume="game.togglePause"
-          />
+          >
+            <template #result>
+              <GameResult :time="time" :moves="moves" :hints="hints" @next="nextGame" />
+            </template>
+          </QueensBoard>
           <div v-else class="empty-board">
             <CrownIcon />
             <h2>尚未開始遊戲</h2>
@@ -184,7 +188,6 @@ onMounted(() => {
             >
             <p v-else-if="conflicts.length">皇冠有衝突。請檢查紅色斜紋的格子。</p>
           </div>
-          <GameResult v-if="won" :time="time" :moves="moves" :hints="hints" @next="nextGame" />
           <div v-if="puzzle" class="puzzle-footer">
             <span
               >SEED {{ puzzle.seed }} <span class="dot-separator">·</span> v{{ puzzle.version }}
