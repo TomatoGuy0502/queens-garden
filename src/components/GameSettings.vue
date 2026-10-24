@@ -43,7 +43,7 @@ function start() {
           </option>
         </select>
         <label for="difficulty">難度 <span>DIFFICULTY</span></label>
-        <div class="difficulty-options" id="difficulty" role="group" aria-label="難度">
+        <div id="difficulty" class="difficulty-options" role="group" aria-label="難度">
           <button
             v-for="item in [
               { id: 'easy', label: '輕鬆' },

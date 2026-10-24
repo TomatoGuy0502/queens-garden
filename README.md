@@ -27,7 +27,14 @@ npm run e2e
 npm run build
 ```
 
-`npm run format` 使用 Oxfmt 寫入格式化結果；Lint 使用 Oxlint。圖示使用 `@lucide/vue`。無 Pinia，因為目前只有單一遊戲狀態擁有者，不需要跨頁 store。
+`npm run format` 使用 Oxfmt 寫入格式化結果；`npm run lint` 先執行 Oxlint，再執行 ESLint，兩者皆不允許警告。可用 `npm run lint:oxlint` 與 `npm run lint:eslint` 分別執行。
+
+- `.oxlintrc.json` 明確設定 Oxlint 的 correctness 規則與啟用的 plugins。
+- `eslint.config.js` 使用 `@vue/eslint-config-typescript` 的 `withVueTs` / `recommendedTypeChecked` 與 `eslint-plugin-vue` 的 `flat/recommended`，涵蓋 Vue template、SFC 與型別感知 TypeScript 檢查。
+- `eslint-plugin-oxlint` 依實際 `.oxlintrc.json` 停用重複的 ESLint 規則，Vue template 檢查仍保留。僅為 `App.vue` 入口元件豁免多單字元件名稱規則。
+- `eslint-config-prettier` 只負責停用與格式化衝突的規則，不會執行 Prettier；格式化工具仍為 Oxfmt。型別檢查另由 `vue-tsc` 執行。
+
+圖示使用 `@lucide/vue`。無 Pinia，因為目前只有單一遊戲狀態擁有者，不需要跨頁 store。
 
 套件均於建立時從 npm 的 `latest` 安裝，唯獨 TypeScript 使用 **6.0.3**：目前 npm latest TypeScript 7 的 package exports 與最新版 vue-tsc 3.3.13 不相容（`ERR_PACKAGE_PATH_NOT_EXPORTED: typescript/lib/tsc`）。沒有使用 force/legacy-peer-deps 隱藏此問題。package-lock.json 固定實際驗證過的版本；未來需與 vue-tsc 一起升級 TypeScript。
 
@@ -112,7 +119,7 @@ console.log(puzzle.analysis.steps) // strategy、level、place/eliminate、cells
 
 ## 驗證與限制
 
-最終驗證：43 個 Vitest 核心測試、14 個 Playwright E2E 全數通過；TypeScript、Oxlint、Oxfmt format check 與 production build 通過。E2E 每局監聽 browser console errors 與 uncaught page errors。
+最終驗證：43 個 Vitest 核心測試、14 個 Playwright E2E 全數通過；TypeScript、Oxlint＋ESLint、Oxfmt format check 與 production build 通過。E2E 每局監聽 browser console errors 與 uncaught page errors。
 
 測試包含：獨立 permutation oracle 與 Solver 的全解對照、無解/多解/唯一解、遠距對角線、跨 Seed/大小批次生成、250 次邊界變異的連通性、完整 recipe 序列化重現、所有難度標籤與最低層級驗證、提示/排除的解保留、Hall sets 的多解安全性，以及預算耗盡的明確失敗。
 

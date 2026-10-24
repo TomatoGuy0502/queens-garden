@@ -2,7 +2,7 @@
 import { Crown, Rows3, Columns3, Shapes, MoveDiagonal } from '@lucide/vue'
 </script>
 <template>
-  <section class="rules" id="rules" aria-labelledby="rules-title">
+  <section id="rules" class="rules" aria-labelledby="rules-title">
     <span class="eyebrow">A LITTLE HOW-TO</span>
     <h2 id="rules-title">一頂皇冠，剛剛好。</h2>
     <p class="rules-intro">

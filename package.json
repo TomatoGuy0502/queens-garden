@@ -9,10 +9,12 @@
     "typecheck": "vue-tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
-    "lint": "oxlint --deny-warnings src e2e *.ts",
+    "lint": "npm run lint:oxlint && npm run lint:eslint",
     "e2e": "playwright test",
     "format": "oxfmt .",
-    "format:check": "oxfmt --check ."
+    "format:check": "oxfmt --check .",
+    "lint:oxlint": "oxlint --deny-warnings src e2e *.ts",
+    "lint:eslint": "eslint . --max-warnings 0"
   },
   "dependencies": {
     "@lucide/vue": "^1.61.0",
@@ -22,6 +24,11 @@
     "@playwright/test": "^1.64.1",
     "@types/node": "^26.6.5",
     "@vitejs/plugin-vue": "^6.0.10",
+    "@vue/eslint-config-typescript": "^14.9.0",
+    "eslint": "^10.13.0",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-oxlint": "^1.89.0",
+    "eslint-plugin-vue": "^10.11.1",
     "oxfmt": "^0.74.0",
     "oxlint": "^1.89.0",
     "typescript": "^6.0.3",
