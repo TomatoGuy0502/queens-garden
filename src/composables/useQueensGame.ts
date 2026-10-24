@@ -15,7 +15,9 @@ export function useQueensGame() {
     paused = shallowRef(false)
   const seconds = shallowRef(0),
     moves = shallowRef(0),
-    hints = shallowRef(0)
+    hints = shallowRef(0),
+    // Bumps on every fresh start of the same puzzle, so one attempt is only ever scored once.
+    attempt = shallowRef(0)
   const message = shallowRef(''),
     error = shallowRef('')
   const hint = shallowRef<DeductionStep | null>(null),
@@ -99,6 +101,7 @@ export function useQueensGame() {
     elapsedMs = 0
     lastTick = performance.now()
     paused.value = false
+    attempt.value++
     clearFeedback()
   }
   async function newGame(size: number, difficulty: Difficulty, seed: number) {
@@ -238,6 +241,7 @@ export function useQueensGame() {
     future,
     moves,
     hints,
+    attempt,
     message,
     error,
     hint,

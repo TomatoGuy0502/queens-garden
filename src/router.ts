@@ -9,6 +9,7 @@ export const router = createRouter({
         Object.keys(to.query).length ? { path: '/solo', query: to.query, replace: true } : true,
     },
     { path: '/solo', component: () => import('./components/QueensGame.vue') },
+    { path: '/stats', component: () => import('./views/StatsView.vue') },
     { path: '/rooms/new', component: () => import('./views/CreateRoomView.vue') },
     {
       path: '/rooms/:roomId([A-Za-z0-9]{5})',

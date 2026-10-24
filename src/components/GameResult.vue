@@ -1,10 +1,13 @@
 <script setup lang="ts">
 import { onMounted, useTemplateRef } from 'vue'
 import CrownIcon from './CrownIcon.vue'
+import { formatDuration } from '../queens/stats'
 const props = defineProps<{
   time: string
   moves: number
   hints: number
+  /** Personal best context for solo games; omitted for shared rooms. */
+  record?: { newBest: boolean; previousBest: number | null }
   nextDisabled?: boolean
   nextLabel?: string
 }>()
@@ -23,6 +26,15 @@ onMounted(() => {
     <CrownIcon filled class="result-crown" />
     <h2 id="result-title">關卡完成</h2>
     <p>{{ time }} 完成 · {{ moves }} 次操作 · {{ hints }} 次提示</p>
+    <p v-if="record" class="record" :class="{ best: record.newBest }">
+      <template v-if="record.newBest"
+        >新紀錄！原本最佳 {{ formatDuration(record.previousBest!) }}</template
+      >
+      <template v-else-if="record.previousBest !== null"
+        >此大小與難度的最佳時間 {{ formatDuration(record.previousBest) }}</template
+      >
+      <template v-else>第一次完成這個大小與難度，成績已記錄</template>
+    </p>
     <button ref="nextButton" class="primary" :disabled="nextDisabled" @click="emit('next')">
       {{ nextLabel ?? '再來一局 →' }}
     </button>
@@ -59,6 +71,10 @@ onMounted(() => {
   line-height: 1.8;
   margin: 0;
   color: var(--muted);
+}
+.result .record.best {
+  color: var(--accent);
+  font-weight: 600;
 }
 .result button {
   min-width: 144px;

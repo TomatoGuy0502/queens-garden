@@ -10,6 +10,7 @@ import GameResult from './GameResult.vue'
 import GameShare from './GameShare.vue'
 import GamePreferences from './GamePreferences.vue'
 import { useGamePreferences } from '../composables/useGamePreferences'
+import { useGameStats } from '../composables/useGameStats'
 import { useSoloGameStore } from '../stores/solo'
 import { storeToRefs } from 'pinia'
 import { GENERATOR_VERSION } from '../queens/version'
@@ -25,6 +26,8 @@ const {
   assisting,
   paused,
   time,
+  seconds,
+  attempt,
   queens,
   conflicts,
   won,
@@ -56,6 +59,31 @@ const reviewing = shallowRef(false)
 watch([won, () => puzzle.value?.id], () => {
   reviewing.value = false
 })
+const { record: recordStats } = useGameStats()
+const lastRecord = shallowRef<{ newBest: boolean; previousBest: number | null } | null>(null)
+let scored = ''
+// Score each attempt once; undo then redo of the final move must not count as a new win.
+watch(won, (isWon) => {
+  const current = puzzle.value
+  if (!isWon || !current) return
+  const key = `${current.id}#${attempt.value}`
+  if (scored === key) return
+  scored = key
+  const { newBest, previousBest } = recordStats({
+    size: current.size,
+    difficulty: current.difficulty,
+    seconds: seconds.value,
+    moves: moves.value,
+    hints: hints.value,
+  })
+  lastRecord.value = { newBest, previousBest }
+})
+watch(
+  () => `${puzzle.value?.id}#${attempt.value}`,
+  () => {
+    lastRecord.value = null
+  },
+)
 const difficulties = DIFFICULTY_LABELS
 const highlighted = computed(() => (paused.value ? [] : (hint.value?.cells ?? [])))
 const allMistakes = computed(() => [...new Set([...conflicts.value, ...mistakes.value])])
@@ -89,6 +117,7 @@ onMounted(() => {
         ><span>queens<span class="brand-dot">.</span></span></RouterLink
       >
       <div class="header-actions">
+        <RouterLink to="/stats" class="text-button coop-link">我的成績</RouterLink>
         <RouterLink to="/rooms/new" class="text-button coop-link">多人合作</RouterLink>
         <GamePreferences v-model="guidance" :storage-available="storageAvailable" />
       </div>
@@ -155,6 +184,7 @@ onMounted(() => {
                 :time="time"
                 :moves="moves"
                 :hints="hints"
+                :record="lastRecord ?? undefined"
                 @next="nextGame"
                 @review="reviewing = true"
               />
