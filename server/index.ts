@@ -1,12 +1,12 @@
 import './env'
+import { storageConfig } from './runtimeConfig'
 import { createApp } from './app'
 import { workerPool } from './compute'
 import { fileRepository, postgresRepository } from './repository'
-const production = process.env.NODE_ENV === 'production'
-if (production && !process.env.DATABASE_URL) throw new Error('Production requires DATABASE_URL.')
-const postgres = process.env.DATABASE_URL ? postgresRepository(process.env.DATABASE_URL) : null
-const repository =
-  postgres?.repository ?? (await fileRepository(process.env.ROOM_FILE ?? '.data/rooms.json'))
+const { production, url, file } = storageConfig(process.env)
+const postgres = url ? postgresRepository(url) : null
+const repository = postgres?.repository ?? (await fileRepository(file))
+console.info(`Room storage: ${postgres ? 'PostgreSQL' : `local file (${file})`}`)
 const { app } = await createApp({
   repository,
   compute: workerPool(Number(process.env.WORKER_CONCURRENCY ?? 2)),

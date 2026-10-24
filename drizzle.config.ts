@@ -1,4 +1,5 @@
 import './server/env'
+import { migrationUrl } from './server/runtimeConfig'
 import { databaseUrl } from './server/databaseUrl'
 import { defineConfig } from 'drizzle-kit'
 export default defineConfig({
@@ -7,10 +8,6 @@ export default defineConfig({
   schema: './server/schema.ts',
   out: './drizzle',
   dbCredentials: {
-    url: databaseUrl(
-      process.env.DATABASE_URL_UNPOOLED ??
-        process.env.DATABASE_URL ??
-        'postgres://queens:queens@localhost:5432/queens',
-    ),
+    url: databaseUrl(migrationUrl(process.env)),
   },
 })
