@@ -1,9 +1,17 @@
 import type { Difficulty } from './types'
 import { DIFFICULTIES } from './levels'
+import { isDateKey } from './daily'
 
 export interface GameOutcome {
   size: number
   difficulty: Difficulty
+  seconds: number
+  moves: number
+  hints: number
+  /** Local date key when the game was that day's challenge. */
+  daily?: string
+}
+export interface DailyResult {
   seconds: number
   moves: number
   hints: number
@@ -17,7 +25,10 @@ export interface BucketStats {
 }
 export interface StatsData {
   buckets: Record<string, BucketStats>
+  /** Best result per daily challenge date. */
+  dailies: Record<string, DailyResult>
 }
+const MAX_DAILIES = 400
 export interface RecordedOutcome {
   stats: StatsData
   previousBest: number | null
@@ -25,7 +36,7 @@ export interface RecordedOutcome {
 }
 
 export const bucketKey = (size: number, difficulty: Difficulty) => `${size}:${difficulty}`
-export const emptyStats = (): StatsData => ({ buckets: {} })
+export const emptyStats = (): StatsData => ({ buckets: {}, dailies: {} })
 export function formatDuration(seconds: number): string {
   return `${String(Math.floor(seconds / 60)).padStart(2, '0')}:${String(seconds % 60).padStart(2, '0')}`
 }
@@ -36,7 +47,16 @@ const count = (value: unknown) =>
 export function parseStats(raw: unknown): StatsData {
   const stats = emptyStats()
   if (!raw || typeof raw !== 'object') return stats
-  const buckets = (raw as { buckets?: unknown }).buckets
+  const { buckets, dailies } = raw as { buckets?: unknown; dailies?: unknown }
+  if (dailies && typeof dailies === 'object')
+    for (const [date, value] of Object.entries(dailies)) {
+      const entry = value as Partial<Record<keyof DailyResult, unknown>> | null
+      const seconds = count(entry?.seconds),
+        moves = count(entry?.moves),
+        hints = count(entry?.hints)
+      if (isDateKey(date) && seconds !== null && moves !== null && hints !== null)
+        stats.dailies[date] = { seconds, moves, hints }
+    }
   if (!buckets || typeof buckets !== 'object') return stats
   for (const [key, value] of Object.entries(buckets)) {
     const [size, difficulty] = key.split(':')
@@ -71,8 +91,14 @@ export function recordOutcome(stats: StatsData, outcome: GameOutcome): RecordedO
     bestSeconds: Math.min(previousBest ?? Infinity, outcome.seconds),
     withoutHints: (current?.withoutHints ?? 0) + (outcome.hints === 0 ? 1 : 0),
   }
+  const dailies = { ...stats.dailies }
+  const day = outcome.daily
+  if (day && (!dailies[day] || outcome.seconds < dailies[day].seconds))
+    dailies[day] = { seconds: outcome.seconds, moves: outcome.moves, hints: outcome.hints }
+  // Keep the newest dates only, so long-term play cannot grow the stored data without bound.
+  const kept = Object.fromEntries(Object.entries(dailies).sort().slice(-MAX_DAILIES))
   return {
-    stats: { buckets: { ...stats.buckets, [key]: next } },
+    stats: { buckets: { ...stats.buckets, [key]: next }, dailies: kept },
     previousBest,
     // The first completion of a bucket sets a baseline, not a record worth celebrating.
     newBest: previousBest !== null && outcome.seconds < previousBest,

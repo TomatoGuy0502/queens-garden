@@ -1,12 +1,14 @@
 <script setup lang="ts">
 import { Crown, Users, ArrowRight } from '@lucide/vue'
 import AppHeader from '../components/AppHeader.vue'
+import DailyChallenge from '../components/DailyChallenge.vue'
 </script>
 <template>
   <main class="page-shell">
     <AppHeader />
     <h1>Queens 益智遊戲</h1>
     <p class="page-description">選擇遊玩模式。</p>
+    <DailyChallenge class="daily-card" />
     <div class="mode-cards">
       <RouterLink to="/solo" class="mode-card"
         ><Crown :size="28" />
@@ -28,11 +30,14 @@ h1 {
   font-weight: 500;
   margin: 42px 0 14px;
 }
+.daily-card {
+  margin-top: 28px;
+}
 .mode-cards {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 24px;
-  margin-top: 32px;
+  margin-top: 24px;
 }
 .mode-card {
   display: block;

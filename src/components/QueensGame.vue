@@ -9,8 +9,18 @@ import GameRules from './GameRules.vue'
 import GameResult from './GameResult.vue'
 import GameShare from './GameShare.vue'
 import GamePreferences from './GamePreferences.vue'
+import DailyChallenge from './DailyChallenge.vue'
 import { useGamePreferences } from '../composables/useGamePreferences'
 import { useGameStats } from '../composables/useGameStats'
+import {
+  DAILY_MAX_ATTEMPTS,
+  dailyConfig,
+  dailySeed,
+  dailyStreak,
+  dateKey,
+  isDailyPuzzle,
+  isDateKey,
+} from '../queens/daily'
 import { useSoloGameStore } from '../stores/solo'
 import { storeToRefs } from 'pinia'
 import { GENERATOR_VERSION } from '../queens/version'
@@ -28,6 +38,7 @@ const {
   time,
   seconds,
   attempt,
+  daily,
   queens,
   conflicts,
   won,
@@ -53,14 +64,30 @@ const initialSeed =
   requestedSeed !== null && /^\d+$/.test(requestedSeed) && Number(requestedSeed) <= 0xffffffff
     ? Number(requestedSeed)
     : crypto.getRandomValues(new Uint32Array(1))[0]
+const dailyParam = params.get('daily')
+// A link only counts as today's challenge when it really is today's board; old days stay closed.
+const linkedDaily =
+  isDateKey(dailyParam) &&
+  dailyParam === dateKey() &&
+  isDailyPuzzle(dailyParam, {
+    size: initialSize,
+    difficulty: initialDifficulty,
+    seed: initialSeed,
+  })
+    ? dailyParam
+    : null
 const versionMismatch = shallowRef(params.has('v') && params.get('v') !== GENERATOR_VERSION)
 const restartConfirm = shallowRef(false)
 const reviewing = shallowRef(false)
 watch([won, () => puzzle.value?.id], () => {
   reviewing.value = false
 })
-const { record: recordStats } = useGameStats()
-const lastRecord = shallowRef<{ newBest: boolean; previousBest: number | null } | null>(null)
+const { record: recordStats, stats } = useGameStats()
+const lastRecord = shallowRef<{
+  newBest: boolean
+  previousBest: number | null
+  streak?: number
+} | null>(null)
 let scored = ''
 // Score each attempt once; undo then redo of the final move must not count as a new win.
 watch(won, (isWon) => {
@@ -75,8 +102,13 @@ watch(won, (isWon) => {
     seconds: seconds.value,
     moves: moves.value,
     hints: hints.value,
+    daily: daily.value ?? undefined,
   })
-  lastRecord.value = { newBest, previousBest }
+  lastRecord.value = {
+    newBest,
+    previousBest,
+    streak: daily.value ? dailyStreak(stats.value.dailies, daily.value) : undefined,
+  }
 })
 watch(
   () => `${puzzle.value?.id}#${attempt.value}`,
@@ -87,26 +119,44 @@ watch(
 const difficulties = DIFFICULTY_LABELS
 const highlighted = computed(() => (paused.value ? [] : (hint.value?.cells ?? [])))
 const allMistakes = computed(() => [...new Set([...conflicts.value, ...mistakes.value])])
-function startGame(size: number, difficulty: Difficulty, seed: number) {
+// The daily challenge is a fixed board, so its page offers no settings until the player leaves it.
+const inDaily = shallowRef(false)
+function startGame(
+  size: number,
+  difficulty: Difficulty,
+  seed: number,
+  dailyDate: string | null = null,
+) {
+  inDaily.value = dailyDate !== null
   displayDifficulty.value = difficulty
   versionMismatch.value = false
   restartConfirm.value = false
-  return game.newGame(size, difficulty, seed)
+  return game.newGame(size, difficulty, seed, dailyDate)
+}
+async function startDaily() {
+  const key = dateKey()
+  const { size, difficulty } = dailyConfig(key)
+  // A seed can exhaust the generation budget; everyone walks the same fixed fallback seeds.
+  for (let attempt = 0; attempt < DAILY_MAX_ATTEMPTS; attempt++) {
+    const status = await startGame(size, difficulty, dailySeed(key, attempt), key)
+    if (status !== 'failed') return
+  }
 }
 function confirmRestart() {
   game.restart()
   restartConfirm.value = false
 }
 function nextGame() {
-  if (puzzle.value)
-    void startGame(
-      puzzle.value.size,
-      puzzle.value.difficulty,
-      crypto.getRandomValues(new Uint32Array(1))[0],
-    )
+  void startGame(
+    puzzle.value?.size ?? initialSize,
+    puzzle.value?.difficulty ?? initialDifficulty,
+    crypto.getRandomValues(new Uint32Array(1))[0],
+  )
 }
 onMounted(() => {
-  if (!versionMismatch.value) void startGame(initialSize, initialDifficulty, initialSeed)
+  if (dailyParam === 'today') void startDaily()
+  else if (!versionMismatch.value)
+    void startGame(initialSize, initialDifficulty, initialSeed, linkedDaily)
 })
 </script>
 <template>
@@ -128,7 +178,8 @@ onMounted(() => {
         <section class="play-area" aria-label="遊戲區域" :aria-busy="busy">
           <div class="game-meta">
             <div class="puzzle-meta">
-              <span class="difficulty-badge">{{ difficulties[displayDifficulty] }}</span
+              <span v-if="daily" class="difficulty-badge daily-badge">每日挑戰</span
+              ><span class="difficulty-badge">{{ difficulties[displayDifficulty] }}</span
               ><span class="board-size"
                 >{{ puzzle?.size ?? initialSize }} × {{ puzzle?.size ?? initialSize }}</span
               ><span v-if="puzzle" class="queen-count"
@@ -185,6 +236,7 @@ onMounted(() => {
                 :moves="moves"
                 :hints="hints"
                 :record="lastRecord ?? undefined"
+                :next-label="inDaily ? '自由遊玩 →' : undefined"
                 @next="nextGame"
                 @review="reviewing = true"
               />
@@ -250,15 +302,22 @@ onMounted(() => {
           </div>
         </section>
         <aside class="side-panel">
-          <GameSettings
-            :busy="busy"
-            :initial-size="initialSize"
-            :initial-difficulty="initialDifficulty"
-            :initial-seed="initialSeed"
-            :current-seed="puzzle?.seed"
-            @start="startGame"
-            @cancel="game.cancelGeneration"
-          /><GameRules />
+          <button v-if="inDaily" class="text-button free-play" :disabled="busy" @click="nextGame">
+            離開每日挑戰，自由遊玩
+          </button>
+          <template v-else>
+            <DailyChallenge class="daily-panel" in-game :busy="busy" @start="startDaily" />
+            <GameSettings
+              :busy="busy"
+              :initial-size="initialSize"
+              :initial-difficulty="initialDifficulty"
+              :initial-seed="initialSeed"
+              :current-seed="puzzle?.seed"
+              @start="startGame"
+              @cancel="game.cancelGeneration"
+            />
+          </template>
+          <GameRules />
         </aside>
       </div>
     </main>
@@ -342,6 +401,17 @@ onMounted(() => {
   background: var(--accent-soft);
   padding: 5px 11px;
   border-radius: 4px;
+}
+.daily-badge {
+  color: var(--surface);
+  background: var(--accent);
+}
+.daily-panel {
+  margin-bottom: 27px;
+}
+.free-play {
+  display: block;
+  margin: 0 auto 27px;
 }
 .board-size {
   font-size: 12px;

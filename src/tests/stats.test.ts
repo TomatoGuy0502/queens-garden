@@ -33,7 +33,7 @@ it('records completions per size and difficulty without mutating the previous st
   })
   const other = recordOutcome(first.stats, { ...outcome(50), size: 6, difficulty: 'easy' })
   expect(Object.keys(other.stats.buckets).sort()).toEqual(['6:easy', '8:medium'])
-  expect(emptyStats().buckets).toEqual({})
+  expect(emptyStats()).toEqual({ buckets: {}, dailies: {} })
 })
 it('only celebrates a strictly faster time and counts hint-free completions', () => {
   let stats = recordOutcome(emptyStats(), outcome(100)).stats
@@ -71,5 +71,37 @@ it('keeps only well formed stored buckets', () => {
         '12:hard': { ...good, completed: 1.5 },
       },
     }),
-  ).toEqual({ buckets: { '8:medium': good } })
+  ).toEqual({ buckets: { '8:medium': good }, dailies: {} })
+})
+it('stores the best result per daily challenge date and counts it in the size bucket too', () => {
+  const day = '2026-10-27'
+  const first = recordOutcome(emptyStats(), { ...outcome(90, 1), daily: day })
+  expect(first.stats.dailies).toEqual({ [day]: { seconds: 90, moves: 20, hints: 1 } })
+  expect(first.stats.buckets['8:medium'].completed).toBe(1)
+  const slower = recordOutcome(first.stats, { ...outcome(120), daily: day })
+  expect(slower.stats.dailies[day].seconds).toBe(90)
+  const faster = recordOutcome(slower.stats, { ...outcome(60, 0), daily: day })
+  expect(faster.stats.dailies[day]).toEqual({ seconds: 60, moves: 20, hints: 0 })
+  expect(recordOutcome(faster.stats, outcome(10)).stats.dailies).toEqual(faster.stats.dailies)
+})
+it('only keeps the newest daily dates and validates stored ones', () => {
+  let stats = emptyStats()
+  const start = new Date(Date.UTC(2025, 0, 1))
+  for (let i = 0; i < 405; i++) {
+    const day = new Date(start.getTime() + i * 86400000).toISOString().slice(0, 10)
+    stats = recordOutcome(stats, { ...outcome(10), daily: day }).stats
+  }
+  const days = Object.keys(stats.dailies)
+  expect(days).toHaveLength(400)
+  expect(days[0]).toBe(new Date(start.getTime() + 5 * 86400000).toISOString().slice(0, 10))
+  const parsed = parseStats({
+    buckets: {},
+    dailies: {
+      '2026-10-27': { seconds: 5, moves: 6, hints: 0 },
+      '2026-13-40': { seconds: 5, moves: 6, hints: 0 },
+      '2026-10-28': { seconds: -5, moves: 6, hints: 0 },
+      today: { seconds: 5, moves: 6, hints: 0 },
+    },
+  })
+  expect(Object.keys(parsed.dailies)).toEqual(['2026-10-27'])
 })

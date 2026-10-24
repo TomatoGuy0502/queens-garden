@@ -18,6 +18,8 @@ export function useQueensGame() {
     hints = shallowRef(0),
     // Bumps on every fresh start of the same puzzle, so one attempt is only ever scored once.
     attempt = shallowRef(0)
+  /** Date key when the puzzle on the board is that day's challenge. */
+  const daily = shallowRef<string | null>(null)
   const message = shallowRef(''),
     error = shallowRef('')
   const hint = shallowRef<DeductionStep | null>(null),
@@ -104,7 +106,13 @@ export function useQueensGame() {
     attempt.value++
     clearFeedback()
   }
-  async function newGame(size: number, difficulty: Difficulty, seed: number) {
+  /** `stale` means a newer request or a cancel took over, so callers must not retry. */
+  async function newGame(
+    size: number,
+    difficulty: Difficulty,
+    seed: number,
+    dailyDate: string | null = null,
+  ): Promise<'ready' | 'failed' | 'stale'> {
     stopWorker()
     busy.value = true
     assisting.value = false
@@ -114,10 +122,12 @@ export function useQueensGame() {
     const generation = ++generationId
     cells.value = []
     puzzle.value = null
+    daily.value = null
     try {
       const result = await rpc({ type: 'generate', options: { size, difficulty, seed } })
-      if (generation !== generationId) return
+      if (generation !== generationId) return 'stale'
       puzzle.value = result.puzzle!
+      daily.value = dailyDate
       resetSession()
       const params = new URLSearchParams({
         size: String(size),
@@ -125,9 +135,13 @@ export function useQueensGame() {
         seed: String(seed),
         v: puzzle.value.version,
       })
+      if (dailyDate) params.set('daily', dailyDate)
       await router.replace({ path: '/solo', query: Object.fromEntries(params) })
+      return 'ready'
     } catch (reason) {
-      if (generation === generationId) error.value = (reason as Error).message
+      if (generation !== generationId) return 'stale'
+      error.value = (reason as Error).message
+      return 'failed'
     } finally {
       if (generation === generationId) busy.value = false
     }
@@ -242,6 +256,7 @@ export function useQueensGame() {
     moves,
     hints,
     attempt,
+    daily,
     message,
     error,
     hint,

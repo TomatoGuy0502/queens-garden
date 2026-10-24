@@ -7,7 +7,7 @@ const props = defineProps<{
   moves: number
   hints: number
   /** Personal best context for solo games; omitted for shared rooms. */
-  record?: { newBest: boolean; previousBest: number | null }
+  record?: { newBest: boolean; previousBest: number | null; streak?: number }
   nextDisabled?: boolean
   nextLabel?: string
 }>()
@@ -35,6 +35,7 @@ onMounted(() => {
       >
       <template v-else>第一次完成這個大小與難度，成績已記錄</template>
     </p>
+    <p v-if="record?.streak" class="record best">每日挑戰完成！連續 {{ record.streak }} 天</p>
     <button ref="nextButton" class="primary" :disabled="nextDisabled" @click="emit('next')">
       {{ nextLabel ?? '再來一局 →' }}
     </button>
