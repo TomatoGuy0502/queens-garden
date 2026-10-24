@@ -80,7 +80,7 @@ async function share() {
     <p id="share-description">
       {{
         roomId
-          ? '分享連結或 QR Code，邀請另一位玩家加入房間。'
+          ? '分享連結或 QR Code，邀請隊友加入房間。'
           : '連結包含棋盤大小、難度與種子，開啟後會得到相同關卡。'
       }}
     </p>

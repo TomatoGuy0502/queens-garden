@@ -46,11 +46,11 @@ async function join() {
 <template>
   <main class="page-shell">
     <AppHeader />
-    <h1>雙人合作</h1>
+    <h1>多人合作</h1>
     <div class="room-forms">
       <section>
         <h2>建立房間</h2>
-        <p class="page-description">兩位玩家準備完成後，由房主開始。</p>
+        <p class="page-description">支援 2～8 人，所有玩家準備完成後，由房主開始。</p>
         <form class="room-form" @submit.prevent="create">
           <label for="player-name">你的暱稱</label
           ><input

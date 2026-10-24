@@ -15,8 +15,8 @@ import AppHeader from '../components/AppHeader.vue'
         <span>開始遊戲 <ArrowRight :size="16" /></span></RouterLink
       ><RouterLink to="/rooms/new" class="mode-card"
         ><Users :size="28" />
-        <h2>雙人合作</h2>
-        <p>邀請一位朋友，同時操作棋盤、分享推理與指示格子。</p>
+        <h2>多人合作</h2>
+        <p>邀請朋友，同時操作棋盤、分享推理與指示格子。</p>
         <span>建立或加入房間 <ArrowRight :size="16" /></span
       ></RouterLink>
     </div>

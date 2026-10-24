@@ -7,7 +7,7 @@ import CrownIcon from './CrownIcon.vue'
       ><CrownIcon /><span>queens<span class="brand-dot">.</span></span></RouterLink
     >
     <nav>
-      <RouterLink to="/solo">單人遊戲</RouterLink><RouterLink to="/rooms/new">雙人合作</RouterLink
+      <RouterLink to="/solo">單人遊戲</RouterLink><RouterLink to="/rooms/new">多人合作</RouterLink
       ><slot />
     </nav>
   </header>

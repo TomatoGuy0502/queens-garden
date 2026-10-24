@@ -13,11 +13,11 @@ async function pair(host: Page, browser: Browser, mobile: boolean) {
   await host.getByLabel('棋盤大小').selectOption('6')
   await host.getByRole('button', { name: '建立房間', exact: true }).click()
   await expect(host).toHaveURL(/\/rooms\/[a-f0-9]{12}$/)
-  await expect(host.getByRole('heading', { name: '等待室' })).toBeVisible()
+  await expect(host.getByRole('heading', { name: /等待室/ })).toBeVisible()
   await guest.goto(host.url())
   await guest.getByLabel('你的暱稱').fill('Bob')
   await guest.getByRole('button', { name: '加入房間', exact: true }).click()
-  await expect(guest.getByRole('heading', { name: '等待室' })).toBeVisible()
+  await expect(guest.getByRole('heading', { name: /等待室/ })).toBeVisible()
   await expect(host.locator('.player-row')).toHaveCount(2)
   await host.getByRole('button', { name: '準備好了', exact: true }).click()
   await guest.getByRole('button', { name: '準備好了', exact: true }).click()
@@ -83,8 +83,8 @@ test('two players share cells, personal undo, markers, hints and team completion
     await expect(guest.getByRole('heading', { name: '關卡完成' })).toBeVisible()
     await expect(guest.getByRole('button', { name: '等待房主開啟下一局' })).toBeDisabled()
     await page.getByRole('button', { name: '開啟下一局 →' }).click()
-    await expect(page.getByRole('heading', { name: '等待室' })).toBeVisible()
-    await expect(guest.getByRole('heading', { name: '等待室' })).toBeVisible()
+    await expect(page.getByRole('heading', { name: /等待室/ })).toBeVisible()
+    await expect(guest.getByRole('heading', { name: /等待室/ })).toBeVisible()
     expect(errors).toEqual([])
     expect(await guest.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
       true,
@@ -130,11 +130,91 @@ test('navigation between home, solo and cooperation preserves working solo contr
   await page.goto('/')
   await page.getByRole('link', { name: '單人遊戲' }).last().click()
   await expect(page.getByRole('grid')).toBeVisible({ timeout: 30000 })
-  await page.getByRole('link', { name: '雙人合作', exact: true }).click()
+  await page.getByRole('link', { name: '多人合作', exact: true }).click()
   await expect(page.getByRole('heading', { name: '建立房間' })).toBeVisible()
   await page.getByRole('link', { name: '單人遊戲', exact: true }).click()
   await expect(page.getByRole('grid')).toBeVisible({ timeout: 30000 })
   await cell(page, 0).click()
   await expect(cell(page, 0)).toHaveAttribute('data-state', 'queen')
   await expect(page.locator('.timer > span')).not.toHaveText('00:00')
+})
+
+test('three players prepare, synchronize edits and pointers, reconnect and finish together', async ({
+  page,
+  browser,
+  isMobile,
+}) => {
+  test.setTimeout(90000)
+  const contexts = await Promise.all(
+    [0, 1].map(() =>
+      browser.newContext({
+        viewport: isMobile ? { width: 393, height: 851 } : { width: 1280, height: 720 },
+        isMobile,
+        hasTouch: isMobile,
+      }),
+    ),
+  )
+  const guests = await Promise.all(contexts.map((context) => context.newPage()))
+  const pages = [page, ...guests]
+  const errors: string[] = []
+  for (const p of pages) p.on('pageerror', (error) => errors.push(error.message))
+  try {
+    await page.goto('/rooms/new')
+    await page.getByLabel('你的暱稱').fill('Alice')
+    await page.getByLabel('棋盤大小').selectOption('6')
+    await page.getByRole('button', { name: '建立房間', exact: true }).click()
+    await expect(page.getByRole('heading', { name: /等待室/ })).toBeVisible()
+    for (const [i, guest] of guests.entries()) {
+      await guest.goto(page.url())
+      await guest.getByLabel('你的暱稱').fill(['Bob', 'Charlie'][i])
+      await guest.getByRole('button', { name: '加入房間', exact: true }).click()
+      await expect(guest.getByRole('heading', { name: /等待室/ })).toBeVisible()
+    }
+    await expect(page.locator('.player-count')).toHaveText('3 / 8 人')
+    await page.getByRole('button', { name: '準備好了', exact: true }).click()
+    await guests[0].getByRole('button', { name: '準備好了', exact: true }).click()
+    await expect(page.getByRole('button', { name: '開始合作', exact: true })).toBeDisabled()
+    await guests[1].getByRole('button', { name: '準備好了', exact: true }).click()
+    await page.getByRole('button', { name: '開始合作', exact: true }).click()
+    for (const p of pages) await expect(p.getByRole('grid')).toBeVisible({ timeout: 30000 })
+    await cell(guests[1], 0).click()
+    for (const p of pages) await expect(cell(p, 0)).toHaveAttribute('data-state', 'queen')
+    await guests[1].getByRole('button', { name: '復原', exact: true }).click()
+    await expect(cell(page, 0)).toHaveAttribute('data-state', 'empty')
+    await guests[1].getByRole('button', { name: '指示格子', exact: true }).click()
+    await cell(guests[1], 7).click()
+    for (const p of [page, guests[0]]) await expect(cell(p, 7)).toContainText('Charlie')
+    await contexts[1].setOffline(true)
+    for (const p of [page, guests[0]])
+      await expect(p.getByRole('button', { name: '繼續合作', exact: true })).toBeDisabled({
+        timeout: 25000,
+      })
+    await contexts[1].setOffline(false)
+    await expect(page.getByRole('button', { name: '繼續合作', exact: true })).toBeEnabled({
+      timeout: 20000,
+    })
+    await page.getByRole('button', { name: '繼續合作', exact: true }).click()
+    for (const p of pages) await expect(p.getByRole('grid')).toBeVisible()
+    const regions = await page.getByRole('gridcell').evaluateAll((elements) => {
+      const cells = elements.map((e) => Number(e.getAttribute('data-region')))
+      return Array.from({ length: 6 }, (_, r) => cells.slice(r * 6, r * 6 + 6))
+    })
+    for (const [row, col] of solve(regions).solutions[0].entries()) {
+      await cell(pages[row % pages.length], row * 6 + col).click()
+      for (const p of pages)
+        await expect(cell(p, row * 6 + col)).toHaveAttribute('data-state', 'queen')
+    }
+    for (const p of pages) {
+      await expect(p.getByRole('heading', { name: '關卡完成' })).toBeVisible()
+      expect(await p.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
+    }
+    await page.getByRole('button', { name: '開啟下一局 →' }).click()
+    for (const p of pages) await expect(p.getByRole('heading', { name: /等待室/ })).toBeVisible()
+    await page.getByRole('button', { name: '離開', exact: true }).click()
+    await expect(guests[0].getByRole('button', { name: '開始合作', exact: true })).toBeVisible()
+    await expect(guests[0].locator('.player-row')).toHaveCount(2)
+    expect(errors).toEqual([])
+  } finally {
+    await Promise.all(contexts.map((context) => context.close()))
+  }
 })

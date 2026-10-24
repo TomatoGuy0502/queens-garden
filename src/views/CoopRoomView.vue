@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { MIN_ROOM_PLAYERS } from '../../shared/coop'
 import { computed, onUnmounted, shallowRef, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { Clock3, Pause, Play, MousePointer2, LoaderCircle, LogOut } from '@lucide/vue'
@@ -28,8 +29,8 @@ const blocked = computed(() => !room.connected || game.state?.phase !== 'playing
 const canResume = computed(
   () =>
     room.connected &&
-    room.room?.players.length === 2 &&
-    room.room.players.every((p) => p.connected),
+    (room.room?.players.length ?? 0) >= MIN_ROOM_PLAYERS &&
+    (room.room?.players.every((p) => p.connected) ?? false),
 )
 const mistakes = computed(() => [...new Set([...game.conflicts, ...(game.state?.mistakes ?? [])])])
 const timer = setInterval(() => room.clock(), 200)
@@ -96,7 +97,7 @@ async function reset() {
     /></AppHeader>
     <div class="room-heading">
       <div>
-        <h1>雙人合作</h1>
+        <h1>多人合作</h1>
         <p>
           房間 <span class="room-code">{{ roomId }}</span>
         </p>
@@ -251,7 +252,7 @@ async function reset() {
               @check="room.assist('check')"
             />
             <div v-if="resetConfirm" class="reset-confirm">
-              <p>結束這一局並回到等待室？兩位玩家需要重新準備。</p>
+              <p>結束這一局並回到等待室？所有玩家需要重新準備。</p>
               <button class="text-button" @click="resetConfirm = false">取消</button
               ><button class="primary" @click="reset">回到等待室</button>
             </div>
@@ -282,7 +283,7 @@ async function reset() {
         <aside class="coop-aside">
           <h2>合作操作</h2>
           <p>皇冠與 X 即時同步。Undo／Redo 只處理自己的操作，已有後續修改的格子不能覆蓋。</p>
-          <p>隊友離線時會自動暫停；雙方重新連線後可繼續。</p>
+          <p>隊友離線時會自動暫停；所有隊友重新連線後可繼續。</p>
           <p>視覺引導各自設定，不會改動隊友的偏好。</p>
           <GameRules />
         </aside></div
@@ -342,6 +343,8 @@ async function reset() {
   margin-bottom: 28px;
 }
 .presence-bar > span {
+  min-width: 0;
+  overflow-wrap: anywhere;
   display: flex;
   align-items: center;
   gap: 7px;

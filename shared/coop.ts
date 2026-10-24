@@ -1,5 +1,8 @@
 import { z } from 'zod'
 import type { CellState, DeductionStep, PuzzleDefinition } from '../src/queens/types'
+export const MIN_ROOM_PLAYERS = 2
+export const MAX_ROOM_PLAYERS = 8
+
 export const sizeSchema = z.union([
   z.literal(6),
   z.literal(7),

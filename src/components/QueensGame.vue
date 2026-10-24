@@ -84,7 +84,7 @@ onMounted(() => {
         ><span>queens<span class="brand-dot">.</span></span></RouterLink
       >
       <div class="header-actions">
-        <RouterLink to="/rooms/new" class="text-button coop-link">雙人合作</RouterLink>
+        <RouterLink to="/rooms/new" class="text-button coop-link">多人合作</RouterLink>
         <GamePreferences v-model="guidance" :storage-available="storageAvailable" />
       </div>
     </header>

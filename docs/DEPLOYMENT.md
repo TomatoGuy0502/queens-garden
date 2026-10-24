@@ -32,7 +32,7 @@ Repository 已提供 `render.yaml` Blueprint，**尚未建立或部署 Render �
 3. 使用 Node 24，單一 instance。Blueprint 設定 Starter、Singapore、`WORKER_CONCURRENCY=1`；方案會產生 Render 費用。
 4. Build 為 `npm ci && npm run build`，start 為 `npm run db:migrate && npm start`。Health check 為 `/api/health`。
 5. 預設允許 Render 的 `RENDER_EXTERNAL_URL` 來源。自訂網域時設定 `PUBLIC_ORIGIN=https://你的網域`，不可包含路徑。
-6. 確認首頁與 `/rooms/<id>` 深層連結可開啟，兩個瀏覽器可加入同房並同步格子，重新整理可恢復同分頁身份。
+6. 確認首頁與 `/rooms/<id>` 深層連結可開啟，2～8 位玩家可加入同房並同步格子，重新整理可恢復同分頁身份。
 
 前後端由同一個 Node 服務提供；`PORT` 使用 Render 提供的值、監聽 `0.0.0.0`。Socket.IO 使用 WebSocket，無需另一個前端環境變數或獨立 websocket host。靜態檔案與 health check 不套用建立／加入房間的 API 限流。
 

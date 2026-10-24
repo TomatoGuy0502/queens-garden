@@ -1,4 +1,5 @@
 import { createHash, randomBytes, randomUUID, timingSafeEqual } from 'node:crypto'
+import { MIN_ROOM_PLAYERS, MAX_ROOM_PLAYERS } from '../shared/coop'
 import type {
   BoardAction,
   Change,
@@ -91,8 +92,11 @@ export class RoomManager {
   private online(id: string, playerId: string) {
     return !!this.connections.get(id)?.get(playerId)?.size
   }
-  private bothOnline(room: StoredRoom) {
-    return room.players.length === 2 && room.players.every((p) => this.online(room.id, p.id))
+  private allOnline(room: StoredRoom) {
+    return (
+      room.players.length >= MIN_ROOM_PLAYERS &&
+      room.players.every((p) => this.online(room.id, p.id))
+    )
   }
   snapshot(room: StoredRoom): RoomSnapshot {
     const now = Date.now()
@@ -191,9 +195,15 @@ export class RoomManager {
       room.players = room.players.filter(
         (p) => p.id === room.hostId || this.online(id, p.id) || Date.now() - p.lastSeenAt < 300000,
       )
-      if (room.players.length >= 2) throw new RoomError('房間已滿，目前支援兩人合作。', 'ROOM_FULL')
+      if (room.players.length >= MAX_ROOM_PLAYERS)
+        throw new RoomError(`房間已滿，最多 ${MAX_ROOM_PLAYERS} 人合作。`, 'ROOM_FULL')
       const { stored, token } = player(name)
       room.players.push(stored)
+      if (room.phase === 'playing') {
+        room.phase = 'paused'
+        room.pausedAt = Date.now()
+        room.message = '新隊友已加入，所有玩家連線後即可繼續。'
+      }
       if (!room.hostId) {
         room.hostId = stored.id
         freshGame(room)
@@ -227,10 +237,10 @@ export class RoomManager {
       sockets.add(socketId)
       member.lastSeenAt = Date.now()
       // A process restart has no active socket sessions. Preserve elapsed time from the last durable snapshot.
-      if (room.phase === 'playing' && !this.bothOnline(room)) {
+      if (room.phase === 'playing' && !this.allOnline(room)) {
         room.phase = 'paused'
         room.pausedAt = firstConnection ? room.checkpointAt : Date.now()
-        room.message = '等待兩位玩家連線後繼續。'
+        room.message = '等待所有玩家連線後繼續。'
       }
       if (room.phase === 'generating' && !this.generating.has(room.gameId)) {
         room.phase = 'waiting'
@@ -310,7 +320,7 @@ export class RoomManager {
     } else if (!solved && room.phase === 'completed') {
       room.pausedMs += Date.now() - room.finishedAt!
       room.finishedAt = null
-      room.phase = this.bothOnline(room) ? 'playing' : 'paused'
+      room.phase = this.allOnline(room) ? 'playing' : 'paused'
       room.pausedAt = room.phase === 'paused' ? Date.now() : null
     }
   }
@@ -362,10 +372,10 @@ export class RoomManager {
           this.host(room, member.id)
           if (
             room.phase !== 'waiting' ||
-            !this.bothOnline(room) ||
+            !this.allOnline(room) ||
             !room.players.every((p) => p.ready)
           )
-            throw new RoomError('需要兩位玩家連線並準備完成。')
+            throw new RoomError('至少需要兩位玩家，且所有玩家都需連線並準備完成。')
           room.phase = 'generating'
           room.gameId = randomUUID()
           room.message = ''
@@ -391,7 +401,8 @@ export class RoomManager {
             room.phase = 'paused'
             room.pausedAt = Date.now()
           } else if (!command.paused && room.phase === 'paused') {
-            if (!this.bothOnline(room)) throw new RoomError('請等待另一位玩家重新連線。')
+            if (!this.allOnline(room))
+              throw new RoomError('至少需要兩位玩家，並等待所有隊友重新連線。')
             room.pausedMs += Date.now() - room.pausedAt!
             room.pausedAt = null
             room.phase = 'playing'
@@ -473,7 +484,7 @@ export class RoomManager {
         room.cells = Array<CellState>(puzzle.size ** 2).fill('empty')
         room.versions = Array<number>(puzzle.size ** 2).fill(0)
         room.startedAt = Date.now()
-        room.phase = this.bothOnline(room) ? 'playing' : 'paused'
+        room.phase = this.allOnline(room) ? 'playing' : 'paused'
         room.pausedAt = room.phase === 'paused' ? Date.now() : null
         await this.commit(room, 'generated', room.hostId)
       })

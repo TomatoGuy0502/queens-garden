@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { MIN_ROOM_PLAYERS, MAX_ROOM_PLAYERS } from '../../../shared/coop'
 import type { Player, RoomSettings } from '../../../shared/coop'
 import type { Difficulty } from '../../queens/types'
 const props = defineProps<{
@@ -25,8 +26,13 @@ function difficulty(event: Event) {
 </script>
 <template>
   <section class="lobby" aria-labelledby="lobby-title">
-    <h2 id="lobby-title">等待室</h2>
-    <p class="page-description">邀請一位朋友。兩位玩家連線並準備完成後，房主即可開始。</p>
+    <h2 id="lobby-title">
+      等待室 <span class="player-count">{{ players.length }} / {{ MAX_ROOM_PLAYERS }} 人</span>
+    </h2>
+    <p class="page-description">
+      至少 {{ MIN_ROOM_PLAYERS }} 人即可開始，最多
+      {{ MAX_ROOM_PLAYERS }} 人。所有玩家連線並準備完成後，由房主開始。
+    </p>
     <div class="players">
       <div v-for="player in players" :key="player.id" class="player-row">
         <span class="avatar">{{ Array.from(player.name)[0] }}</span>
@@ -37,7 +43,7 @@ function difficulty(event: Event) {
         </div>
         <span class="ready-state">{{ player.ready ? '已準備' : '尚未準備' }}</span>
       </div>
-      <div v-if="players.length < 2" class="empty-seat">等待隊友加入</div>
+      <div v-if="players.length < MAX_ROOM_PLAYERS" class="empty-seat">可繼續邀請隊友加入</div>
     </div>
     <div class="lobby-settings room-form">
       <label for="coop-size">棋盤大小</label
@@ -78,7 +84,7 @@ function difficulty(event: Event) {
         開始合作
       </button>
     </div>
-    <p class="setting-note">變更關卡設定後，兩位玩家需要重新準備。</p>
+    <p class="setting-note">變更關卡設定後，所有玩家需要重新準備。</p>
   </section>
 </template>
 <style scoped>
@@ -93,6 +99,12 @@ function difficulty(event: Event) {
   font-weight: 550;
   margin: 0 0 14px;
 }
+.player-count {
+  font-size: 12px;
+  color: var(--muted);
+  font-weight: 400;
+  margin-left: 10px;
+}
 .players {
   margin: 24px 0;
 }
@@ -103,7 +115,13 @@ function difficulty(event: Event) {
   padding: 15px 0;
   border-bottom: 1px solid var(--line);
 }
+.player-row > div {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
 .avatar {
+  flex-shrink: 0;
   display: grid;
   place-items: center;
   background: #eee7f3;
@@ -129,6 +147,7 @@ function difficulty(event: Event) {
   margin-left: 9px;
 }
 .ready-state {
+  flex-shrink: 0;
   margin-left: auto;
   color: var(--muted);
   font-size: 11px;
