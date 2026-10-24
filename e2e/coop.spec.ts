@@ -14,6 +14,7 @@ async function pair(
     viewport: mobile ? { width: 393, height: 851 } : { width: 1280, height: 720 },
     isMobile: mobile,
     hasTouch: mobile,
+    locale: 'zh-TW',
   })
   const guest = await context.newPage()
   acceptDialogs(guest)
@@ -230,6 +231,7 @@ test('three players join freely, synchronize edits and pointers, reconnect and f
         viewport: isMobile ? { width: 393, height: 851 } : { width: 1280, height: 720 },
         isMobile,
         hasTouch: isMobile,
+        locale: 'zh-TW',
       }),
     ),
   )
@@ -366,6 +368,7 @@ test('cooperative nickname input remains usable when localStorage is unavailable
     viewport: isMobile ? { width: 393, height: 851 } : { width: 1280, height: 720 },
     isMobile,
     hasTouch: isMobile,
+    locale: 'zh-TW',
   })
   try {
     await page.goto('/rooms/new')
@@ -419,6 +422,8 @@ test('simultaneous edits show dismissible toasts without moving the board, inclu
       })
     })
   const { guest, context } = await pair(page, browser, isMobile, prepare)
+  // The lobby may have scrolled while starting; measure the board from the top of the page.
+  await Promise.all([page, guest].map((p) => p.evaluate(() => scrollTo(0, 0))))
   const boards = await Promise.all([page, guest].map((p) => p.getByRole('grid').boundingBox()))
   try {
     for (const index of [0, 1]) {

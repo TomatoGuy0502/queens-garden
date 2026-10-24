@@ -57,7 +57,10 @@ test('everyone gets the same daily board, and finishing it builds a streak acros
   await expect(page.locator('.daily')).toContainText('已完成')
   await expect(page.locator('.daily')).toContainText('連續 1 天')
   // A different visitor on the same day opens the very same board.
-  const other = await page.context().browser()!.newContext({ timezoneId: 'Asia/Taipei' })
+  const other = await page
+    .context()
+    .browser()!
+    .newContext({ timezoneId: 'Asia/Taipei', locale: 'zh-TW' })
   const otherPage = await other.newPage()
   await day(otherPage, first)
   await otherPage.goto('/')

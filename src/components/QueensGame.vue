@@ -9,6 +9,7 @@ import GameRules from './GameRules.vue'
 import GameResult from './GameResult.vue'
 import GameShare from './GameShare.vue'
 import GamePreferences from './GamePreferences.vue'
+import LanguageSwitcher from './LanguageSwitcher.vue'
 import ThemeToggle from './ThemeToggle.vue'
 import DailyChallenge from './DailyChallenge.vue'
 import TutorialPrompt from './TutorialPrompt.vue'
@@ -206,6 +207,7 @@ onMounted(() => {
         <RouterLink to="/tutorial" class="text-button coop-link">新手教學</RouterLink>
         <RouterLink to="/stats" class="text-button coop-link">我的成績</RouterLink>
         <RouterLink to="/rooms/new" class="text-button coop-link">多人合作</RouterLink>
+        <LanguageSwitcher />
         <ThemeToggle />
         <GamePreferences v-model="guidance" :storage-available="storageAvailable" />
       </div>
@@ -694,11 +696,20 @@ onMounted(() => {
     padding: 0 18px;
   }
   .header-actions {
-    gap: 12px;
+    flex: 1 1 auto;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 6px 12px;
+  }
+  .coop-link {
+    white-space: nowrap;
   }
   .site-header {
-    gap: 12px;
-    height: 78px;
+    flex-wrap: wrap;
+    gap: 4px 12px;
+    height: auto;
+    min-height: 78px;
+    padding: 10px 0;
   }
   .brand {
     font-size: 30px;

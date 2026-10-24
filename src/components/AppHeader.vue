@@ -1,19 +1,25 @@
 <script setup lang="ts">
 import CrownIcon from './CrownIcon.vue'
 import GamePreferences from './GamePreferences.vue'
+import LanguageSwitcher from './LanguageSwitcher.vue'
 import ThemeToggle from './ThemeToggle.vue'
 import { useGamePreferences } from '../composables/useGamePreferences'
 const { guidance, storageAvailable } = useGamePreferences()
 </script>
 <template>
   <header class="app-header">
-    <RouterLink class="brand" to="/" aria-label="Queens 首頁"
+    <RouterLink class="brand" to="/" :aria-label="$t('brand.home')"
       ><CrownIcon /><span>queens<span class="brand-dot">.</span></span></RouterLink
     >
     <nav>
-      <RouterLink to="/solo">單人遊戲</RouterLink><RouterLink to="/rooms/new">多人合作</RouterLink
-      ><RouterLink to="/stats">我的成績</RouterLink><RouterLink to="/tutorial">新手教學</RouterLink
-      ><ThemeToggle /><GamePreferences v-model="guidance" :storage-available="storageAvailable" />
+      <RouterLink to="/solo">{{ $t('nav.solo') }}</RouterLink
+      ><RouterLink to="/rooms/new">{{ $t('nav.coop') }}</RouterLink
+      ><RouterLink to="/stats">{{ $t('nav.stats') }}</RouterLink
+      ><RouterLink to="/tutorial">{{ $t('nav.tutorial') }}</RouterLink
+      ><LanguageSwitcher /><ThemeToggle /><GamePreferences
+        v-model="guidance"
+        :storage-available="storageAvailable"
+      />
     </nav>
   </header>
 </template>
@@ -54,13 +60,19 @@ nav > a {
   font-size: 12px;
   color: var(--muted);
   text-decoration: none;
+  white-space: nowrap;
 }
 nav > a.router-link-active {
   color: var(--accent);
 }
 @media (max-width: 650px) {
   .app-header {
-    height: 78px;
+    height: auto;
+    min-height: 78px;
+    flex-wrap: wrap;
+    justify-content: flex-start;
+    gap: 4px 18px;
+    padding: 10px 0;
     margin-bottom: 25px;
   }
   .brand {
@@ -70,7 +82,10 @@ nav > a.router-link-active {
     width: 25px;
   }
   nav {
-    gap: 12px;
+    flex: 1 1 auto;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 6px 12px;
   }
   nav > a {
     font-size: 11px;

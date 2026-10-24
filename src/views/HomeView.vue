@@ -6,25 +6,25 @@ import DailyChallenge from '../components/DailyChallenge.vue'
 <template>
   <main class="page-shell">
     <AppHeader />
-    <h1>Queens 益智遊戲</h1>
-    <p class="page-description">選擇遊玩模式。</p>
+    <h1>{{ $t('app.title') }}</h1>
+    <p class="page-description">{{ $t('home.intro') }}</p>
     <DailyChallenge class="daily-card" />
     <div class="mode-cards">
       <RouterLink to="/solo" class="mode-card"
         ><Crown :size="28" />
-        <h2>單人遊戲</h2>
-        <p>依照自己的步調解題，支援種子重現與邏輯提示。</p>
-        <span>開始遊戲 <ArrowRight :size="16" /></span></RouterLink
+        <h2>{{ $t('home.solo.title') }}</h2>
+        <p>{{ $t('home.solo.body') }}</p>
+        <span>{{ $t('home.solo.cta') }} <ArrowRight :size="16" /></span></RouterLink
       ><RouterLink to="/rooms/new" class="mode-card"
         ><Users :size="28" />
-        <h2>多人合作</h2>
-        <p>邀請朋友，同時操作棋盤、分享推理與指示格子。</p>
-        <span>建立或加入房間 <ArrowRight :size="16" /></span></RouterLink
+        <h2>{{ $t('home.coop.title') }}</h2>
+        <p>{{ $t('home.coop.body') }}</p>
+        <span>{{ $t('home.coop.cta') }} <ArrowRight :size="16" /></span></RouterLink
       ><RouterLink to="/tutorial" class="mode-card"
         ><GraduationCap :size="28" />
-        <h2>新手教學</h2>
-        <p>用幾個互動練習學會規則、X 標記與三個基本推理技巧。</p>
-        <span>開始學習 <ArrowRight :size="16" /></span
+        <h2>{{ $t('home.tutorial.title') }}</h2>
+        <p>{{ $t('home.tutorial.body') }}</p>
+        <span>{{ $t('home.tutorial.cta') }} <ArrowRight :size="16" /></span
       ></RouterLink>
     </div>
   </main>
