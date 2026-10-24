@@ -1,13 +1,22 @@
-import { test, expect, type Browser, type Page } from '@playwright/test'
+import { test, expect, type Browser, type Page, type WebSocketRoute } from '@playwright/test'
 import { solve } from '../src/queens/solver'
 const cell = (page: Page, index: number) => page.locator(`[data-index="${index}"]`)
-async function pair(host: Page, browser: Browser, mobile: boolean) {
+async function pair(
+  host: Page,
+  browser: Browser,
+  mobile: boolean,
+  prepare?: (page: Page) => Promise<void>,
+) {
   const context = await browser.newContext({
     viewport: mobile ? { width: 393, height: 851 } : { width: 1280, height: 720 },
     isMobile: mobile,
     hasTouch: mobile,
   })
   const guest = await context.newPage()
+  if (prepare) {
+    await prepare(host)
+    await prepare(guest)
+  }
   await host.goto('/rooms/new')
   await host.getByLabel('你的暱稱').fill('Alice')
   await host.getByLabel('棋盤大小').selectOption('6')
@@ -311,6 +320,65 @@ test('cooperative nickname input remains usable when localStorage is unavailable
     await expect(guest.locator('.presence-bar > span')).toHaveCount(1)
     await cell(guest, 1).click()
     await expect(cell(guest, 1)).toHaveAttribute('data-state', 'queen')
+  } finally {
+    await context.close()
+  }
+})
+
+test('simultaneous edits show dismissible toasts without moving the board, including repeated conflicts', async ({
+  page,
+  browser,
+  isMobile,
+}) => {
+  let hold = true
+  let queued: { server: WebSocketRoute; message: string | Buffer }[] = []
+  const prepare = (p: Page) =>
+    p.routeWebSocket('**/socket.io/**', (route) => {
+      const server = route.connectToServer()
+      route.onMessage((message) => {
+        if (
+          hold &&
+          typeof message === 'string' &&
+          message.includes('"room:command"') &&
+          message.includes('"setCell"')
+        ) {
+          queued.push({ server, message })
+          if (queued.length === 2) {
+            hold = false
+            for (const item of queued) item.server.send(item.message)
+            queued = []
+          }
+        } else server.send(message)
+      })
+    })
+  const { guest, context } = await pair(page, browser, isMobile, prepare)
+  const boards = await Promise.all([page, guest].map((p) => p.getByRole('grid').boundingBox()))
+  try {
+    for (const index of [0, 1]) {
+      hold = true
+      await Promise.all([cell(page, index).click(), cell(guest, index).click()])
+      await expect
+        .poll(
+          async () =>
+            (await page.locator('.room-toast').count()) +
+            (await guest.locator('.room-toast').count()),
+        )
+        .toBe(1)
+      const loser = (await page.locator('.room-toast').count()) ? page : guest
+      await expect(loser.locator('.room-toast')).toContainText('已被其他操作更新')
+      await expect(loser.locator('.toast-host')).toHaveCSS('position', 'fixed')
+      for (const [i, p] of [page, guest].entries()) {
+        expect((await p.getByRole('grid').boundingBox())?.y).toBeCloseTo(boards[i]!.y, 1)
+        await expect(p.locator('.error-notice')).toHaveCount(0)
+      }
+      if (index === 0) {
+        await loser.getByRole('button', { name: '關閉通知', exact: true }).click()
+        await expect(loser.locator('.room-toast')).toHaveCount(0)
+      } else {
+        await loser.mouse.move(0, 0)
+        await expect(loser.locator('.room-toast')).toHaveCount(0, { timeout: 7000 })
+      }
+    }
   } finally {
     await context.close()
   }

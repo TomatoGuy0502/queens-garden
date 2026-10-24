@@ -23,6 +23,14 @@ export const useRoomStore = defineStore('room', () => {
     connecting = shallowRef(false),
     error = shallowRef(''),
     pending = shallowRef(0)
+  const notice = shallowRef<{ id: number; message: string } | null>(null)
+  let noticeId = 0
+  function notify(message: string) {
+    notice.value = { id: ++noticeId, message }
+  }
+  function dismissNotice() {
+    notice.value = null
+  }
   const points = shallowRef<Point[]>([]),
     pendingCells = shallowRef<number[]>([]),
     assisting = shallowRef(false)
@@ -73,6 +81,7 @@ export const useRoomStore = defineStore('room', () => {
     connected.value = false
     connecting.value = false
     pending.value = 0
+    notice.value = null
     pendingCells.value = []
     assisting.value = false
     points.value = []
@@ -156,17 +165,16 @@ export const useRoomStore = defineStore('room', () => {
   }
   async function send(input: CommandInput) {
     if (!client || !connected.value) {
-      error.value = '請等待重新連線後操作。'
+      notify('請等待重新連線後操作。')
       return false
     }
     const gameId = input.gameId ?? game.state?.id
     if (!gameId) {
-      error.value = '正在同步房間，請稍後再試。'
+      notify('正在同步房間，請稍後再試。')
       return false
     }
     const currentClient = client
     pending.value++
-    error.value = ''
     try {
       const actionId = crypto.randomUUID()
       const command: RoomCommand =
@@ -177,12 +185,12 @@ export const useRoomStore = defineStore('room', () => {
         accept(reply.state)
         return true
       }
-      error.value = reply.error
+      notify(reply.error)
       currentClient.sync()
       return false
     } catch (reason) {
       if (client === currentClient) {
-        error.value = (reason as Error).message
+        notify((reason as Error).message)
         currentClient.sync()
       }
       return false
@@ -245,6 +253,8 @@ export const useRoomStore = defineStore('room', () => {
   }
   return {
     room,
+    notice,
+    dismissNotice,
     credentials,
     connected,
     connecting,

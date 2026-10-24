@@ -4,6 +4,7 @@ import { computed, onUnmounted, shallowRef, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { Clock3, Pause, Play, MousePointer2, LoaderCircle, LogOut } from '@lucide/vue'
 import AppHeader from '../components/AppHeader.vue'
+import RoomToast from '../components/coop/RoomToast.vue'
 import RoomLobby from '../components/coop/RoomLobby.vue'
 import QueensBoard from '../components/QueensBoard.vue'
 import GameToolbar from '../components/GameToolbar.vue'
@@ -86,6 +87,7 @@ async function reset() {
 }
 </script>
 <template>
+  <RoomToast :notice="room.notice" @dismiss="room.dismissNotice" />
   <main class="page-shell coop-page">
     <AppHeader
       ><GamePreferences v-model="guidance" :storage-available="storageAvailable"
