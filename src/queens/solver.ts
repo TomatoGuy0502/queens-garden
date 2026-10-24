@@ -18,6 +18,20 @@ export function solve(
     throw new Error('不合法的區域矩陣。')
   const result: SolveResult = { solutionCount: 0, solutions: [], nodes: 0, exhausted: false }
   const path: number[] = []
+  // suffix[row][region]: columns where the region still has a cell in rows >= row.
+  const suffix = Array.from({ length: n + 1 }, () => Array<number>(n).fill(0))
+  for (let row = n - 1; row >= 0; row--) {
+    for (let region = 0; region < n; region++) suffix[row][region] = suffix[row + 1][region]
+    for (let col = 0; col < n; col++) suffix[row][regions[row][col]] |= 1 << col
+  }
+  const full = (1 << n) - 1
+  /** Prune dead branches without changing solution order: every unused region needs a free column below. */
+  function viable(row: number, columns: number, colors: number): boolean {
+    const free = full & ~columns
+    for (let region = 0; region < n; region++)
+      if (!(colors & (1 << region)) && !(suffix[row][region] & free)) return false
+    return true
+  }
   function visit(row: number, columns: number, colors: number): void {
     if (result.solutionCount >= limit || result.exhausted) return
     if (++result.nodes > maxNodes) {
@@ -38,8 +52,11 @@ export function solve(
         (allowed && !allowed.has(row * n + col))
       )
         continue
+      const nextColumns = columns | (1 << col),
+        nextColors = colors | (1 << region)
+      if (row + 1 < n && !viable(row + 1, nextColumns, nextColors)) continue
       path.push(col)
-      visit(row + 1, columns | (1 << col), colors | (1 << region))
+      visit(row + 1, nextColumns, nextColors)
       path.pop()
       if (result.solutionCount >= limit || result.exhausted) break
     }
