@@ -1,12 +1,13 @@
 <script setup lang="ts">
 import { computed, onMounted, shallowRef } from 'vue'
-import { Clock3, Pause, Play, ArrowUpRight, Check, Copy, LoaderCircle } from '@lucide/vue'
+import { Clock3, Pause, Play, ArrowUpRight, LoaderCircle } from '@lucide/vue'
 import CrownIcon from './CrownIcon.vue'
 import QueensBoard from './QueensBoard.vue'
 import GameSettings from './GameSettings.vue'
 import GameToolbar from './GameToolbar.vue'
 import GameRules from './GameRules.vue'
 import GameResult from './GameResult.vue'
+import GameShare from './GameShare.vue'
 import { useQueensGame } from '../composables/useQueensGame'
 import { GENERATOR_VERSION } from '../queens/version'
 import type { Difficulty } from '../queens/types'
@@ -43,22 +44,12 @@ const initialSeed =
     ? Number(requestedSeed)
     : crypto.getRandomValues(new Uint32Array(1))[0]
 const versionMismatch = shallowRef(params.has('v') && params.get('v') !== GENERATOR_VERSION)
-const restartConfirm = shallowRef(false),
-  copied = shallowRef(false)
+const restartConfirm = shallowRef(false)
 const difficulties = { easy: '輕鬆', medium: '適中', hard: '挑戰' }
 const highlighted = computed(() => (paused.value ? [] : (hint.value?.cells ?? [])))
 const allMistakes = computed(() => [...new Set([...conflicts.value, ...mistakes.value])])
-async function copyLink() {
-  try {
-    await navigator.clipboard.writeText(location.href)
-    copied.value = true
-  } catch {
-    message.value = '無法自動複製，請從網址列複製關卡連結。'
-  }
-}
 function startGame(size: number, difficulty: Difficulty, seed: number) {
   versionMismatch.value = false
-  copied.value = false
   restartConfirm.value = false
   return game.newGame(size, difficulty, seed)
 }
@@ -198,11 +189,8 @@ onMounted(() => {
             <span
               >SEED {{ puzzle.seed }} <span class="dot-separator">·</span> v{{ puzzle.version }}
               <span class="dot-separator">·</span> 難度分數 {{ puzzle.difficultyScore }}</span
-            ><button class="text-button share-button" @click="copyLink">
-              <Check v-if="copied" :size="12" /><Copy v-else :size="12" />{{
-                copied ? '已複製' : '分享關卡'
-              }}
-            </button>
+            >
+            <GameShare :puzzle="puzzle" />
           </div>
         </section>
         <aside class="side-panel">
@@ -211,6 +199,7 @@ onMounted(() => {
             :initial-size="initialSize"
             :initial-difficulty="initialDifficulty"
             :initial-seed="initialSeed"
+            :current-seed="puzzle?.seed"
             @start="startGame"
             @cancel="game.cancelGeneration"
           /><GameRules />
@@ -384,12 +373,6 @@ onMounted(() => {
   color: #a29aa6;
   padding: 19px 0;
   border-top: 1px solid var(--line);
-}
-.share-button {
-  display: flex;
-  gap: 5px;
-  align-items: center;
-  font-size: 10px !important;
 }
 .dot-separator {
   margin: 0 5px;

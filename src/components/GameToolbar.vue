@@ -86,7 +86,7 @@ const emit = defineEmits<{
   gap: 35px;
   border-top: 1px solid var(--line);
   margin-top: 20px;
-  padding-top: 20px;
+  padding: 20px 0;
 }
 .assist-tools button {
   display: flex;

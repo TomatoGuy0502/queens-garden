@@ -1,12 +1,13 @@
 <script setup lang="ts">
 import { ArrowRight, Shuffle } from '@lucide/vue'
-import { shallowRef } from 'vue'
+import { shallowRef, watch } from 'vue'
 import type { Difficulty } from '../queens/types'
 const props = defineProps<{
   busy: boolean
   initialSize: number
   initialDifficulty: Difficulty
   initialSeed: number
+  currentSeed?: number
 }>()
 const emit = defineEmits<{
   start: [size: number, difficulty: Difficulty, seed: number]
@@ -16,10 +17,22 @@ const size = shallowRef(props.initialSize),
   difficulty = shallowRef<Difficulty>(props.initialDifficulty),
   seed = shallowRef(String(props.initialSeed)),
   invalid = shallowRef('')
+watch(
+  () => props.currentSeed,
+  (value) => {
+    if (value !== undefined) seed.value = String(value)
+  },
+)
 function newSeed() {
-  seed.value = String(crypto.getRandomValues(new Uint32Array(1))[0])
+  const previous = props.currentSeed ?? Number(seed.value)
+  const random = crypto.getRandomValues(new Uint32Array(1))[0]
+  seed.value = String(random === previous ? (random + 1) >>> 0 : random)
 }
 function start() {
+  newSeed()
+  loadSeed()
+}
+function loadSeed() {
   if (!/^\d+$/.test(seed.value) || Number(seed.value) > 0xffffffff) {
     invalid.value = 'Seed 請輸入 0～4294967295 的整數。'
     return
@@ -68,7 +81,8 @@ function start() {
             <Shuffle :size="16" />
           </button>
         </div>
-        <p id="seed-note" class="field-note">相同種子與設定，重現同一道謎題。</p>
+        <p id="seed-note" class="field-note">新遊戲會自動換種子；指定種子請按「載入此種子」。</p>
+        <button type="button" class="text-button load-seed" @click="loadSeed">載入此種子</button>
         <p v-if="invalid" role="alert" class="error-text">{{ invalid }}</p>
         <button class="primary new-game" type="submit">
           {{ busy ? '正在尋找唯一解…' : '開始新遊戲' }}<ArrowRight :size="17" />
@@ -167,7 +181,11 @@ select {
 .field-note {
   font-size: 10px;
   color: var(--muted);
-  margin: 8px 0 21px;
+  margin: 8px 0;
+}
+.load-seed {
+  margin: 0 0 20px;
+  color: var(--accent);
 }
 .new-game {
   width: 100%;

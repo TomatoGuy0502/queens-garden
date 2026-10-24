@@ -43,10 +43,10 @@ npm run build
 - 每一列、每一欄、每個區域各一頂皇冠，任何兩頂皇冠不能八方向直接相鄰。**較遠的對角線不受限制。**
 - 點擊或觸控依序切換「空格 → 皇冠 → X → 空格」，不需要切換操作模式。桌面右鍵可直接切換 X 標記。
 - 方向鍵移動焦點，Home/End 到列首尾，空白鍵/Enter 循環皇冠、X、空格，X 鍵標記。
-- Undo/Redo、重新開始、暫停/繼續、計時、檢查錯誤、提示、完成摘要與分享連結。
+- Undo/Redo、重新開始、暫停/繼續、計時、檢查錯誤、提示、完成摘要。分享視窗直接顯示 QR Code，支援複製連結與瀏覽器提供的系統分享；無剪貼簿權限時可手動複製。分享內容取自目前關卡，不受未套用的表單值影響。
 - 切換瀏覽器分頁自動暫停。大棋盤在手機可橫向滑動，格子至少 40px 寬。
 - 區域除了色彩也有字母與實線邊界；具 ARIA 格子描述、roving tabindex、可見焦點、狀態宣告與 reduced-motion 支援。
-- 設定需要按「開始新遊戲」才套用。生成過程可取消；生成失敗時顯示錯誤，請調整 Seed 或設定再試，不會偷偷降級難度。
+- 「開始新遊戲」會自動換成不同 Seed；手動輸入 Seed 後按「載入此種子」可重現指定關卡。生成過程可取消；生成失敗時顯示錯誤，請調整 Seed 或設定再試，不會偷偷降級難度。
 
 ## 架構與資料責任
 
@@ -72,6 +72,7 @@ src/
     GameToolbar.vue        操作按鈕；傳出 action
     GameRules.vue          規則與操作說明
     GameResult.vue         接收時間、操作與提示次數，顯示摘要
+    GameShare.vue          目前關卡的重現連結、QR Code、複製與系統分享
   tests/                   核心 Vitest 測試
  e2e/                      桌面 Chromium 與 Pixel 7 模擬的 Playwright 測試
 ```
@@ -119,9 +120,9 @@ console.log(puzzle.analysis.steps) // strategy、level、place/eliminate、cells
 
 ## 驗證與限制
 
-最終驗證：51 個 Vitest 核心測試、14 個 Playwright E2E 全數通過；TypeScript、Oxlint＋ESLint、Oxfmt format check 與 production build 通過。E2E 每局監聽 browser console errors 與 uncaught page errors。
+最終驗證：51 個 Vitest 核心測試、20 個 Playwright E2E 全數通過；TypeScript、Oxlint＋ESLint、Oxfmt format check 與 production build 通過。E2E 每局監聽 browser console errors 與 uncaught page errors。
 
-測試包含：獨立 permutation oracle 與 Solver 的全解對照、無解/多解/唯一解、遠距對角線、跨 Seed/大小批次生成、250 次邊界變異的連通性、各難度最小面積與變異下限、完整 recipe 序列化重現、所有難度標籤與最低層級驗證、提示/排除的解保留、Hall sets 與基礎相鄰排除的多解安全性，以及預算耗盡的明確失敗。
+測試包含：獨立 permutation oracle 與 Solver 的全解對照、無解/多解/唯一解、遠距對角線、跨 Seed/大小批次生成、250 次邊界變異的連通性、各難度最小面積與變異下限、完整 recipe 序列化重現、所有難度標籤與最低層級驗證、提示/排除的解保留、Hall sets 與基礎相鄰排除的多解安全性，以及預算耗盡的明確失敗。E2E 另驗證自動換 Seed、指定 Seed 重現、分享連結、實際解碼畫面上的 QR Code、剪貼簿拒絕時的備用操作與提示區間距。
 
 18 種大小（6/7/8/9/10/12）與難度組合皆以 Seed 42 在預設預算下成功；2026-10-24 本機單獨執行矩陣測試，6～9 格約 2～140ms、10 格約 36～899ms、12 格約 1.9～6.6s。這是單一 Seed 的樣本測量，不代表每一個 Seed 都會成功，也不是裝置效能保證。可重跑：
 
@@ -134,6 +135,7 @@ npx vitest run src/tests/generation-matrix.test.ts --disableConsoleIntercept
 - 部分 Seed 與難度組合仍可能用盡預算；UI 明確回報失敗，沒有預設題庫 fallback。
 - 區域有連通性與軟性面積平衡，但沒有美觀最佳化目標，可能出現細長或較大的區域；最小面積依難度強制為 2/3/4 格。
 - Hall sets 限 2/3 組，反證限單層；不包含所有人類策略。Unrated 關卡不提供遊玩。
+- 分享連結使用目前開啟的網域；localhost 僅適用本機，跨裝置掃描請使用已部署網址或同一網路可存取的網址。
 - 遊戲進度與 Undo/Redo 不跨重新整理儲存；重載分享 URL 重開相同關卡。操作歷史保留最近 1,000 步。
 - E2E 使用桌面 Chromium 與同引擎的 Pixel 7 模擬，尚未驗證實體手機、Safari 或 Firefox；可見焦點與 ARIA 已實作，但沒有實體螢幕閱讀器使用者測試。
 - TypeScript 7 與 vue-tsc 相容性例外如上；其餘依賴使用安裝時 npm latest。
