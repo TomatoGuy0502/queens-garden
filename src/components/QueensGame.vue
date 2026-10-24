@@ -9,6 +9,7 @@ import GameRules from './GameRules.vue'
 import GameResult from './GameResult.vue'
 import GameShare from './GameShare.vue'
 import GamePreferences from './GamePreferences.vue'
+import ThemeToggle from './ThemeToggle.vue'
 import DailyChallenge from './DailyChallenge.vue'
 import TutorialPrompt from './TutorialPrompt.vue'
 import ResumePrompt from './ResumePrompt.vue'
@@ -205,6 +206,7 @@ onMounted(() => {
         <RouterLink to="/tutorial" class="text-button coop-link">新手教學</RouterLink>
         <RouterLink to="/stats" class="text-button coop-link">我的成績</RouterLink>
         <RouterLink to="/rooms/new" class="text-button coop-link">多人合作</RouterLink>
+        <ThemeToggle />
         <GamePreferences v-model="guidance" :storage-available="storageAvailable" />
       </div>
     </header>

@@ -2,20 +2,10 @@
 import { useTemplateRef } from 'vue'
 import { Settings2, X } from '@lucide/vue'
 import { useGamePreferences } from '../composables/useGamePreferences'
-import { useTheme, type ThemePreference } from '../composables/useTheme'
 import type { BoardGuidance } from '../queens/guidance'
 const { expandedBoard } = useGamePreferences()
 const preferences = defineModel<BoardGuidance>({ required: true })
 defineProps<{ storageAvailable: boolean }>()
-const { preference, storageAvailable: themeStorageAvailable, setPreference } = useTheme()
-const themes = [
-  { value: 'system', label: '跟隨系統' },
-  { value: 'light', label: '淺色' },
-  { value: 'dark', label: '深色' },
-] as const
-function changeTheme(event: Event) {
-  setPreference((event.target as HTMLInputElement).value as ThemePreference)
-}
 const dialog = useTemplateRef<HTMLDialogElement>('dialog')
 const ranges = [
   { key: 'rows', label: '同一列' },
@@ -43,23 +33,6 @@ function update(key: keyof BoardGuidance, event: Event) {
         <X :size="19" />
       </button>
     </div>
-    <fieldset class="theme-options">
-      <legend>外觀</legend>
-      <label
-        v-for="theme in themes"
-        :key="theme.value"
-        :class="{ selected: preference === theme.value }"
-      >
-        <input
-          type="radio"
-          name="theme"
-          :value="theme.value"
-          :checked="preference === theme.value"
-          @change="changeTheme"
-        />
-        {{ theme.label }}
-      </label>
-    </fieldset>
     <label class="guidance-toggle layout-toggle">
       <span
         >放大棋盤<small id="expanded-board-note"
@@ -100,7 +73,7 @@ function update(key: keyof BoardGuidance, event: Event) {
     </p>
     <p class="storage-note" role="status">
       {{
-        storageAvailable && themeStorageAvailable
+        storageAvailable
           ? '設定立即套用，並儲存於此瀏覽器。'
           : '此瀏覽器無法儲存設定，本次遊戲仍會套用。'
       }}
@@ -201,31 +174,6 @@ legend {
 }
 fieldset:disabled {
   opacity: 0.45;
-}
-.theme-options {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 8px;
-  margin: 18px 0 24px;
-}
-.theme-options label {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  padding: 10px 4px;
-  border: 1px solid var(--control-border);
-  border-radius: 5px;
-  cursor: pointer;
-  font-size: 12px;
-}
-.theme-options label.selected {
-  background: var(--accent-soft);
-  border-color: var(--accent);
-  color: var(--accent);
-}
-.theme-options input {
-  margin: 0;
-  accent-color: var(--accent);
 }
 .preferences-dialog {
   max-height: calc(100dvh - 36px);

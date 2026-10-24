@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import CrownIcon from './CrownIcon.vue'
 import GamePreferences from './GamePreferences.vue'
+import ThemeToggle from './ThemeToggle.vue'
 import { useGamePreferences } from '../composables/useGamePreferences'
 const { guidance, storageAvailable } = useGamePreferences()
 </script>
@@ -12,7 +13,7 @@ const { guidance, storageAvailable } = useGamePreferences()
     <nav>
       <RouterLink to="/solo">單人遊戲</RouterLink><RouterLink to="/rooms/new">多人合作</RouterLink
       ><RouterLink to="/stats">我的成績</RouterLink><RouterLink to="/tutorial">新手教學</RouterLink
-      ><GamePreferences v-model="guidance" :storage-available="storageAvailable" />
+      ><ThemeToggle /><GamePreferences v-model="guidance" :storage-available="storageAvailable" />
     </nav>
   </header>
 </template>
