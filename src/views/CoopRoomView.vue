@@ -15,6 +15,7 @@ import GameRules from '../components/GameRules.vue'
 import GameShare from '../components/GameShare.vue'
 import { DIFFICULTY_LABELS } from '../queens/levels'
 import { HINT_LEVELS, hintView } from '../queens/strategies'
+import { useLeaveGuard } from '../composables/useLeaveGuard'
 import { useRoomStore } from '../stores/room'
 import { useCoopGameStore } from '../stores/game'
 import { useGamePreferences } from '../composables/useGamePreferences'
@@ -130,7 +131,13 @@ function applyHint() {
   if (game.state?.hint?.step)
     void room.send({ type: 'applyHint', gameId: game.state.id, hintId: game.state.hint.id })
 }
+// A joined player who closes the page cannot come back as the same player, so ask first.
+const guard = useLeaveGuard(
+  () => !!room.me,
+  '確定要離開這個房間嗎？離開後需要重新加入，目前的進度由其他玩家繼續。',
+)
 async function leave() {
+  if (!guard.confirmLeave()) return
   await room.leave()
   await router.push('/')
 }

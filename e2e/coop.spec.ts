@@ -1,6 +1,9 @@
 import { test, expect, type Browser, type Page, type WebSocketRoute } from '@playwright/test'
 import { solve } from '../src/queens/solver'
 const cell = (page: Page, index: number) => page.locator(`[data-index="${index}"]`)
+// Leaving a joined room asks for confirmation; ordinary flows simply agree to it.
+const acceptDialogs = (page: Page) => page.on('dialog', (dialog) => void dialog.accept())
+test.beforeEach(({ page }) => acceptDialogs(page))
 async function pair(
   host: Page,
   browser: Browser,
@@ -13,6 +16,7 @@ async function pair(
     hasTouch: mobile,
   })
   const guest = await context.newPage()
+  acceptDialogs(guest)
   if (prepare) {
     await prepare(host)
     await prepare(guest)
@@ -230,6 +234,7 @@ test('three players join freely, synchronize edits and pointers, reconnect and f
     ),
   )
   const guests = await Promise.all(contexts.map((context) => context.newPage()))
+  guests.forEach(acceptDialogs)
   const pages = [page, ...guests]
   const errors: string[] = []
   for (const p of pages) p.on('pageerror', (error) => errors.push(error.message))
@@ -371,6 +376,7 @@ test('cooperative nickname input remains usable when localStorage is unavailable
     await expect(page.getByRole('grid')).toBeVisible({ timeout: 30000 })
     await cell(page, 0).click()
     const guest = await context.newPage()
+    acceptDialogs(guest)
     await guest.goto(page.url())
     await guest.getByLabel('你的暱稱').fill('Late guest')
     await guest.getByRole('button', { name: '加入房間', exact: true }).click()
@@ -610,4 +616,60 @@ test('a team hint is revealed in levels that every player sees together', async 
   } finally {
     await context.close()
   }
+})
+
+test('a joined player is asked to confirm before leaving the room', async ({
+  page,
+  browser,
+  isMobile,
+}) => {
+  const { guest, context } = await pair(page, browser, isMobile)
+  try {
+    const seen: string[] = []
+    page.removeAllListeners('dialog')
+    page.on('dialog', (dialog) => {
+      seen.push(`${dialog.type()}:${dialog.message()}`)
+      void dialog.dismiss()
+    })
+    const room = page.url()
+    // Declining keeps the player in the room, whichever way they try to leave.
+    await page.getByRole('link', { name: '單人遊戲', exact: true }).click()
+    await expect.poll(() => seen.length).toBe(1)
+    expect(seen[0]).toContain('confirm:確定要離開這個房間嗎')
+    await page.getByRole('button', { name: '離開', exact: true }).click()
+    await expect.poll(() => seen.length).toBe(2)
+    await expect(page).toHaveURL(room)
+    await expect(page.getByRole('grid')).toBeVisible()
+    // Closing the tab raises the browser's own prompt, and declining keeps the page open.
+    const unload = page.waitForEvent('dialog')
+    void page.close({ runBeforeUnload: true })
+    expect((await unload).type()).toBe('beforeunload')
+    expect(page.isClosed()).toBe(false)
+    // Agreeing leaves, and the explicit leave button asks only once.
+    page.removeAllListeners('dialog')
+    const asked: string[] = []
+    page.on('dialog', (dialog) => {
+      asked.push(dialog.type())
+      void dialog.accept()
+    })
+    await page.getByRole('button', { name: '離開', exact: true }).click()
+    await expect(page).toHaveURL(/\/$/)
+    expect(asked).toEqual(['confirm'])
+    await expect(guest.locator('.presence-bar > span')).toHaveCount(1)
+  } finally {
+    await context.close()
+  }
+})
+test('pages outside a joined room never ask before leaving', async ({ page }) => {
+  const dialogs: string[] = []
+  page.removeAllListeners('dialog')
+  page.on('dialog', (dialog) => {
+    dialogs.push(dialog.type())
+    void dialog.dismiss()
+  })
+  await page.goto('/rooms/new')
+  await page.getByRole('link', { name: '單人遊戲', exact: true }).click()
+  await expect(page).toHaveURL(/\/solo/)
+  await page.goto('/')
+  expect(dialogs).toEqual([])
 })
