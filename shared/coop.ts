@@ -22,10 +22,10 @@ export type RoomSettings = z.infer<typeof settingsSchema>
 const envelope = { actionId: z.uuid() }
 const round = { ...envelope, gameId: z.uuid() }
 export const commandSchema = z.discriminatedUnion('type', [
-  z.object({ ...envelope, type: z.literal('ready'), ready: z.boolean() }),
-  z.object({ ...envelope, type: z.literal('configure'), settings: settingsSchema }),
-  z.object({ ...envelope, type: z.literal('start') }),
-  z.object({ ...envelope, type: z.literal('reset') }),
+  z.object({ ...round, type: z.literal('ready'), ready: z.boolean() }),
+  z.object({ ...round, type: z.literal('configure'), settings: settingsSchema }),
+  z.object({ ...round, type: z.literal('start') }),
+  z.object({ ...round, type: z.literal('reset') }),
   z.object({ ...envelope, type: z.literal('leave') }),
   z.object({
     ...round,

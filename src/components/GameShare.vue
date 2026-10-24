@@ -3,13 +3,16 @@ import { computed, shallowRef, useTemplateRef } from 'vue'
 import QRCode from 'qrcode'
 import { Share2, Copy, Check, X } from '@lucide/vue'
 import type { PuzzleDefinition } from '../queens/types'
-const props = defineProps<{ puzzle: PuzzleDefinition }>()
+const props = defineProps<{ puzzle?: PuzzleDefinition; roomId?: string }>()
 const dialog = useTemplateRef<HTMLDialogElement>('dialog')
 const linkInput = useTemplateRef<HTMLInputElement>('linkInput')
 const status = shallowRef(''),
   copied = shallowRef(false)
 const canShare = typeof navigator.share === 'function'
+const shareTitle = computed(() => (props.roomId ? '邀請隊友' : '分享關卡'))
 const shareUrl = computed(() => {
+  if (props.roomId) return new URL(`/rooms/${props.roomId}`, location.origin).href
+  if (!props.puzzle) throw new Error('分享目標不存在。')
   const url = new URL(location.pathname, location.origin)
   url.search = new URLSearchParams({
     size: String(props.puzzle.size),
@@ -38,7 +41,7 @@ async function copy() {
   try {
     await navigator.clipboard.writeText(shareUrl.value)
     copied.value = true
-    status.value = '已複製關卡連結。'
+    status.value = props.roomId ? '已複製房間連結。' : '已複製關卡連結。'
   } catch {
     linkInput.value?.focus()
     linkInput.value?.select()
@@ -47,7 +50,10 @@ async function copy() {
 }
 async function share() {
   try {
-    await navigator.share({ title: 'Queens 關卡', url: shareUrl.value })
+    await navigator.share({
+      title: props.roomId ? 'Queens 合作關卡' : 'Queens 關卡',
+      url: shareUrl.value,
+    })
     status.value = '已分享關卡。'
   } catch (error) {
     if (!(error instanceof DOMException && error.name === 'AbortError'))
@@ -56,7 +62,9 @@ async function share() {
 }
 </script>
 <template>
-  <button class="text-button share-button" @click="open"><Share2 :size="14" />分享關卡</button>
+  <button class="text-button share-button" @click="open">
+    <Share2 :size="14" />{{ shareTitle }}
+  </button>
   <dialog
     ref="dialog"
     class="share-dialog"
@@ -64,12 +72,18 @@ async function share() {
     aria-describedby="share-description"
   >
     <div class="share-header">
-      <h2 id="share-title">分享關卡</h2>
+      <h2 id="share-title">{{ shareTitle }}</h2>
       <button class="icon-button" aria-label="關閉分享" @click="dialog?.close()">
         <X :size="19" />
       </button>
     </div>
-    <p id="share-description">連結包含棋盤大小、難度與種子，開啟後會得到相同關卡。</p>
+    <p id="share-description">
+      {{
+        roomId
+          ? '分享連結或 QR Code，邀請另一位玩家加入房間。'
+          : '連結包含棋盤大小、難度與種子，開啟後會得到相同關卡。'
+      }}
+    </p>
     <figure class="share-qr">
       <svg
         xmlns="http://www.w3.org/2000/svg"
@@ -77,15 +91,15 @@ async function share() {
         width="224"
         height="224"
         role="img"
-        aria-label="關卡 QR Code"
+        :aria-label="roomId ? '房間 QR Code' : '關卡 QR Code'"
         shape-rendering="crispEdges"
       >
         <rect x="-4" y="-4" :width="qr.size + 8" :height="qr.size + 8" fill="#fff" />
         <path :d="qr.path" fill="#30263a" />
       </svg>
-      <figcaption>掃描開啟相同關卡</figcaption>
+      <figcaption>{{ roomId ? '掃描加入房間' : '掃描開啟相同關卡' }}</figcaption>
     </figure>
-    <label for="share-link">關卡連結</label>
+    <label for="share-link">{{ roomId ? '房間連結' : '關卡連結' }}</label>
     <input
       id="share-link"
       ref="linkInput"

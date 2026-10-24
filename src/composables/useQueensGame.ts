@@ -1,9 +1,11 @@
 import { computed, onMounted, onUnmounted, shallowRef } from 'vue'
+import { useRouter } from 'vue-router'
 import type { CellState, DeductionStep, Difficulty, PuzzleDefinition } from '../queens/types'
 import type { WorkerRequest, WorkerResponse } from '../queens/protocol'
 import { conflictCells } from '../queens/validator'
 
 export function useQueensGame() {
+  const router = useRouter()
   const puzzle = shallowRef<PuzzleDefinition | null>(null)
   const cells = shallowRef<CellState[]>([])
   const history = shallowRef<CellState[][]>([]),
@@ -120,7 +122,7 @@ export function useQueensGame() {
         seed: String(seed),
         v: puzzle.value.version,
       })
-      window.history.replaceState(null, '', `?${params}`)
+      await router.replace({ path: '/solo', query: Object.fromEntries(params) })
     } catch (reason) {
       if (generation === generationId) error.value = (reason as Error).message
     } finally {

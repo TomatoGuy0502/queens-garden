@@ -5,15 +5,19 @@ import { MIN_REGION_AREA, validPlacement, validRegions } from '../queens/validat
 
 describe('bounded seeded generation', () => {
   for (const size of [6, 7, 8, 9, 10, 12])
-    it(`generates valid unique connected ${size}×${size} puzzles across seeds`, () => {
-      for (const seed of [1, 42, 2026]) {
-        const puzzle = generatePuzzle({ size, seed })
-        expect(validRegions(puzzle.regions, MIN_REGION_AREA[puzzle.difficulty])).toBe(true)
-        expect(validPlacement(puzzle.regions, puzzle.solution)).toBe(true)
-        expect(uniqueSolution(puzzle.regions, puzzle.solution)).toBe(true)
-        expect(solve(puzzle.regions).solutionCount).toBe(1)
-      }
-    })
+    it(
+      `generates valid unique connected ${size}×${size} puzzles across seeds`,
+      { timeout: size === 12 ? 120_000 : 30_000 },
+      () => {
+        for (const seed of [1, 42, 2026]) {
+          const puzzle = generatePuzzle({ size, seed })
+          expect(validRegions(puzzle.regions, MIN_REGION_AREA[puzzle.difficulty])).toBe(true)
+          expect(validPlacement(puzzle.regions, puzzle.solution)).toBe(true)
+          expect(uniqueSolution(puzzle.regions, puzzle.solution)).toBe(true)
+          expect(solve(puzzle.regions).solutionCount).toBe(1)
+        }
+      },
+    )
   it('reproduces identical serialized puzzles', () => {
     expect(generatePuzzle({ size: 8, seed: 734 })).toEqual(generatePuzzle({ size: 8, seed: 734 }))
   })

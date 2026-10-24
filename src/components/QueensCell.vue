@@ -9,6 +9,7 @@ const props = defineProps<{
   region: number
   state: CellState
   guidanceReasons: GuidanceReason[]
+  pointNames?: string[]
   active: boolean
   highlighted: boolean
   mistake: boolean
@@ -50,12 +51,14 @@ const colors = [
     :data-index="index"
     :data-region="region"
     :data-state="state"
+    :data-pointed="!!pointNames?.length"
     :data-guided="guidanceReasons.length > 0"
     :class="{
       queen: state === 'queen',
       guided: guidanceReasons.length > 0,
       highlighted,
       mistake,
+      pointing: !!pointNames?.length,
     }"
     :style="{ backgroundColor: colors[region] }"
     :tabindex="active ? 0 : -1"
@@ -67,6 +70,9 @@ const colors = [
     @keydown="emit('navigate', index, $event)"
     @focus="emit('focus', index)"
   >
+    <span v-if="pointNames?.length" class="point-label" aria-live="polite">{{
+      pointNames.join('、')
+    }}</span>
     <span class="region-label" aria-hidden="true">{{ String.fromCharCode(65 + region) }}</span>
     <CrownIcon v-if="state === 'queen'" filled class="cell-crown" />
     <span v-else-if="state === 'marked'" class="cell-mark" aria-hidden="true">×</span>
@@ -103,6 +109,27 @@ const colors = [
   background-image:
     repeating-linear-gradient(135deg, transparent, transparent 5px, #39333b28 5px, #39333b28 7px),
     linear-gradient(#f8f7f344, #f8f7f344);
+}
+.pointing::after {
+  content: '';
+  position: absolute;
+  inset: 3px;
+  border: 2px dashed #76528b;
+  pointer-events: none;
+}
+.point-label {
+  position: absolute;
+  bottom: 2px;
+  right: 2px;
+  max-width: calc(100% - 4px);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 9px;
+  padding: 1px 3px;
+  background: #fffdfae8;
+  color: #634078;
+  z-index: 1;
 }
 .cell-crown {
   width: 57%;

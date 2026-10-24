@@ -147,7 +147,25 @@ export class RoomManager {
     room.revision++
     room.checkpointAt = Date.now()
     room.expiresAt = Date.now() + ROOM_TTL
-    await this.repository.save(room, { type, playerId, actionId, changes })
+    const completed = room.phase === 'completed' && ['setCell', 'applyHint', 'redo'].includes(type)
+    const result = completed
+      ? {
+          gameId: room.gameId,
+          puzzleId: room.puzzle!.id,
+          elapsedMs: room.finishedAt! - room.startedAt! - room.pausedMs,
+          moves: room.moves,
+          hints: room.hints,
+          players: room.players.map((p) => ({ id: p.id, name: p.name })),
+        }
+      : undefined
+    const boardAction = room.actions.find((action) => action.id === actionId)
+    await this.repository.save(room, {
+      type,
+      playerId,
+      actionId,
+      changes: changes ?? boardAction?.changes,
+      result,
+    })
     const state = this.snapshot(room)
     this.onState(state)
     return state
@@ -176,6 +194,10 @@ export class RoomManager {
       if (room.players.length >= 2) throw new RoomError('房間已滿，目前支援兩人合作。', 'ROOM_FULL')
       const { stored, token } = player(name)
       room.players.push(stored)
+      if (!room.hostId) {
+        room.hostId = stored.id
+        freshGame(room)
+      }
       const state = await this.commit(room, 'joined', stored.id)
       return { credentials: { roomId: id, playerId: stored.id, token }, state }
     })

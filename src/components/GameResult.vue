@@ -1,7 +1,13 @@
 <script setup lang="ts">
 import { onMounted, useTemplateRef } from 'vue'
 import CrownIcon from './CrownIcon.vue'
-defineProps<{ time: string; moves: number; hints: number }>()
+defineProps<{
+  time: string
+  moves: number
+  hints: number
+  nextDisabled?: boolean
+  nextLabel?: string
+}>()
 const emit = defineEmits<{ next: [] }>()
 const result = useTemplateRef<HTMLElement>('result')
 const nextButton = useTemplateRef<HTMLButtonElement>('nextButton')
@@ -15,7 +21,9 @@ onMounted(() => {
     <CrownIcon filled class="result-crown" />
     <h2 id="result-title">關卡完成</h2>
     <p>{{ time }} 完成 · {{ moves }} 次操作 · {{ hints }} 次提示</p>
-    <button ref="nextButton" class="primary" @click="emit('next')">再來一局 →</button>
+    <button ref="nextButton" class="primary" :disabled="nextDisabled" @click="emit('next')">
+      {{ nextLabel ?? '再來一局 →' }}
+    </button>
   </section>
 </template>
 <style scoped>

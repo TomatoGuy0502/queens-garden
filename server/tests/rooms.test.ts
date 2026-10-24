@@ -2,7 +2,7 @@ import { beforeAll, expect, it } from 'vitest'
 import { randomUUID } from 'node:crypto'
 import { RoomManager } from '../rooms'
 import type { Compute } from '../compute'
-import type { RoomRepository, StoredRoom } from '../model'
+import type { RoomEvent, RoomRepository, StoredRoom } from '../model'
 import type { Credentials, RoomCommand, RoomSnapshot } from '../../shared/coop'
 import type { QueensPuzzle } from '../../src/queens/types'
 import { generatePuzzle } from '../../src/queens/generator'
@@ -36,9 +36,19 @@ async function game(repository = memory(), engine = compute()) {
     guest = await manager.join(host.state.id, 'Bob')
   await manager.connect(host.credentials, 'a')
   await manager.connect(guest.credentials, 'b')
-  await manager.command(host.credentials, command({ type: 'ready', ready: true }))
-  await manager.command(guest.credentials, command({ type: 'ready', ready: true }))
-  await manager.command(host.credentials, { type: 'start', actionId: randomUUID() })
+  await manager.command(
+    host.credentials,
+    command({ type: 'ready', ready: true, gameId: host.state.game.id }),
+  )
+  await manager.command(
+    guest.credentials,
+    command({ type: 'ready', ready: true, gameId: host.state.game.id }),
+  )
+  await manager.command(host.credentials, {
+    type: 'start',
+    actionId: randomUUID(),
+    gameId: host.state.game.id,
+  })
   let state = await manager.state(host.credentials)
   for (let i = 0; i < 50 && state.game.phase === 'generating'; i++) {
     await new Promise((r) => setTimeout(r, 1))
@@ -157,11 +167,18 @@ it('rejects outsider credentials, full rooms and commands from the old game', as
     code: 'UNAUTHORIZED',
   })
   await expect(manager.join(host.roomId, 'Third')).rejects.toMatchObject({ code: 'ROOM_FULL' })
-  await manager.command(host, { type: 'reset', actionId: randomUUID() })
+  await manager.command(host, { type: 'reset', actionId: randomUUID(), gameId: state.game.id })
   await expect(manager.command(host, cell(state, 0))).rejects.toMatchObject({ code: 'STALE_GAME' })
 })
 it('invalid positions do not win; a valid solution completes for the team; undo resumes', async () => {
-  const { manager, host, state } = await game()
+  const repository = memory()
+  const events: RoomEvent[] = []
+  const save = repository.save.bind(repository)
+  repository.save = async (room, event) => {
+    await save(room, event)
+    events.push(structuredClone(event))
+  }
+  const { manager, host, state } = await game(repository)
   let current = state
   for (let i = 0; i < 6; i++) current = await manager.command(host, cell(current, i))
   expect(current.game.phase).toBe('playing')
@@ -173,6 +190,14 @@ it('invalid positions do not win; a valid solution completes for the team; undo 
     current = await manager.command(host, action)
   }
   expect(current.game.phase).toBe('completed')
+  expect(events.at(-1)?.result).toMatchObject({
+    gameId: state.game.id,
+    puzzleId: puzzle.id,
+    moves: current.game.moves,
+    hints: 0,
+  })
+  expect(events.at(-1)?.result?.players.map((p) => p.name)).toEqual(['Alice', 'Bob'])
+  expect(events.at(-1)?.changes).toHaveLength(1)
   expect(
     (
       await manager.command(host, {
@@ -222,3 +247,15 @@ it('a process restart restores room identity and board, paused for reconnection'
   expect(next.game.phase).toBe('paused')
 })
 export type { Credentials }
+
+it('leaving transfers hosting and an empty room can be joined with a fresh round', async () => {
+  const { manager, host, guest } = await game()
+  await manager.command(host, { type: 'leave', actionId: randomUUID() })
+  const transferred = await manager.state(guest)
+  expect(transferred.hostId).toBe(guest.playerId)
+  await manager.command(guest, { type: 'leave', actionId: randomUUID() })
+  const replacement = await manager.join(host.roomId, 'New host')
+  expect(replacement.state.hostId).toBe(replacement.credentials.playerId)
+  expect(replacement.state.game.phase).toBe('waiting')
+  expect(replacement.state.game.cells).toEqual([])
+})

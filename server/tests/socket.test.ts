@@ -37,7 +37,9 @@ it('real Socket.IO clients receive shared state, authorized operations and trans
     url: '/api/rooms',
     payload: { name: 'A', size: 6, difficulty: 'easy' },
   })
-  const host = created.json<{ credentials: Credentials }>().credentials
+  const hostAccess = created.json<{ credentials: Credentials; state: RoomSnapshot }>()
+  const host = hostAccess.credentials
+  const gameId = hostAccess.state.game.id
   const joined = await app.inject({
     method: 'POST',
     url: `/api/rooms/${host.roomId}/join`,
@@ -66,10 +68,10 @@ it('real Socket.IO clients receive shared state, authorized operations and trans
   const send = (socket: typeof a, command: Parameters<ClientEvents['room:command']>[0]) =>
     new Promise<RoomReply>((resolve) => socket.emit('room:command', command, resolve))
   try {
-    await send(a, { type: 'ready', actionId: randomUUID(), ready: true })
-    await send(b, { type: 'ready', actionId: randomUUID(), ready: true })
-    expect((await send(b, { type: 'start', actionId: randomUUID() })).ok).toBe(false)
-    await send(a, { type: 'start', actionId: randomUUID() })
+    await send(a, { type: 'ready', actionId: randomUUID(), ready: true, gameId })
+    await send(b, { type: 'ready', actionId: randomUUID(), ready: true, gameId })
+    expect((await send(b, { type: 'start', actionId: randomUUID(), gameId })).ok).toBe(false)
+    await send(a, { type: 'start', actionId: randomUUID(), gameId })
     await expect.poll(() => current?.game.phase).toBe('playing')
     const action = {
       type: 'setCell' as const,
@@ -104,5 +106,47 @@ it('runs the actual generator and deduction engine in a Node worker', async () =
     expect(hint.step).toBeTruthy()
   } finally {
     await pool.close()
+  }
+})
+
+it('static assets do not consume API limits and rate-limit errors remain HTTP 429', async () => {
+  const { app } = await createApp({
+    repository: {
+      get: () => Promise.resolve(null),
+      save: () => Promise.resolve(),
+      deleteExpired: () => Promise.resolve(),
+    },
+    compute: {
+      generate: () => Promise.reject(new Error('not used')),
+      hint: () => Promise.resolve({ step: null, message: '' }),
+      close: () => Promise.resolve(),
+    },
+  })
+  app.get('/assets/probe.js', () => 'export {}')
+  try {
+    for (let i = 0; i < 130; i++)
+      expect((await app.inject('/assets/probe.js')).statusCode).toBe(200)
+    for (let i = 0; i < 30; i++)
+      expect(
+        (
+          await app.inject({
+            method: 'POST',
+            url: '/api/rooms',
+            payload: { name: 'test', size: 6, difficulty: 'easy' },
+          })
+        ).statusCode,
+      ).toBe(200)
+    expect(
+      (
+        await app.inject({
+          method: 'POST',
+          url: '/api/rooms',
+          payload: { name: 'test', size: 6, difficulty: 'easy' },
+        })
+      ).statusCode,
+    ).toBe(429)
+    expect((await app.inject('/api/health')).statusCode).toBe(200)
+  } finally {
+    await app.close()
   }
 })

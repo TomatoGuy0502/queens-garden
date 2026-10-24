@@ -26,7 +26,7 @@ export async function createApp(options: {
   logger?: boolean
 }) {
   const app = Fastify({ logger: options.logger ?? false, trustProxy: true, bodyLimit: 8192 })
-  await app.register(rateLimit, { max: 120, timeWindow: '1 minute' })
+  await app.register(rateLimit, { global: false, max: 120, timeWindow: '1 minute' })
   const manager = new RoomManager(options.repository, options.compute)
   const origins = new Set(
     [
@@ -51,6 +51,8 @@ export async function createApp(options: {
     io.to(state.id).emit('room:state', state)
   }
   app.setErrorHandler((error, _request, reply) => {
+    if (error && typeof error === 'object' && 'statusCode' in error && error.statusCode === 429)
+      return reply.code(429).send({ error: '操作太頻繁，請稍後再試。' })
     if (error instanceof ZodError) return reply.code(400).send({ error: '輸入資料格式不正確。' })
     if (error instanceof RoomError)
       return reply
@@ -62,17 +64,21 @@ export async function createApp(options: {
   app.get('/api/health', () => ({ ok: true }))
   app.post(
     '/api/rooms',
-    { config: { rateLimit: { max: 10, timeWindow: '1 minute' } } },
+    { config: { rateLimit: { max: 30, timeWindow: '1 minute' } } },
     async (request) => {
       const { name, ...settings } = createRoomSchema.parse(request.body)
       return manager.create(name, settings)
     },
   )
-  app.post<{ Params: { roomId: string } }>('/api/rooms/:roomId/join', async (request) => {
-    if (!/^[a-f0-9]{12}$/.test(request.params.roomId))
-      throw new RoomError('房間連結不正確。', 'NOT_FOUND')
-    return manager.join(request.params.roomId, joinRoomSchema.parse(request.body).name)
-  })
+  app.post<{ Params: { roomId: string } }>(
+    '/api/rooms/:roomId/join',
+    { config: { rateLimit: { max: 60, timeWindow: '1 minute' } } },
+    async (request) => {
+      if (!/^[a-f0-9]{12}$/.test(request.params.roomId))
+        throw new RoomError('房間連結不正確。', 'NOT_FOUND')
+      return manager.join(request.params.roomId, joinRoomSchema.parse(request.body).name)
+    },
+  )
   io.use((socket, next) => {
     const parsed = credentialsSchema.safeParse(socket.handshake.auth)
     if (!parsed.success) {

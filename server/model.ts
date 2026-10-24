@@ -38,6 +38,14 @@ export interface RoomEvent {
   playerId: string
   actionId?: string
   changes?: BoardAction['changes']
+  result?: {
+    gameId: string
+    puzzleId: string
+    elapsedMs: number
+    moves: number
+    hints: number
+    players: { id: string; name: string }[]
+  }
 }
 export interface RoomRepository {
   get(id: string): Promise<StoredRoom | null>

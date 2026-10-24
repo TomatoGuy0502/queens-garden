@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, shallowRef } from 'vue'
+import { computed, onMounted, onUnmounted, shallowRef } from 'vue'
 import { Clock3, Pause, Play, LoaderCircle } from '@lucide/vue'
 import CrownIcon from './CrownIcon.vue'
 import QueensBoard from './QueensBoard.vue'
@@ -10,10 +10,12 @@ import GameResult from './GameResult.vue'
 import GameShare from './GameShare.vue'
 import GamePreferences from './GamePreferences.vue'
 import { useGamePreferences } from '../composables/useGamePreferences'
-import { useQueensGame } from '../composables/useQueensGame'
+import { useSoloGameStore } from '../stores/solo'
+import { storeToRefs } from 'pinia'
 import { GENERATOR_VERSION } from '../queens/version'
 import type { Difficulty } from '../queens/types'
-const game = useQueensGame()
+const game = useSoloGameStore()
+onUnmounted(() => game.$dispose())
 const { guidance, storageAvailable } = useGamePreferences()
 const {
   puzzle,
@@ -34,7 +36,7 @@ const {
   hint,
   mistakes,
   blocked,
-} = game
+} = storeToRefs(game)
 const params = new URLSearchParams(location.search)
 const requestedSize = Number(params.get('size') ?? 8)
 const initialSize = [6, 7, 8, 9, 10, 12].includes(requestedSize) ? requestedSize : 8
@@ -77,11 +79,12 @@ onMounted(() => {
 <template>
   <div class="app-shell">
     <header class="site-header">
-      <a href="/" class="brand" aria-label="Queens 首頁"
+      <RouterLink to="/" class="brand" aria-label="Queens 首頁"
         ><span class="brand-icon"><CrownIcon /></span
-        ><span>queens<span class="brand-dot">.</span></span></a
+        ><span>queens<span class="brand-dot">.</span></span></RouterLink
       >
       <div class="header-actions">
+        <RouterLink to="/rooms/new" class="text-button coop-link">雙人合作</RouterLink>
         <GamePreferences v-model="guidance" :storage-available="storageAvailable" />
       </div>
     </header>

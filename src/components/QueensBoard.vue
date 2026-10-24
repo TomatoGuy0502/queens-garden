@@ -13,6 +13,9 @@ const props = defineProps<{
   mistakes: number[]
   busy: boolean
   guidance: BoardGuidance
+  canResume?: boolean
+  pendingCells?: number[]
+  points?: { index: number; name: string }[]
 }>()
 const emit = defineEmits<{ play: [index: number]; mark: [index: number]; resume: [] }>()
 const focusIndex = shallowRef(0),
@@ -94,7 +97,10 @@ async function navigate(index: number, event: KeyboardEvent) {
               :state="cells[cell.index]"
               :guidance-reasons="exclusions.get(cell.index) ?? []"
               :active="focusIndex === cell.index"
-              :disabled="won || paused || busy"
+              :disabled="won || paused || busy || !!pendingCells?.includes(cell.index)"
+              :point-names="
+                points?.filter((point) => point.index === cell.index).map((point) => point.name)
+              "
               :highlighted="highlighted.includes(cell.index)"
               :mistake="mistakes.includes(cell.index)"
               @play="emit('play', $event)"
@@ -124,7 +130,9 @@ async function navigate(index: number, event: KeyboardEvent) {
           <Pause :size="28" />
           <h2>遊戲已暫停</h2>
           <p>棋盤和計時都已暫停。</p>
-          <button class="primary" @click="emit('resume')"><Play :size="16" /> 繼續遊戲</button>
+          <button class="primary" :disabled="canResume === false" @click="emit('resume')">
+            <Play :size="16" /> 繼續遊戲
+          </button>
         </div>
       </div>
     </div>
