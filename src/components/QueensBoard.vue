@@ -117,7 +117,7 @@ async function navigate(index: number, event: KeyboardEvent) {
       </div>
       <div v-if="paused" class="pause-cover">
         <Pause :size="28" />
-        <h2>休息一下也很好</h2>
+        <h2>遊戲已暫停</h2>
         <p>棋盤和計時都已暫停。</p>
         <button class="primary" @click="emit('resume')"><Play :size="16" /> 繼續遊戲</button>
       </div>

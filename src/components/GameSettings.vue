@@ -30,10 +30,7 @@ function start() {
 </script>
 <template>
   <section class="settings-section" aria-labelledby="settings-title">
-    <div class="section-top">
-      <span class="eyebrow">MAKE IT YOURS</span><span class="tiny-number">01</span>
-    </div>
-    <h2 id="settings-title">你的節奏，你的挑戰。</h2>
+    <h2 id="settings-title">遊戲設定</h2>
     <form @submit.prevent="start">
       <fieldset :disabled="busy">
         <label for="size">棋盤大小 <span>BOARD SIZE</span></label>
@@ -89,15 +86,6 @@ function start() {
   font-size: 18px;
   font-weight: 550;
   margin: 15px 0 25px;
-}
-.section-top {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-.tiny-number {
-  font-size: 11px;
-  color: #a9a2ac;
 }
 fieldset {
   border: 0;

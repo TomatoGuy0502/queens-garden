@@ -7,8 +7,8 @@ const emit = defineEmits<{ next: [] }>()
   <section class="result" aria-labelledby="result-title">
     <CrownIcon filled class="result-crown" />
     <div>
-      <span class="eyebrow">BEAUTIFULLY SOLVED</span>
-      <h2 id="result-title">所有皇冠，都恰如其分。</h2>
+      <span class="eyebrow">完成結果</span>
+      <h2 id="result-title">關卡完成</h2>
       <p>{{ time }} 完成 · {{ moves }} 次操作 · {{ hints }} 次提示</p>
     </div>
     <button class="primary" @click="emit('next')">再來一局 →</button>

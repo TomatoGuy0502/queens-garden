@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, shallowRef } from 'vue'
-import { Clock3, Pause, Play, ArrowUpRight, Flower2, Check, Copy, LoaderCircle } from '@lucide/vue'
+import { Clock3, Pause, Play, ArrowUpRight, Check, Copy, LoaderCircle } from '@lucide/vue'
 import CrownIcon from './CrownIcon.vue'
 import QueensBoard from './QueensBoard.vue'
 import GameSettings from './GameSettings.vue'
@@ -84,18 +84,10 @@ onMounted(() => {
       <a href="/" class="brand" aria-label="Queens 首頁"
         ><span class="brand-icon"><CrownIcon /></span
         ><span>queens<span class="brand-dot">.</span></span></a
-      ><span class="brand-tagline">A LITTLE SPACE FOR YOUR MIND</span
       ><a class="how-to" href="#rules">玩法說明 <ArrowUpRight :size="14" /></a>
     </header>
     <main>
-      <div class="page-intro">
-        <div>
-          <p class="eyebrow">THE LOGIC GARDEN <span class="intro-line"></span> 邏輯花園</p>
-          <h1>給思緒，一點空間。</h1>
-          <p class="intro-description">放慢腳步，用一點邏輯，安放每一頂皇冠。</p>
-        </div>
-        <Flower2 class="intro-flower" :size="61" :stroke-width="0.8" aria-hidden="true" />
-      </div>
+      <div class="page-intro"><h1>Queens 益智遊戲</h1></div>
       <div class="game-layout">
         <section class="play-area" aria-label="遊戲區域" :aria-busy="busy">
           <div class="game-meta">
@@ -132,7 +124,7 @@ onMounted(() => {
             <div class="generating-art">
               <CrownIcon /><LoaderCircle class="spinner" :size="21" />
             </div>
-            <h2>一個新的謎題，正在成形。</h2>
+            <h2>正在產生關卡</h2>
             <p>生成區域、驗證唯一解，再評估邏輯難度。</p>
             <span class="loading-bars"><i></i><i></i><i></i></span>
           </div>
@@ -152,8 +144,8 @@ onMounted(() => {
           />
           <div v-else class="empty-board">
             <CrownIcon />
-            <h2>為下一個靈光，留個位置。</h2>
-            <p>選擇棋盤與難度，開始一段安靜的挑戰。</p>
+            <h2>尚未開始遊戲</h2>
+            <p>選擇棋盤大小與難度後開始。</p>
           </div>
           <div v-if="error" class="error-notice" role="alert">{{ error }}</div>
           <GameToolbar
@@ -175,7 +167,13 @@ onMounted(() => {
               ><button class="primary" @click="confirmRestart">重新開始</button>
             </div>
           </div>
-          <div class="feedback" role="status" aria-live="polite" aria-atomic="true">
+          <div
+            :class="{ 'has-feedback': message || conflicts.length }"
+            class="feedback"
+            role="status"
+            aria-live="polite"
+            aria-atomic="true"
+          >
             <template v-if="message"
               ><span class="feedback-label">{{ hint ? '邏輯提示' : '遊戲訊息' }}</span>
               <p>{{ message }}</p>
@@ -194,9 +192,6 @@ onMounted(() => {
               </button></template
             >
             <p v-else-if="conflicts.length">皇冠有衝突。請檢查紅色斜紋的格子。</p>
-            <p v-else class="quiet-note">
-              {{ paused ? '休息片刻，靈感也需要呼吸。' : '不必急，每一頂皇冠都有自己的位置。' }}
-            </p>
           </div>
           <GameResult v-if="won" :time="time" :moves="moves" :hints="hints" @next="nextGame" />
           <div v-if="puzzle" class="puzzle-footer">
@@ -222,17 +217,13 @@ onMounted(() => {
         </aside>
       </div>
     </main>
-    <footer class="site-footer">
-      <span>一點專注，一點留白。</span
-      ><span>CRAFTED FOR CURIOUS MINDS <span class="footer-star">✳</span></span>
-    </footer>
   </div>
 </template>
 <style scoped>
 .app-shell {
   max-width: 1096px;
   margin: 0 auto;
-  padding: 0 44px;
+  padding: 0 44px 44px;
 }
 .site-header {
   height: 104px;
@@ -259,12 +250,6 @@ onMounted(() => {
 .brand-dot {
   color: #9573a8;
 }
-.brand-tagline {
-  font-size: 8px;
-  letter-spacing: 1.65px;
-  color: #9d949f;
-  padding-top: 8px;
-}
 .how-to {
   display: flex;
   align-items: center;
@@ -278,7 +263,7 @@ onMounted(() => {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 48px 0 39px;
+  padding: 24px 0;
 }
 .page-intro h1 {
   font-family: 'Iowan Old Style', 'Noto Serif TC', serif;
@@ -286,30 +271,6 @@ onMounted(() => {
   font-size: 35px;
   letter-spacing: 2px;
   margin: 16px 0;
-}
-.page-intro .eyebrow {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  font-size: 9px;
-  letter-spacing: 1.7px;
-}
-.intro-line {
-  display: inline-block;
-  width: 22px;
-  height: 1px;
-  background: #b5a5be;
-}
-.intro-description {
-  font-size: 12px;
-  letter-spacing: 1px;
-  color: var(--muted);
-  margin: 0;
-}
-.intro-flower {
-  color: #ac95b9;
-  margin-right: 6px;
-  transform: rotate(12deg);
 }
 .game-layout {
   display: grid;
@@ -380,10 +341,11 @@ onMounted(() => {
   margin-left: 4px;
 }
 .feedback {
-  min-height: 82px;
-  padding: 22px 2px 8px;
   font-size: 12px;
   line-height: 1.9;
+}
+.has-feedback {
+  padding: 18px 2px;
 }
 .feedback p {
   margin: 5px 0;
@@ -406,11 +368,6 @@ onMounted(() => {
   font-size: 10px;
   color: #865d9d;
   letter-spacing: 1px;
-}
-.quiet-note {
-  text-align: center;
-  color: #a199a5;
-  font-size: 11px;
 }
 .apply-hint {
   margin-top: 6px;
@@ -522,25 +479,6 @@ onMounted(() => {
   font-size: 12px;
   padding: 8px 13px;
 }
-.site-footer {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  font-size: 10px;
-  color: #aaa1ae;
-  border-top: 1px solid var(--line);
-  margin-top: 54px;
-  padding: 25px 0 30px;
-}
-.site-footer > span:last-child {
-  font-size: 8px;
-  letter-spacing: 1.3px;
-}
-.footer-star {
-  color: #a086b1;
-  margin-left: 10px;
-  font-size: 16px;
-}
 @keyframes spin {
   to {
     transform: rotate(360deg);
@@ -574,9 +512,6 @@ onMounted(() => {
   .side-panel {
     padding-left: 22px;
   }
-  .brand-tagline {
-    display: none;
-  }
   .page-intro h1 {
     font-size: 30px;
   }
@@ -598,18 +533,11 @@ onMounted(() => {
     width: 26px;
   }
   .page-intro {
-    padding: 33px 0 30px;
+    padding: 20px 0;
   }
   .page-intro h1 {
     font-size: 28px;
     letter-spacing: 1px;
-  }
-  .intro-description {
-    font-size: 11px;
-    letter-spacing: 0.3px;
-  }
-  .intro-flower {
-    width: 43px;
   }
   .game-layout {
     display: flex;
@@ -634,13 +562,6 @@ onMounted(() => {
   }
   .puzzle-footer {
     font-size: 8px;
-  }
-  .site-footer {
-    margin-top: 33px;
-  }
-  .site-footer > span:last-child {
-    font-size: 7px;
-    letter-spacing: 0.7px;
   }
   .queen-count {
     font-size: 11px;

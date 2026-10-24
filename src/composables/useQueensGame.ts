@@ -151,7 +151,7 @@ export function useQueensGame() {
     cells.value = cells.value.map((cell, i) => (i === index ? next : cell))
     moves.value++
     clearFeedback()
-    if (won.value) message.value = '完成了！每一頂皇冠都找到了自己的位置。'
+    if (won.value) message.value = '關卡完成。'
   }
   function undo() {
     if (busy.value || paused.value || !history.value.length) return

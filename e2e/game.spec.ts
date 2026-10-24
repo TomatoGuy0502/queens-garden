@@ -84,7 +84,7 @@ test('cycle empty queen marked empty, undo, redo, keyboard navigation and restar
 test('invalid placement never wins; valid solution completes with summary', async ({ page }) => {
   await start(page)
   for (let i = 0; i < 6; i++) await cell(page, i).click()
-  await expect(page.getByText('所有皇冠，都恰如其分。')).not.toBeVisible()
+  await expect(page.getByText('關卡完成')).not.toBeVisible()
   await expect(page.locator('.cell.mistake')).toHaveCount(6)
   for (let i = 0; i < 6; i++) {
     await cell(page, i).click()
@@ -94,10 +94,10 @@ test('invalid placement never wins; valid solution completes with summary', asyn
   const result = solve(regions)
   expect(result.solutionCount).toBe(1)
   for (const [r, c] of result.solutions[0].entries()) await cell(page, r * 6 + c).click()
-  await expect(page.getByRole('heading', { name: '所有皇冠，都恰如其分。' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: '關卡完成' })).toBeVisible()
   await expect(page.getByText(/次操作 · 0 次提示/)).toBeVisible()
   await page.getByRole('button', { name: '復原', exact: true }).click()
-  await expect(page.getByRole('heading', { name: '所有皇冠，都恰如其分。' })).not.toBeVisible()
+  await expect(page.getByRole('heading', { name: '關卡完成' })).not.toBeVisible()
 })
 test('pause conceals board and freezes timer; hint explains and safely applies', async ({
   page,

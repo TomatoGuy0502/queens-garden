@@ -3,11 +3,7 @@ import { Crown, Rows3, Columns3, Shapes, MoveDiagonal } from '@lucide/vue'
 </script>
 <template>
   <section id="rules" class="rules" aria-labelledby="rules-title">
-    <span class="eyebrow">A LITTLE HOW-TO</span>
-    <h2 id="rules-title">一頂皇冠，剛剛好。</h2>
-    <p class="rules-intro">
-      找到所有皇冠的位置，讓每個空間<br class="desktop-break" />都保有恰到好處的距離。
-    </p>
+    <h2 id="rules-title">遊戲規則</h2>
     <ul>
       <li><Rows3 :size="18" /><span>每一列，恰好一頂皇冠。</span></li>
       <li><Columns3 :size="18" /><span>每一欄，恰好一頂皇冠。</span></li>
@@ -23,7 +19,7 @@ import { Crown, Rows3, Columns3, Shapes, MoveDiagonal } from '@lucide/vue'
         <span>×</span><span>×</span><span>×</span><span>×</span><span><Crown :size="22" /></span
         ><span>×</span><span>×</span><span>×</span><span>×</span>
       </div>
-      <span>給彼此一點空間。</span>
+      <span>皇冠周圍八格不能放置皇冠。</span>
     </div>
     <details>
       <summary>操作與鍵盤快捷鍵</summary>
@@ -45,12 +41,6 @@ import { Crown, Rows3, Columns3, Shapes, MoveDiagonal } from '@lucide/vue'
   font-size: 18px;
   font-weight: 550;
   margin: 14px 0;
-}
-.rules-intro {
-  font-size: 12px;
-  line-height: 1.9;
-  color: var(--muted);
-  margin: 0 0 22px;
 }
 .rules ul {
   list-style: none;
