@@ -126,7 +126,7 @@ console.log(puzzle.analysis.steps) // strategy、level、place/eliminate、cells
 
 ## 驗證與限制
 
-測試涵蓋 59 個 Vitest 核心測試、39 個後端測試及 54 個 Playwright E2E（桌面與手機）；TypeScript、Oxlint＋ESLint、Oxfmt format check 與 production build 通過。E2E 包含 browser console errors 與 uncaught page errors 檢查。
+測試涵蓋 59 個 Vitest 核心測試、43 個後端測試及 54 個 Playwright E2E（桌面與手機）；TypeScript、Oxlint＋ESLint、Oxfmt format check 與 production build 通過。E2E 包含 browser console errors 與 uncaught page errors 檢查。
 
 測試包含：獨立 permutation oracle 與 Solver 的全解對照、無解/多解/唯一解、遠距對角線、跨 Seed/大小批次生成、250 次邊界變異的連通性、各難度最小面積與變異下限、完整 recipe 序列化重現、所有難度標籤與最低層級驗證、提示/排除的解保留、Hall sets 與基礎相鄰排除的多解安全性，以及預算耗盡的明確失敗。E2E 另驗證自動換 Seed、指定 Seed 重現、分享連結、實際解碼畫面上的 QR Code、剪貼簿拒絕時的備用操作與提示區間距。另測試視覺引導各範圍、標記保留、Undo/Redo 更新、重新載入後的偏好設定與儲存權限被拒絕時的行為。
 
@@ -201,3 +201,29 @@ Neon 設定、Render 部署與正式服務驗證方式見 [部署說明](docs/DE
 正式環境使用 Neon PostgreSQL，只有短交易用於去重、領題和計數，生成／解題不占用資料庫鎖。本地預設使用 `${ROOM_FILE}.puzzles.json`，可由 `PUZZLE_CATALOG_FILE` 指定其他路徑；E2E 與日常開發沿用各自的獨立房間檔案，題庫也隨之隔離。題庫不暴露公開的解答 API，房間快照仍只包含 `PuzzleDefinition`。
 
 目前未提供題庫瀏覽、收藏或永久個人紀錄 UI。題庫保存從此版本開始新產生的合作題目，不回填已過期的歷史房間。尚未做自動保留期限／容量淘汰，PostgreSQL 題庫會隨實際接受的題目增加；候選盤面與背景工作不會無限制堆積。
+
+## 用本機批次補充 12×12 題庫
+
+```bash
+# 預設每種難度各 5 題，只寫獨立的本地批次檔與題庫檔
+npm run puzzles:seed
+
+# 明確指定寫入 Neon 正式題庫；運算仍全部在執行腳本的電腦上
+npm run puzzles:seed -- --target production --count 10 --workers 4
+
+# 先在本地生成，再用同一份批次檔重新驗證、匯入正式題庫
+npm run puzzles:seed -- --target file --count 5 --checkpoint .data/puzzle-batches/stock.json
+npm run puzzles:seed -- --target production --count 5 --checkpoint .data/puzzle-batches/stock.json
+
+# 只補挑戰難度，或降低 CPU 負載
+npm run puzzles:seed -- --difficulty hard --count 20 --workers 2 --minutes 30
+npm run puzzles:seed -- --help
+```
+
+`--count` 是本批次「每種選取難度」的目標題數；`--difficulty` 可用 `all/easy/medium/hard`。每次未指定批次檔會建立新的隨機路徑；使用相同 `--checkpoint` 則重新驗證已完成題目、只生成缺少的部分，入庫可安全重試並依盤面去重。一次只執行一個使用相同批次檔的程序。檔案包含私人解答與完整推理，存於 Git 忽略的 `.data/`，權限為僅檔案擁有者可讀寫，不要公開分享。
+
+預設最多 4 個本地 Worker，每次生成最多 60 秒、整批生成最多 10 分鐘、最多嘗試目標總題數 × 10 次。可用 `--timeout-seconds`、`--minutes`、`--max-attempts` 調整。每題必須通過唯一解、連通性、最小區域面積與實際邏輯難度驗證；不合格或重複盤面會繼續嘗試。已完成題目以暫存檔＋原子重新命名保存，資料庫連線失敗時不用重新出題。Ctrl+C 或整批時間耗盡會停止生成、保留批次檔；該次不進行匯入。達到嘗試上限時僅匯入已驗證題目，並以非零狀態回報尚未達標。
+
+`--target file` 完全不使用資料庫，輸出至批次檔旁的 `.catalog.json`，與開發中遊戲的題庫隔離；`--target local` 僅使用 `LOCAL_DATABASE_URL`，未設定時明確失敗；只有 `--target production` 會使用 `DATABASE_URL`，且 `LOCAL_TEST_MODE=1` 時禁止使用。沿用 `.env.local`／`.env` 的既有設定，不建立或修改資料庫結構。
+
+匯入使用現有題庫交易並保留已有題目的使用次數，不會把題目標記為已玩，也不會重設房間。多人開啟 12×12 新局時，即可從這些未使用庫存取題；預設背景補貨仍只處理 8×8。腳本輸出各難度入庫前後的未使用庫存，正式網站同時取題時數量可能隨之減少。

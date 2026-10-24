@@ -23,7 +23,8 @@
     "start": "node dist-server/index.js",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
-    "test:server": "npm run build:worker && vitest run --config vitest.server.config.ts"
+    "test:server": "npm run build:worker && vitest run --config vitest.server.config.ts",
+    "puzzles:seed": "npm run build:worker && node --import tsx server/tools/seedPuzzles.ts"
   },
   "dependencies": {
     "@fastify/rate-limit": "^11.2.1",
