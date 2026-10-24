@@ -4,19 +4,22 @@ import { Pause, Play } from '@lucide/vue'
 import QueensCell from './QueensCell.vue'
 import { guidedCells, type BoardGuidance } from '../queens/guidance'
 import type { CellState, PuzzleDefinition } from '../queens/types'
-const props = defineProps<{
-  puzzle: PuzzleDefinition
-  cells: CellState[]
-  paused: boolean
-  won: boolean
-  highlighted: number[]
-  mistakes: number[]
-  busy: boolean
-  guidance: BoardGuidance
-  canResume?: boolean
-  pendingCells?: number[]
-  points?: { index: number; name: string }[]
-}>()
+const props = withDefaults(
+  defineProps<{
+    puzzle: PuzzleDefinition
+    cells: CellState[]
+    paused: boolean
+    won: boolean
+    highlighted: number[]
+    mistakes: number[]
+    busy: boolean
+    guidance: BoardGuidance
+    canResume?: boolean
+    pendingCells?: number[]
+    points?: { index: number; name: string }[]
+  }>(),
+  { canResume: true, pendingCells: () => [], points: () => [] },
+)
 const emit = defineEmits<{ play: [index: number]; mark: [index: number]; resume: [] }>()
 const focusIndex = shallowRef(0),
   board = useTemplateRef<HTMLDivElement>('board')
