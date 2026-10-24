@@ -42,11 +42,11 @@ onMounted(() => {
   padding: 26px;
   border: 1px solid var(--line);
   border-radius: 7px;
-  background: #fffdfa;
+  background: var(--surface);
   color: var(--ink);
 }
 .round-confirmation::backdrop {
-  background: #30263a55;
+  background: var(--backdrop);
 }
 h2 {
   margin: 0 0 16px;

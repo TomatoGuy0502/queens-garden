@@ -52,8 +52,8 @@ onUnmounted(stop)
   align-items: center;
   gap: 16px;
   padding: 12px 14px 12px 18px;
-  border: 1px solid #d7c9df;
-  background: #fffdfa;
+  border: 1px solid var(--accent-border);
+  background: var(--surface);
   color: var(--ink);
   box-shadow: 0 4px 18px #30263a18;
   border-radius: 6px;

@@ -184,7 +184,7 @@ async function navigate(index: number, event: KeyboardEvent) {
               <path
                 :d="boundaryPath"
                 fill="none"
-                stroke="#39333b"
+                stroke="var(--board-boundary)"
                 stroke-width="4"
                 stroke-linecap="square"
                 stroke-linejoin="miter"
@@ -228,7 +228,7 @@ async function navigate(index: number, event: KeyboardEvent) {
   padding: 12px 14px;
   border: 1px solid var(--line);
   border-radius: 6px;
-  background: #fffdfa;
+  background: var(--surface);
   box-shadow: 0 4px 20px #30263a18;
 }
 .review-controls > span {
@@ -250,7 +250,7 @@ async function navigate(index: number, event: KeyboardEvent) {
   place-items: center;
   padding: 20px;
   border-radius: 5px;
-  background: #f8f7f3d9;
+  background: var(--result-overlay);
 }
 
 .board-scroll {
@@ -299,17 +299,17 @@ async function navigate(index: number, event: KeyboardEvent) {
   position: sticky;
   left: 0;
   z-index: 4;
-  background: #f8f7f3;
+  background: var(--page);
 }
 .board-wrap {
   grid-column: 2;
   grid-row: 2;
   position: relative;
   width: 100%;
-  border: 2px solid #39333b;
+  border: 2px solid var(--board-boundary);
   border-radius: 5px;
   overflow: hidden;
-  background: #ece9e4;
+  background: var(--subtle);
   box-shadow: 0 10px 24px #30263a08;
 }
 .board-row {
@@ -337,7 +337,7 @@ async function navigate(index: number, event: KeyboardEvent) {
   align-items: center;
   justify-content: center;
   flex-direction: column;
-  background: #f4f1ea;
+  background: var(--subtle);
   gap: 12px;
 }
 .pause-cover h2 {

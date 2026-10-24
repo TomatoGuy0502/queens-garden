@@ -1,15 +1,100 @@
 :root {
   font-family: Inter, 'PingFang TC', 'Noto Sans TC', -apple-system, BlinkMacSystemFont, sans-serif;
-  color: #39323f;
-  background: #f8f7f3;
+  color: var(--ink);
+  background: var(--page);
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
+  color-scheme: light;
+  --page: #f8f7f3;
+  --surface: #fffdfa;
+  --subtle: #f0ecef;
   --ink: #39323f;
   --muted: #756b79;
   --line: #e6e1e6;
+  --control-border: #dcd7de;
   --accent: #77518d;
+  --accent-soft: #eee7f3;
+  --accent-border: #b49cc4;
+  --primary: #76528b;
+  --primary-hover: #644377;
+  --on-primary: #fff;
+  --focus: #81549d;
+  --selection: #d9c8e6;
+  --error: #a12c45;
+  --error-bg: #f7e9eb;
+  --error-border: #dab8c0;
+  --warning-bg: #f4ecd4;
+  --result-overlay: #f8f7f3d9;
+  --backdrop: #30263a66;
+  --board-boundary: #39333b;
+  --cell-ink: #30263a;
+  --cell-grid: #30263a22;
+  --cell-accent: #774695;
+  --cell-tag: #fffdfae8;
+  --guidance-line: #39333b28;
+  --guidance-wash: #f8f7f344;
+  --mistake-stripe: #9f263b33;
+  --region-label-opacity: 0.7;
+  --region-0: #dbcaed;
+  --region-1: #f4d5a7;
+  --region-2: #bcd8cd;
+  --region-3: #eebfbe;
+  --region-4: #bfcee9;
+  --region-5: #eee1a3;
+  --region-6: #c5e0e0;
+  --region-7: #e8c9dc;
+  --region-8: #cfd8ad;
+  --region-9: #d4c7b8;
+  --region-10: #bfc6e0;
+  --region-11: #f0cba9;
 }
+:root[data-theme='dark'] {
+  color-scheme: dark;
+  --page: #1c1a20;
+  --surface: #25222a;
+  --subtle: #2d2932;
+  --ink: #eee8f0;
+  --muted: #b2a8b8;
+  --line: #3d3543;
+  --control-border: #5c5065;
+  --accent: #d0a9e7;
+  --accent-soft: #3b2e47;
+  --accent-border: #826391;
+  --primary: #a77ac0;
+  --primary-hover: #b78ace;
+  --on-primary: #211927;
+  --focus: #e2bdff;
+  --selection: #654777;
+  --error: #ff9caf;
+  --error-bg: #40252f;
+  --error-border: #895263;
+  --warning-bg: #3b3323;
+  --result-overlay: #1c1a20dc;
+  --backdrop: #07060abb;
+  --board-boundary: #151219;
+  --cell-ink: #fff8f1;
+  --cell-grid: #ffffff1a;
+  --cell-accent: #e4b9ff;
+  --cell-tag: #25222af2;
+  --guidance-line: #ffffff24;
+  --guidance-wash: #16131a28;
+  --mistake-stripe: #ff92a34d;
+  --region-label-opacity: 0.85;
+  --region-0: #645170;
+  --region-1: #765b3d;
+  --region-2: #3e6658;
+  --region-3: #795052;
+  --region-4: #465e7e;
+  --region-5: #726638;
+  --region-6: #3c666c;
+  --region-7: #715266;
+  --region-8: #59683d;
+  --region-9: #6b5c50;
+  --region-10: #545d7d;
+  --region-11: #785b48;
+}
+
 * {
   box-sizing: border-box;
 }
@@ -37,7 +122,7 @@ a:focus-visible,
 input:focus-visible,
 select:focus-visible,
 summary:focus-visible {
-  outline: 2px solid #81549d;
+  outline: 2px solid var(--focus);
   outline-offset: 4px;
 }
 button {
@@ -51,7 +136,7 @@ button:not(:disabled):hover {
 .eyebrow {
   font-size: 9px;
   letter-spacing: 1.8px;
-  color: #92809d;
+  color: var(--muted);
   font-weight: 500;
 }
 .primary {
@@ -59,9 +144,9 @@ button:not(:disabled):hover {
   align-items: center;
   justify-content: center;
   gap: 8px;
-  background: #76528b;
-  color: #fff;
-  border: 1px solid #76528b;
+  background: var(--primary);
+  color: var(--on-primary);
+  border: 1px solid var(--primary);
   border-radius: 5px;
   padding: 13px 17px;
   cursor: pointer;
@@ -69,7 +154,7 @@ button:not(:disabled):hover {
   font-weight: 500;
 }
 .primary:not(:disabled):hover {
-  background: #644377;
+  background: var(--primary-hover);
 }
 .icon-button {
   width: 32px;
@@ -78,12 +163,12 @@ button:not(:disabled):hover {
   place-items: center;
   border: 0;
   background: transparent;
-  color: #817485;
+  color: var(--muted);
   border-radius: 4px;
   cursor: pointer;
 }
 .icon-button:not(:disabled):hover {
-  background: #eee9ef;
+  background: var(--subtle);
 }
 .text-button {
   border: 0;
@@ -94,7 +179,7 @@ button:not(:disabled):hover {
   cursor: pointer;
 }
 ::selection {
-  background: #d9c8e6;
+  background: var(--selection);
 }
 @media (prefers-reduced-motion: reduce) {
   *,
@@ -127,9 +212,9 @@ button:not(:disabled):hover {
 .room-form input,
 .room-form select {
   width: 100%;
-  border: 1px solid #dcd7de;
+  border: 1px solid var(--control-border);
   border-radius: 5px;
-  background: #fffdfa;
+  background: var(--surface);
   padding: 12px;
   color: var(--ink);
   font: inherit;
@@ -144,7 +229,7 @@ button:not(:disabled):hover {
   justify-content: center;
   gap: 7px;
   padding: 11px 15px;
-  border: 1px solid #c8bacf;
+  border: 1px solid var(--accent-border);
   border-radius: 5px;
   background: transparent;
   color: var(--accent);
@@ -154,10 +239,10 @@ button:not(:disabled):hover {
 .error-notice {
   padding: 12px 15px;
   margin: 18px 0;
-  border: 1px solid #dab8c0;
+  border: 1px solid var(--error-border);
   border-radius: 5px;
-  background: #f7e9eb;
-  color: #95374d;
+  background: var(--error-bg);
+  color: var(--error);
   font-size: 12px;
   line-height: 1.9;
 }

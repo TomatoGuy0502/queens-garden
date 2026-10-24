@@ -76,7 +76,7 @@ const emit = defineEmits<{
 }
 .tool-divider {
   height: 18px;
-  background: #ddd7df;
+  background: var(--line);
   width: 1px;
   margin: 0 5px;
 }
@@ -95,7 +95,7 @@ const emit = defineEmits<{
   border: 0;
   background: transparent;
   font-size: 12px;
-  color: #6a527a;
+  color: var(--accent);
   cursor: pointer;
 }
 .assist-tools button:last-child {

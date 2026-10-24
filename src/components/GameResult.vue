@@ -38,8 +38,8 @@ onMounted(() => {
   width: min(100%, 340px);
   padding: 28px 20px;
   text-align: center;
-  background: #fffdfa;
-  border: 1px solid #d7c6e2;
+  background: var(--surface);
+  border: 1px solid var(--accent-border);
   border-radius: 7px;
   box-shadow: 0 8px 32px #30263a14;
   animation: result-in 0.3s ease-out;
@@ -47,7 +47,7 @@ onMounted(() => {
 .result-crown {
   width: 40px;
   height: 40px;
-  color: #78548d;
+  color: var(--accent);
 }
 .result h2 {
   font-size: 24px;

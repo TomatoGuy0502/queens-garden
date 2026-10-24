@@ -44,6 +44,12 @@ test('two players share cells, personal undo, markers, hints and team completion
   page.on('pageerror', (e) => errors.push(e.message))
   guest.on('pageerror', (e) => errors.push(e.message))
   try {
+    await guest.getByRole('button', { name: '遊玩設定', exact: true }).click()
+    const preferences = guest.getByRole('dialog', { name: '遊玩設定', exact: true })
+    await preferences.getByRole('radio', { name: '深色', exact: true }).check()
+    await preferences.getByRole('button', { name: '完成', exact: true }).click()
+    await expect(guest.locator('html')).toHaveAttribute('data-theme', 'dark')
+    await expect(page.locator('html')).toHaveAttribute('data-theme', 'light')
     await page.getByRole('button', { name: '邀請隊友', exact: true }).click()
     const invite = page.getByRole('dialog', { name: '邀請隊友' })
     expect(await invite.getByLabel('房間連結').inputValue()).toBe(page.url())

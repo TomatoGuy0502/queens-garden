@@ -38,20 +38,6 @@ const emit = defineEmits<{
   focus: [index: number]
   hover: [index: number | null]
 }>()
-const colors = [
-  '#dbcaed',
-  '#f4d5a7',
-  '#bcd8cd',
-  '#eebfbe',
-  '#bfcee9',
-  '#eee1a3',
-  '#c5e0e0',
-  '#e8c9dc',
-  '#cfd8ad',
-  '#d4c7b8',
-  '#bfc6e0',
-  '#f0cba9',
-]
 </script>
 <template>
   <button
@@ -71,7 +57,7 @@ const colors = [
       pointing: !!pointNames?.length,
       hovering: !!hoverNames?.length,
     }"
-    :style="{ backgroundColor: colors[region] }"
+    :style="{ backgroundColor: `var(--region-${region})` }"
     :tabindex="active ? 0 : -1"
     :disabled="disabled"
     :aria-label="cellLabel"
@@ -102,8 +88,8 @@ const colors = [
   width: 100%;
   padding: 0;
   border: 0;
-  box-shadow: inset 0 0 0 0.5px #30263a22;
-  color: #30263a;
+  box-shadow: inset 0 0 0 0.5px var(--cell-grid);
+  color: var(--cell-ink);
   cursor: pointer;
   touch-action: manipulation;
   transition: filter 0.13s;
@@ -122,14 +108,20 @@ const colors = [
 }
 .guided {
   background-image:
-    repeating-linear-gradient(135deg, transparent, transparent 5px, #39333b28 5px, #39333b28 7px),
-    linear-gradient(#f8f7f344, #f8f7f344);
+    repeating-linear-gradient(
+      135deg,
+      transparent,
+      transparent 5px,
+      var(--guidance-line) 5px,
+      var(--guidance-line) 7px
+    ),
+    linear-gradient(var(--guidance-wash), var(--guidance-wash));
 }
 .hovering::before {
   content: '';
   position: absolute;
   inset: 5px;
-  border: 2px solid #76528b;
+  border: 2px solid var(--cell-accent);
   border-radius: 2px;
   pointer-events: none;
 }
@@ -137,7 +129,7 @@ const colors = [
   content: '';
   position: absolute;
   inset: 3px;
-  border: 2px dashed #76528b;
+  border: 2px dashed var(--cell-accent);
   pointer-events: none;
 }
 .point-label {
@@ -150,8 +142,8 @@ const colors = [
   white-space: nowrap;
   font-size: 9px;
   padding: 1px 3px;
-  background: #fffdfae8;
-  color: #634078;
+  background: var(--cell-tag);
+  color: var(--cell-accent);
   z-index: 1;
 }
 .cell-crown {
@@ -172,10 +164,10 @@ const colors = [
   font:
     500 9px/1.1 ui-sans-serif,
     system-ui;
-  opacity: 0.55;
+  opacity: var(--region-label-opacity);
 }
 .highlighted {
-  box-shadow: inset 0 0 0 4px #774695;
+  box-shadow: inset 0 0 0 4px var(--cell-accent);
   z-index: 1;
 }
 .mistake {
@@ -183,10 +175,10 @@ const colors = [
     135deg,
     transparent,
     transparent 8px,
-    #9f263b33 8px,
-    #9f263b33 11px
+    var(--mistake-stripe) 8px,
+    var(--mistake-stripe) 11px
   );
-  box-shadow: inset 0 0 0 3px #a12c45;
+  box-shadow: inset 0 0 0 3px var(--error);
   z-index: 1;
 }
 @keyframes appear {

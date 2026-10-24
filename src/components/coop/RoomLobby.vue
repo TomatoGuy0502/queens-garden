@@ -80,7 +80,7 @@ function difficulty(event: Event) {
 <style scoped>
 .lobby {
   padding: 28px;
-  background: #fffdfa;
+  background: var(--surface);
   border: 1px solid var(--line);
   border-radius: 7px;
 }
@@ -114,7 +114,7 @@ function difficulty(event: Event) {
   flex-shrink: 0;
   display: grid;
   place-items: center;
-  background: #eee7f3;
+  background: var(--accent-soft);
   color: var(--accent);
   width: 37px;
   height: 37px;

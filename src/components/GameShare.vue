@@ -132,7 +132,7 @@ async function share() {
   padding: 24px;
   border: 1px solid var(--line);
   border-radius: 8px;
-  background: #f8f7f3;
+  background: var(--page);
   color: var(--ink);
   font:
     13px/1.8 Inter,
@@ -142,7 +142,7 @@ async function share() {
   box-shadow: 0 16px 60px #30263a22;
 }
 .share-dialog::backdrop {
-  background: #30263a66;
+  background: var(--backdrop);
 }
 .share-header {
   display: flex;
@@ -165,10 +165,10 @@ async function share() {
 }
 .share-dialog input {
   width: 100%;
-  border: 1px solid #dcd7de;
+  border: 1px solid var(--control-border);
   border-radius: 5px;
   padding: 11px;
-  background: #fffdfa;
+  background: var(--surface);
   color: var(--ink);
   font:
     12px/1.5 ui-monospace,
@@ -201,7 +201,7 @@ async function share() {
   display: inline-flex;
   align-items: center;
   gap: 7px;
-  border: 1px solid #dcd7de;
+  border: 1px solid var(--control-border);
   border-radius: 5px;
   background: transparent;
   padding: 11px 15px;

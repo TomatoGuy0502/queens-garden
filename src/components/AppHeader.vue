@@ -1,5 +1,8 @@
 <script setup lang="ts">
 import CrownIcon from './CrownIcon.vue'
+import GamePreferences from './GamePreferences.vue'
+import { useGamePreferences } from '../composables/useGamePreferences'
+const { guidance, storageAvailable } = useGamePreferences()
 </script>
 <template>
   <header class="app-header">
@@ -8,7 +11,7 @@ import CrownIcon from './CrownIcon.vue'
     >
     <nav>
       <RouterLink to="/solo">單人遊戲</RouterLink><RouterLink to="/rooms/new">多人合作</RouterLink
-      ><slot />
+      ><GamePreferences v-model="guidance" :storage-available="storageAvailable" />
     </nav>
   </header>
 </template>
@@ -38,7 +41,7 @@ import CrownIcon from './CrownIcon.vue'
   height: 34px;
 }
 .brand-dot {
-  color: #9573a8;
+  color: var(--accent);
 }
 nav {
   display: flex;

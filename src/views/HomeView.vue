@@ -41,7 +41,7 @@ h1 {
   border-radius: 7px;
   text-decoration: none;
   color: var(--ink);
-  background: #fffdfa;
+  background: var(--surface);
 }
 .mode-card > svg {
   color: var(--accent);
@@ -66,7 +66,7 @@ h1 {
   margin-top: 25px;
 }
 .mode-card:hover {
-  border-color: #b49cc4;
+  border-color: var(--accent-border);
 }
 @media (max-width: 650px) {
   .mode-cards {

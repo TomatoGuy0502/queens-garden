@@ -118,7 +118,7 @@ label {
 label span {
   font-size: 9px;
   letter-spacing: 1px;
-  color: #98919b;
+  color: var(--muted);
   font-weight: 400;
 }
 label:first-child {
@@ -127,9 +127,9 @@ label:first-child {
 select,
 input {
   width: 100%;
-  border: 1px solid #dcd7de;
+  border: 1px solid var(--control-border);
   border-radius: 5px;
-  background: #fffdfa;
+  background: var(--surface);
   padding: 12px 13px;
   color: var(--ink);
   font: inherit;
@@ -144,7 +144,7 @@ select {
   gap: 6px;
 }
 .difficulty-options button {
-  border: 1px solid #dcd7de;
+  border: 1px solid var(--control-border);
   background: transparent;
   border-radius: 5px;
   padding: 10px 2px;
@@ -153,9 +153,9 @@ select {
   cursor: pointer;
 }
 .difficulty-options .selected {
-  background: #eee7f3;
-  border-color: #9e80b2;
-  color: #623f7b;
+  background: var(--accent-soft);
+  border-color: var(--accent-border);
+  color: var(--accent);
   font-weight: 600;
 }
 .seed-field {
@@ -193,7 +193,7 @@ select {
 }
 .generation-note {
   font-size: 10px;
-  color: #938b95;
+  color: var(--muted);
   line-height: 1.8;
   margin: 13px 0 0;
 }
@@ -203,6 +203,6 @@ select {
 }
 .error-text {
   font-size: 12px;
-  color: #a12c45;
+  color: var(--error);
 }
 </style>

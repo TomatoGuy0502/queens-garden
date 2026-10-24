@@ -98,7 +98,7 @@ legend {
   text-transform: uppercase;
   border: 1px solid var(--line);
   border-radius: 5px;
-  background: #fffdfa;
+  background: var(--surface);
   color: var(--ink);
 }
 .code-digits input:focus-visible {

@@ -13,7 +13,6 @@ import GameToolbar from '../components/GameToolbar.vue'
 import GameResult from '../components/GameResult.vue'
 import GameRules from '../components/GameRules.vue'
 import GameShare from '../components/GameShare.vue'
-import GamePreferences from '../components/GamePreferences.vue'
 import { useRoomStore } from '../stores/room'
 import { useCoopGameStore } from '../stores/game'
 import { useGamePreferences } from '../composables/useGamePreferences'
@@ -21,7 +20,7 @@ const props = defineProps<{ roomId: string }>()
 const room = useRoomStore(),
   game = useCoopGameStore(),
   router = useRouter()
-const { guidance, storageAvailable } = useGamePreferences()
+const { guidance } = useGamePreferences()
 const name = usePlayerName()
 const joining = shallowRef(false),
   joinError = shallowRef(''),
@@ -139,9 +138,7 @@ async function reset() {
     @cancel="confirmation = null"
   />
   <main class="page-shell coop-page">
-    <AppHeader
-      ><GamePreferences v-model="guidance" :storage-available="storageAvailable"
-    /></AppHeader>
+    <AppHeader />
     <div class="room-heading">
       <div>
         <h1>多人合作</h1>
@@ -379,7 +376,7 @@ async function reset() {
   height: 27px;
   border: 1px solid var(--line);
   border-radius: 3px;
-  background: #fffdfa;
+  background: var(--surface);
   font-size: 13px;
   color: var(--ink);
 }
@@ -398,7 +395,7 @@ async function reset() {
   padding: 26px;
   border: 1px solid var(--line);
   border-radius: 7px;
-  background: #fffdfa;
+  background: var(--surface);
 }
 .join-panel h2 {
   font-size: 20px;
@@ -407,7 +404,7 @@ async function reset() {
 }
 .connection-notice {
   padding: 12px;
-  background: #f4ecd4;
+  background: var(--warning-bg);
   font-size: 12px;
   line-height: 1.8;
 }
@@ -443,7 +440,7 @@ async function reset() {
   color: var(--muted);
 }
 .difficulty-badge {
-  background: #eee7f3;
+  background: var(--accent-soft);
   color: var(--accent);
   padding: 5px 9px;
   border-radius: 4px;
@@ -456,7 +453,7 @@ async function reset() {
   flex-direction: column;
   gap: 15px;
   border: 1px solid var(--line);
-  background: #f0ecef;
+  background: var(--subtle);
   border-radius: 6px;
   color: var(--muted);
 }
@@ -482,8 +479,8 @@ async function reset() {
   color: var(--muted);
 }
 .point-tools .active {
-  background: #eee7f3;
-  border-color: #a48cb5;
+  background: var(--accent-soft);
+  border-color: var(--accent-border);
 }
 .coop-feedback {
   font-size: 12px;

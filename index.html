@@ -8,6 +8,21 @@
       name="description"
       content="Queens — 每一列、每一欄、每個色區，各一頂皇冠。動態生成的邏輯益智遊戲。"
     />
+    <script>
+      // Apply the preference before styles load to avoid a light flash on dark pages.
+      ;(() => {
+        let preference = 'system'
+        try {
+          preference = localStorage.getItem('queens:theme:v1') ?? 'system'
+        } catch {}
+        const dark =
+          preference === 'dark' ||
+          (preference !== 'light' && matchMedia('(prefers-color-scheme: dark)').matches)
+        document.documentElement.dataset.theme = dark ? 'dark' : 'light'
+        document.querySelector('meta[name="theme-color"]').content = dark ? '#1c1a20' : '#f8f7f3'
+      })()
+    </script>
+    <link rel="stylesheet" href="/src/style.css" />
     <title>Queens · 益智遊戲</title>
   </head>
   <body>

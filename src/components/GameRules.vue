@@ -57,7 +57,7 @@ import { Crown, Rows3, Columns3, Shapes, MoveDiagonal } from '@lucide/vue'
   line-height: 1.5;
 }
 .rules li svg {
-  color: #95839e;
+  color: var(--muted);
   flex-shrink: 0;
 }
 .rules small {
@@ -80,24 +80,24 @@ import { Crown, Rows3, Columns3, Shapes, MoveDiagonal } from '@lucide/vue'
 .example-cells {
   display: grid;
   grid-template-columns: repeat(3, 25px);
-  border: 1px solid #b7a4c4;
+  border: 1px solid var(--accent-border);
   border-radius: 3px;
   overflow: hidden;
 }
 .example-cells span {
   width: 25px;
   height: 25px;
-  background: #e5d9ed;
+  background: var(--accent-soft);
   display: grid;
   place-items: center;
-  border: 0.5px solid #c9b6d4;
-  color: #a08aad;
+  border: 0.5px solid var(--accent-border);
+  color: var(--muted);
   font-size: 20px;
   line-height: 1;
 }
 .example-cells span:nth-child(5) {
-  background: #cab2de;
-  color: #503861;
+  background: var(--accent-soft);
+  color: var(--accent);
 }
 details {
   margin-top: 13px;

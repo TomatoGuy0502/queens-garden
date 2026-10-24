@@ -262,7 +262,7 @@ onMounted(() => {
   height: 34px;
 }
 .brand-dot {
-  color: #9573a8;
+  color: var(--accent);
 }
 .header-actions {
   display: flex;
@@ -307,8 +307,8 @@ onMounted(() => {
 }
 .difficulty-badge {
   font-size: 10px;
-  color: #725781;
-  background: #ece5f1;
+  color: var(--accent);
+  background: var(--accent-soft);
   padding: 5px 11px;
   border-radius: 4px;
 }
@@ -324,14 +324,14 @@ onMounted(() => {
   font:
     12px ui-monospace,
     monospace;
-  color: #6e577d;
+  color: var(--accent);
 }
 .queen-count svg {
   width: 15px;
   height: 17px;
 }
 .queen-count > span {
-  color: #a399a8;
+  color: var(--muted);
 }
 .timer {
   display: flex;
@@ -377,12 +377,12 @@ onMounted(() => {
 }
 .feedback-label {
   font-size: 10px;
-  color: #865d9d;
+  color: var(--accent);
   letter-spacing: 1px;
 }
 .apply-hint {
   margin-top: 6px;
-  color: #754d90 !important;
+  color: var(--accent) !important;
 }
 .puzzle-footer {
   display: flex;
@@ -392,7 +392,7 @@ onMounted(() => {
   font:
     9px ui-monospace,
     monospace;
-  color: #a29aa6;
+  color: var(--muted);
   padding: 19px 0;
   border-top: 1px solid var(--line);
 }
@@ -402,13 +402,13 @@ onMounted(() => {
 .empty-board {
   width: 100%;
   aspect-ratio: 1;
-  border: 1px solid #ded7e2;
+  border: 1px solid var(--line);
   border-radius: 5px;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-direction: column;
-  background: #f0ecef;
+  background: var(--subtle);
   padding: 30px;
   text-align: center;
 }
@@ -416,7 +416,7 @@ onMounted(() => {
 .generating-art > svg:first-child {
   width: 49px;
   height: 49px;
-  color: #9a7daa;
+  color: var(--accent);
 }
 .empty-board h2 {
   font-size: 18px;
@@ -435,7 +435,7 @@ onMounted(() => {
 }
 .spinner {
   animation: spin 1.4s linear infinite;
-  color: #9a7daa;
+  color: var(--accent);
 }
 .loading-bars {
   display: flex;
@@ -445,7 +445,7 @@ onMounted(() => {
 .loading-bars i {
   width: 5px;
   height: 5px;
-  background: #ad95b9;
+  background: var(--accent);
   border-radius: 50%;
   animation: pulse 1.4s ease-in-out infinite;
 }
@@ -458,16 +458,16 @@ onMounted(() => {
 .error-notice {
   font-size: 12px;
   line-height: 1.9;
-  border: 1px solid #dab8c0;
-  background: #f7e9eb;
+  border: 1px solid var(--error-border);
+  background: var(--error-bg);
   padding: 12px;
   margin: 15px 0;
   border-radius: 5px;
-  color: #95374d;
+  color: var(--error);
 }
 .restart-confirm {
   padding: 17px;
-  background: #eee7f3;
+  background: var(--accent-soft);
   margin-top: 17px;
   border-radius: 5px;
 }
