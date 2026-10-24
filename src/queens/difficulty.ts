@@ -12,6 +12,40 @@ export const STRATEGY_WEIGHTS: Record<Strategy, number> = {
   hall: 10,
   contradiction: 16,
 }
+/**
+ * Level 3 puzzles only count as challenging when they need several advanced steps and score above
+ * what a medium board of that size reaches; otherwise they are too easy to label and stay unrated.
+ * Expert additionally needs repeated contradiction reasoning and a much higher score.
+ */
+export const HARD_MIN_SCORE: Readonly<Record<number, number>> = {
+  6: 60,
+  7: 70,
+  8: 90,
+  9: 100,
+  10: 115,
+  11: 135,
+  12: 155,
+}
+export const EXPERT_MIN_SCORE: Readonly<Record<number, number>> = {
+  6: 110,
+  7: 125,
+  8: 140,
+  9: 155,
+  10: 200,
+  11: 225,
+  12: 250,
+}
+const MIN_ADVANCED_STEPS = 3
+const MIN_EXPERT_CONTRADICTIONS = 2
+export function advancedDifficulty(size: number, score: number, steps: DeductionStep[]) {
+  const advanced = steps.filter((step) => step.level === 3).length
+  const contradictions = steps.filter((step) => step.strategy === 'contradiction').length
+  if (advanced < MIN_ADVANCED_STEPS || score < (HARD_MIN_SCORE[size] ?? Infinity)) return 'unrated'
+  return contradictions >= MIN_EXPERT_CONTRADICTIONS &&
+    score >= (EXPERT_MIN_SCORE[size] ?? Infinity)
+    ? 'expert'
+    : 'hard'
+}
 export function nextDeduction(state: LogicState, maxLevel = 3): DeductionStep | null {
   return (
     singleCandidate(state) ??
@@ -39,7 +73,13 @@ export function evaluateDifficulty(regions: number[][], maxLevel = 3): Difficult
   }
   const solved = state.queens.size === state.n && !contradiction(state)
   return {
-    difficulty: !solved ? 'unrated' : level === 1 ? 'easy' : level === 2 ? 'medium' : 'hard',
+    difficulty: !solved
+      ? 'unrated'
+      : level === 1
+        ? 'easy'
+        : level === 2
+          ? 'medium'
+          : advancedDifficulty(state.n, score, steps),
     score,
     steps,
     solved,

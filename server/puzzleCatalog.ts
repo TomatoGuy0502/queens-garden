@@ -1,5 +1,6 @@
 import { randomBytes } from 'node:crypto'
 import type { GenerateOptions, QueensPuzzle } from '../src/queens/types'
+import { DIFFICULTIES } from '../src/queens/levels'
 import type { CatalogCompute } from './compute'
 import { ComputeError } from './compute'
 import {
@@ -11,9 +12,9 @@ import {
 export interface PuzzleSource {
   get(request: CatalogRequest): Promise<QueensPuzzle>
 }
-export const DEFAULT_STOCK: CatalogBucket[] = ['easy', 'medium', 'hard'].map((difficulty) => ({
+export const DEFAULT_STOCK: CatalogBucket[] = DIFFICULTIES.map((difficulty) => ({
   size: 8,
-  difficulty: difficulty as CatalogBucket['difficulty'],
+  difficulty,
 }))
 export interface CatalogOptions {
   enabled?: boolean

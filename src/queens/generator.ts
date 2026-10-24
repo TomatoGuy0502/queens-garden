@@ -4,14 +4,14 @@ import { growRegions, mutateRegions } from './regionGrower'
 import { solve, uniqueSolution } from './solver'
 import { MIN_REGION_AREA, validRegions } from './validator'
 import type { GenerateOptions, QueensPuzzle } from './types'
+import { DIFFICULTIES } from './levels'
 import { GENERATOR_VERSION } from './version'
 export { GENERATOR_VERSION } from './version'
 /** Fixed work budget, not wall-clock cutoffs: identical inputs reproduce identical output. */
 export function generatePuzzle(options: GenerateOptions): QueensPuzzle {
   const { size, seed, maxAttempts = 160, mutationBudget = 100 } = options
   if (
-    (options.difficulty !== undefined &&
-      !['easy', 'medium', 'hard'].includes(options.difficulty)) ||
+    (options.difficulty !== undefined && !DIFFICULTIES.includes(options.difficulty)) ||
     !Number.isInteger(size) ||
     size < 6 ||
     size > 12 ||

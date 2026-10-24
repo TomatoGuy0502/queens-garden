@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ArrowRight, Shuffle } from '@lucide/vue'
 import { shallowRef, watch } from 'vue'
+import { DIFFICULTIES, DIFFICULTY_LABELS } from '../queens/levels'
 import type { Difficulty } from '../queens/types'
 const props = defineProps<{
   busy: boolean
@@ -55,18 +56,14 @@ function loadSeed() {
         <label for="difficulty">難度 <span>DIFFICULTY</span></label>
         <div id="difficulty" class="difficulty-options" role="group" aria-label="難度">
           <button
-            v-for="item in [
-              { id: 'easy', label: '輕鬆' },
-              { id: 'medium', label: '適中' },
-              { id: 'hard', label: '挑戰' },
-            ] as const"
-            :key="item.id"
+            v-for="item in DIFFICULTIES"
+            :key="item"
             type="button"
-            :aria-pressed="difficulty === item.id"
-            :class="{ selected: difficulty === item.id }"
-            @click="difficulty = item.id"
+            :aria-pressed="difficulty === item"
+            :class="{ selected: difficulty === item }"
+            @click="difficulty = item"
           >
-            {{ item.label }}
+            {{ DIFFICULTY_LABELS[item] }}
           </button>
         </div>
         <label for="seed">關卡種子 <span>SEED</span></label>
@@ -140,7 +137,7 @@ select {
 }
 .difficulty-options {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(4, 1fr);
   gap: 6px;
 }
 .difficulty-options button {

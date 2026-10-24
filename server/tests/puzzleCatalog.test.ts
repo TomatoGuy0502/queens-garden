@@ -49,7 +49,7 @@ it('invalid cached solutions are retired and never returned to a player', async 
 })
 it('refills only to the configured waterline, keeps a full pool dormant and uses 8×8 default buckets', async () => {
   expect(DEFAULT_STOCK).toEqual(
-    ['easy', 'medium', 'hard'].map((difficulty) => ({ size: 8, difficulty })),
+    ['easy', 'medium', 'hard', 'expert'].map((difficulty) => ({ size: 8, difficulty })),
   )
   const repository = await fileCatalogRepository(),
     engine = workerPool(1)

@@ -9,6 +9,7 @@ import { batchOptionsSchema, generateBatch } from '../puzzleBatch'
 import { fileCatalogRepository } from '../filePuzzleCatalog'
 import { postgresRepository } from '../repository'
 import { catalogRecord } from '../puzzleCatalogModel'
+import { DIFFICULTIES } from '../../src/queens/levels'
 
 const { values } = parseArgs({
   options: {
@@ -32,7 +33,7 @@ if (values.help) {
 npm run puzzles:seed -- [options]
   --size 12                 棋盤大小：6/7/8/9/10/12、逗號分隔多個，或 all
   --count 5                 每種大小、每種難度的題數（1–1000）
-  --difficulty all          all / easy / medium / hard
+  --difficulty all          all / easy / medium / hard / expert
   --workers 4               本機平行運算數（1–4）
   --target file             file（隔離檔案）/ local（LOCAL_DATABASE_URL）/ production（DATABASE_URL）
   --checkpoint PATH         保留題目的批次檔；相同路徑可續跑或重新入庫（多種大小時每種加上 -NxN 後綴）
@@ -43,9 +44,7 @@ npm run puzzles:seed -- [options]
 } else {
   const target = z.enum(['file', 'local', 'production']).parse(values.target)
   const difficulties =
-    values.difficulty === 'all'
-      ? (['easy', 'medium', 'hard'] as const)
-      : [z.enum(['easy', 'medium', 'hard']).parse(values.difficulty)]
+    values.difficulty === 'all' ? DIFFICULTIES : [z.enum(DIFFICULTIES).parse(values.difficulty)]
   const sizes =
     values.size === 'all'
       ? [6, 7, 8, 9, 10, 12]

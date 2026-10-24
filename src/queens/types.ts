@@ -1,5 +1,5 @@
 export type QueenPlacement = number[]
-export type Difficulty = 'easy' | 'medium' | 'hard'
+export type Difficulty = 'easy' | 'medium' | 'hard' | 'expert'
 export type CellState = 'empty' | 'marked' | 'queen'
 export interface Position {
   row: number

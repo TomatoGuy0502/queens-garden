@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { generatePuzzle } from '../queens/generator'
+import { DIFFICULTIES } from '../queens/levels'
 import { solve, uniqueSolution } from '../queens/solver'
 import { MIN_REGION_AREA, validPlacement, validRegions } from '../queens/validator'
 
@@ -48,10 +49,10 @@ describe('bounded seeded generation', () => {
   })
 })
 
-for (const difficulty of ['easy', 'medium', 'hard'] as const) {
+for (const difficulty of DIFFICULTIES) {
   it(`${difficulty} satisfies the area rule across seeds without changing its logical label`, () => {
     for (const seed of [1, 42, 2026]) {
-      const puzzle = generatePuzzle({ size: 8, seed, difficulty })
+      const puzzle = generatePuzzle({ size: 8, seed, difficulty, maxAttempts: 800 })
       expect(puzzle.difficulty).toBe(difficulty)
       expect(validRegions(puzzle.regions, MIN_REGION_AREA[difficulty])).toBe(true)
       expect(uniqueSolution(puzzle.regions, puzzle.solution)).toBe(true)

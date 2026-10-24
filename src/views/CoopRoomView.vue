@@ -13,6 +13,7 @@ import GameToolbar from '../components/GameToolbar.vue'
 import GameResult from '../components/GameResult.vue'
 import GameRules from '../components/GameRules.vue'
 import GameShare from '../components/GameShare.vue'
+import { DIFFICULTY_LABELS } from '../queens/levels'
 import { useRoomStore } from '../stores/room'
 import { useCoopGameStore } from '../stores/game'
 import { useGamePreferences } from '../composables/useGamePreferences'
@@ -30,7 +31,7 @@ watch([() => game.state?.id, () => game.state?.phase], () => {
   reviewing.value = false
 })
 const confirmation = shallowRef<{ kind: 'restart' | 'new'; gameId: string } | null>(null)
-const labels = { easy: '輕鬆', medium: '適中', hard: '挑戰' }
+const labels = DIFFICULTY_LABELS
 const blocked = computed(() => !room.connected || game.state?.phase !== 'playing')
 const canResume = computed(() => room.connected)
 const mistakes = computed(() => [...new Set([...game.conflicts, ...(game.state?.mistakes ?? [])])])

@@ -13,6 +13,7 @@ import { useGamePreferences } from '../composables/useGamePreferences'
 import { useSoloGameStore } from '../stores/solo'
 import { storeToRefs } from 'pinia'
 import { GENERATOR_VERSION } from '../queens/version'
+import { DIFFICULTIES, DIFFICULTY_LABELS } from '../queens/levels'
 import type { Difficulty } from '../queens/types'
 const game = useSoloGameStore()
 onUnmounted(() => game.$dispose())
@@ -42,7 +43,7 @@ const requestedSize = Number(params.get('size') ?? 8)
 const initialSize = [6, 7, 8, 9, 10, 12].includes(requestedSize) ? requestedSize : 8
 const requestedDifficulty = params.get('difficulty')
 const initialDifficulty: Difficulty =
-  requestedDifficulty === 'medium' || requestedDifficulty === 'hard' ? requestedDifficulty : 'easy'
+  DIFFICULTIES.find((difficulty) => difficulty === requestedDifficulty) ?? 'easy'
 const displayDifficulty = shallowRef<Difficulty>(initialDifficulty)
 const requestedSeed = params.get('seed')
 const initialSeed =
@@ -55,7 +56,7 @@ const reviewing = shallowRef(false)
 watch([won, () => puzzle.value?.id], () => {
   reviewing.value = false
 })
-const difficulties = { easy: '輕鬆', medium: '適中', hard: '挑戰' }
+const difficulties = DIFFICULTY_LABELS
 const highlighted = computed(() => (paused.value ? [] : (hint.value?.cells ?? [])))
 const allMistakes = computed(() => [...new Set([...conflicts.value, ...mistakes.value])])
 function startGame(size: number, difficulty: Difficulty, seed: number) {

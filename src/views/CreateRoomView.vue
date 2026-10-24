@@ -7,6 +7,7 @@ import { parseRoomCode } from '../../shared/roomCode'
 import AppHeader from '../components/AppHeader.vue'
 import { useRoomStore } from '../stores/room'
 import type { RoomSettings } from '../../shared/coop'
+import { DIFFICULTIES, DIFFICULTY_LABELS } from '../queens/levels'
 import type { Difficulty } from '../queens/types'
 const room = useRoomStore(),
   router = useRouter()
@@ -63,9 +64,9 @@ async function join() {
             </option></select
           ><label for="room-difficulty">難度</label
           ><select id="room-difficulty" v-model="difficulty">
-            <option value="easy">輕鬆</option>
-            <option value="medium">適中</option>
-            <option value="hard">挑戰</option></select
+            <option v-for="item in DIFFICULTIES" :key="item" :value="item">
+              {{ DIFFICULTY_LABELS[item] }}
+            </option></select
           ><button class="primary" :disabled="busy || !name.trim()">
             {{ busy ? '建立中…' : '建立房間' }}
           </button>

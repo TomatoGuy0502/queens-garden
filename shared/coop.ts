@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import { ROOM_CODE_PATTERN } from './roomCode'
+import { DIFFICULTIES } from '../src/queens/levels'
 import type { CellState, DeductionStep, PuzzleDefinition } from '../src/queens/types'
 export const MAX_ROOM_PLAYERS = 8
 
@@ -11,7 +12,7 @@ export const sizeSchema = z.union([
   z.literal(10),
   z.literal(12),
 ])
-export const difficultySchema = z.enum(['easy', 'medium', 'hard'])
+export const difficultySchema = z.enum(DIFFICULTIES)
 export const settingsSchema = z.object({
   size: sizeSchema,
   difficulty: difficultySchema,

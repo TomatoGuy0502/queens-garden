@@ -25,7 +25,12 @@ export function connected(cells: number[], size: number): boolean {
     }
   return seen.size === cells.length
 }
-export const MIN_REGION_AREA: Readonly<Record<Difficulty, number>> = { easy: 2, medium: 3, hard: 4 }
+export const MIN_REGION_AREA: Readonly<Record<Difficulty, number>> = {
+  easy: 2,
+  medium: 3,
+  hard: 4,
+  expert: 4,
+}
 
 export function validRegions(regions: number[][], minimumArea = 2): boolean {
   const n = regions.length

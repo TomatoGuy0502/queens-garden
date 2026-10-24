@@ -3,6 +3,7 @@ import { GENERATOR_VERSION } from '../src/queens/version'
 import { MIN_REGION_AREA, validPlacement, validRegions } from '../src/queens/validator'
 import { uniqueSolution } from '../src/queens/solver'
 import { evaluateDifficulty } from '../src/queens/difficulty'
+import { DIFFICULTIES } from '../src/queens/levels'
 export class CatalogValidationError extends Error {
   readonly code = 'CATALOG_INVALID'
 }
@@ -22,7 +23,7 @@ function validate(puzzle: QueensPuzzle, request: GenerateOptions): QueensPuzzle 
   )
     throw new CatalogValidationError('題庫版本或 Seed 重現參數不符。')
   if (
-    !['easy', 'medium', 'hard'].includes(puzzle.difficulty) ||
+    !DIFFICULTIES.includes(puzzle.difficulty) ||
     !validRegions(puzzle.regions, MIN_REGION_AREA[puzzle.difficulty]) ||
     !validPlacement(puzzle.regions, puzzle.solution) ||
     !uniqueSolution(puzzle.regions, puzzle.solution)

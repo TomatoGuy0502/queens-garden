@@ -1,6 +1,13 @@
 import { expect, it } from 'vitest'
 import { generatePuzzle } from '../queens/generator'
-import { evaluateDifficulty, logicalHint } from '../queens/difficulty'
+import {
+  EXPERT_MIN_SCORE,
+  HARD_MIN_SCORE,
+  advancedDifficulty,
+  evaluateDifficulty,
+  logicalHint,
+} from '../queens/difficulty'
+import type { DeductionStep } from '../queens/types'
 import { applyStep, createState, contradiction } from '../queens/deductions/state'
 import { nextDeduction } from '../queens/difficulty'
 import { solve } from '../queens/solver'
@@ -92,3 +99,39 @@ it('basic adjacency exclusion preserves every solution and does not exclude its 
   }
   expect(deductions).toBeGreaterThan(0)
 })
+
+const step = (strategy: DeductionStep['strategy']): DeductionStep => ({
+  strategy,
+  level: strategy === 'hall' || strategy === 'contradiction' ? 3 : 1,
+  action: 'eliminate',
+  cells: [],
+  reason: '',
+})
+const steps = (hall: number, contradiction: number) => [
+  ...Array.from({ length: hall }, () => step('hall')),
+  ...Array.from({ length: contradiction }, () => step('contradiction')),
+  step('single'),
+]
+it('only rates advanced boards as hard or expert when they are demanding enough', () => {
+  const size = 8,
+    hard = HARD_MIN_SCORE[size],
+    expert = EXPERT_MIN_SCORE[size]
+  expect(advancedDifficulty(size, hard, steps(2, 0))).toBe('unrated')
+  expect(advancedDifficulty(size, hard - 1, steps(3, 0))).toBe('unrated')
+  expect(advancedDifficulty(size, hard, steps(3, 0))).toBe('hard')
+  expect(advancedDifficulty(size, expert, steps(3, 1))).toBe('hard')
+  expect(advancedDifficulty(size, expert - 1, steps(0, 3))).toBe('hard')
+  expect(advancedDifficulty(size, expert, steps(1, 2))).toBe('expert')
+  expect(advancedDifficulty(13, 9999, steps(5, 5))).toBe('unrated')
+})
+for (const difficulty of ['hard', 'expert'] as const)
+  it(`generated ${difficulty} boards meet the advanced step and score requirements`, () => {
+    const p = generatePuzzle({ size: 8, seed: 7, difficulty, maxAttempts: 800 })
+    const contradictions = p.analysis.steps.filter((s) => s.strategy === 'contradiction').length
+    expect(p.analysis.steps.filter((s) => s.level === 3).length).toBeGreaterThanOrEqual(3)
+    expect(p.difficultyScore).toBeGreaterThanOrEqual(HARD_MIN_SCORE[8])
+    if (difficulty === 'expert') {
+      expect(contradictions).toBeGreaterThanOrEqual(2)
+      expect(p.difficultyScore).toBeGreaterThanOrEqual(EXPERT_MIN_SCORE[8])
+    } else expect(p.difficultyScore < EXPERT_MIN_SCORE[8] || contradictions < 2).toBe(true)
+  })

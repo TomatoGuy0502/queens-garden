@@ -3,6 +3,7 @@ import { mkdir, readFile, rename, writeFile } from 'node:fs/promises'
 import { dirname } from 'node:path'
 import { z } from 'zod'
 import type { Difficulty, QueensPuzzle } from '../src/queens/types'
+import { DIFFICULTIES } from '../src/queens/levels'
 import { GENERATOR_VERSION } from '../src/queens/version'
 import type { CatalogCompute } from './compute'
 import { catalogRecord } from './puzzleCatalogModel'
@@ -18,7 +19,7 @@ export interface BatchOptions {
 export const batchOptionsSchema = z.object({
   size: z.coerce.number().int().min(6).max(12),
   count: z.coerce.number().int().min(1).max(1000),
-  difficulties: z.array(z.enum(['easy', 'medium', 'hard'])).min(1),
+  difficulties: z.array(z.enum(DIFFICULTIES)).min(1),
   workers: z.coerce.number().int().min(1).max(4),
   maxAttempts: z.coerce.number().int().min(1).max(30000),
   checkpoint: z.string().min(1),
@@ -32,7 +33,7 @@ const archiveSchema = z.object({
         .object({
           size: z.number().int().min(6).max(12),
           seed: z.number().int().min(0).max(0xffffffff),
-          difficulty: z.enum(['easy', 'medium', 'hard']),
+          difficulty: z.enum(DIFFICULTIES),
         })
         .passthrough(),
     )

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { MAX_ROOM_PLAYERS } from '../../../shared/coop'
 import type { Player, RoomSettings } from '../../../shared/coop'
+import { DIFFICULTIES, DIFFICULTY_LABELS } from '../../queens/levels'
 import type { Difficulty } from '../../queens/types'
 const props = defineProps<{
   players: Player[]
@@ -59,9 +60,9 @@ function difficulty(event: Event) {
         :disabled="meId !== hostId || pending"
         @change="difficulty"
       >
-        <option value="easy">輕鬆</option>
-        <option value="medium">適中</option>
-        <option value="hard">挑戰</option>
+        <option v-for="item in DIFFICULTIES" :key="item" :value="item">
+          {{ DIFFICULTY_LABELS[item] }}
+        </option>
       </select>
     </div>
     <div class="lobby-actions">
