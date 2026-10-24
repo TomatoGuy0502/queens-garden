@@ -14,6 +14,7 @@ beforeAll(() => {
 async function setup(count = 1) {
   const directory = await mkdtemp(join(tmpdir(), 'queens-batch-'))
   const options = {
+    size: 12,
     count,
     difficulties: ['easy' as const],
     workers: 2,

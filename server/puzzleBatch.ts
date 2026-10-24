@@ -8,6 +8,7 @@ import type { CatalogCompute } from './compute'
 import { catalogRecord } from './puzzleCatalogModel'
 
 export interface BatchOptions {
+  size: number
   count: number
   difficulties: Difficulty[]
   workers: number
@@ -15,6 +16,7 @@ export interface BatchOptions {
   checkpoint: string
 }
 export const batchOptionsSchema = z.object({
+  size: z.coerce.number().int().min(6).max(12),
   count: z.coerce.number().int().min(1).max(1000),
   difficulties: z.array(z.enum(['easy', 'medium', 'hard'])).min(1),
   workers: z.coerce.number().int().min(1).max(4),
@@ -28,7 +30,7 @@ const archiveSchema = z.object({
     .array(
       z
         .object({
-          size: z.literal(12),
+          size: z.number().int().min(6).max(12),
           seed: z.number().int().min(0).max(0xffffffff),
           difficulty: z.enum(['easy', 'medium', 'hard']),
         })
@@ -64,7 +66,7 @@ export async function generateBatch(
       if (signal.aborted) return { puzzles, attempts: 0, failures: 0, complete: false }
       // Checkpoint contents are untrusted, including their claimed solution and difficulty.
       const puzzle = await compute.validate(candidate as unknown as QueensPuzzle, {
-        size: 12,
+        size: options.size,
         difficulty: candidate.difficulty,
         seed: candidate.seed,
       })
@@ -116,7 +118,7 @@ export async function generateBatch(
         const started = Date.now()
         let puzzle: QueensPuzzle
         try {
-          puzzle = await compute.generateValidated({ size: 12, difficulty, seed })
+          puzzle = await compute.generateValidated({ size: options.size, difficulty, seed })
         } catch {
           if (signal.aborted) break
           failures++
