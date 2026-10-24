@@ -16,7 +16,7 @@ import { GENERATOR_VERSION } from '../queens/version'
 import type { Difficulty } from '../queens/types'
 const game = useSoloGameStore()
 onUnmounted(() => game.$dispose())
-const { guidance, storageAvailable } = useGamePreferences()
+const { guidance, expandedBoard, storageAvailable } = useGamePreferences()
 const {
   puzzle,
   cells,
@@ -94,7 +94,7 @@ onMounted(() => {
     </header>
     <main>
       <div class="page-intro"><h1>Queens 益智遊戲</h1></div>
-      <div class="game-layout">
+      <div class="game-layout" :class="{ expanded: expandedBoard }">
         <section class="play-area" aria-label="遊戲區域" :aria-busy="busy">
           <div class="game-meta">
             <div class="puzzle-meta">
@@ -493,6 +493,21 @@ onMounted(() => {
   50% {
     opacity: 0.25;
   }
+}
+.game-layout.expanded {
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+}
+.game-layout.expanded > .play-area,
+.game-layout.expanded > .side-panel {
+  width: 100%;
+}
+.game-layout.expanded > .side-panel {
+  border-left: 0;
+  padding-left: 0;
+  border-top: 1px solid var(--line);
+  padding-top: 28px;
 }
 @media (min-width: 1200px) {
   .app-shell {

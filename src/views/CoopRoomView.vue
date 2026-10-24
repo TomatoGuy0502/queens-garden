@@ -20,7 +20,7 @@ const props = defineProps<{ roomId: string }>()
 const room = useRoomStore(),
   game = useCoopGameStore(),
   router = useRouter()
-const { guidance } = useGamePreferences()
+const { guidance, expandedBoard } = useGamePreferences()
 const name = usePlayerName()
 const joining = shallowRef(false),
   joinError = shallowRef(''),
@@ -190,7 +190,7 @@ async function reset() {
         <button class="text-button" @click="room.reconnect">重新連線</button>
       </p>
       <p v-if="room.error" class="error-notice" role="alert">{{ room.error }}</p>
-      <div class="coop-layout">
+      <div class="coop-layout" :class="{ expanded: expandedBoard }">
         <section class="coop-play">
           <RoomLobby
             v-if="game.state?.phase === 'waiting'"
@@ -504,6 +504,15 @@ async function reset() {
   to {
     transform: rotate(360deg);
   }
+}
+.coop-layout.expanded {
+  grid-template-columns: minmax(0, 1fr);
+  gap: 30px;
+}
+.coop-layout.expanded > .coop-aside {
+  padding: 25px 0 0;
+  border-left: 0;
+  border-top: 1px solid var(--line);
 }
 @media (max-width: 750px) {
   .coop-layout {

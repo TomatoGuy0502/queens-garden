@@ -1,8 +1,10 @@
 <script setup lang="ts">
 import { useTemplateRef } from 'vue'
 import { Settings2, X } from '@lucide/vue'
+import { useGamePreferences } from '../composables/useGamePreferences'
 import { useTheme, type ThemePreference } from '../composables/useTheme'
 import type { BoardGuidance } from '../queens/guidance'
+const { expandedBoard } = useGamePreferences()
 const preferences = defineModel<BoardGuidance>({ required: true })
 defineProps<{ storageAvailable: boolean }>()
 const { preference, storageAvailable: themeStorageAvailable, setPreference } = useTheme()
@@ -58,6 +60,20 @@ function update(key: keyof BoardGuidance, event: Event) {
         {{ theme.label }}
       </label>
     </fieldset>
+    <label class="guidance-toggle layout-toggle">
+      <span
+        >放大棋盤<small id="expanded-board-note"
+          >讓棋盤使用整行寬度，設定、合作操作與規則移到下方。</small
+        ></span
+      >
+      <input
+        v-model="expandedBoard"
+        type="checkbox"
+        role="switch"
+        aria-label="放大棋盤"
+        aria-describedby="expanded-board-note"
+      />
+    </label>
     <p id="preferences-description">放置皇冠後，以淺色斜線標示受影響的格子。</p>
     <label class="guidance-toggle" for="guidance-enabled"
       ><span id="guidance-toggle-label">顯示皇冠排除範圍</span
@@ -141,7 +157,18 @@ function update(key: keyof BoardGuidance, event: Event) {
   font-weight: 550;
   cursor: pointer;
 }
+.layout-toggle {
+  margin-bottom: 24px;
+}
+.layout-toggle small {
+  display: block;
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 400;
+}
 .guidance-toggle input {
+  flex-shrink: 0;
   width: 20px;
   height: 20px;
   accent-color: var(--accent);

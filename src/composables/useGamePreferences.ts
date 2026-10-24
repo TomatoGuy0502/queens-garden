@@ -1,7 +1,7 @@
-import { shallowRef, watch } from 'vue'
+import { computed, shallowRef, watch } from 'vue'
 import { DEFAULT_GUIDANCE, type BoardGuidance } from '../queens/guidance'
 const STORAGE_KEY = 'queens:board-guidance:v1'
-const storageAvailable = shallowRef(true)
+const guidanceStorageAvailable = shallowRef(true)
 function read(): BoardGuidance {
   try {
     const stored: unknown = JSON.parse(localStorage.getItem(STORAGE_KEY) ?? 'null')
@@ -18,7 +18,7 @@ function read(): BoardGuidance {
       adjacent: value('adjacent'),
     }
   } catch {
-    storageAvailable.value = false
+    guidanceStorageAvailable.value = false
     return { ...DEFAULT_GUIDANCE }
   }
 }
@@ -26,11 +26,33 @@ const guidance = shallowRef<BoardGuidance>(read())
 watch(guidance, (value) => {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(value))
-    storageAvailable.value = true
+    guidanceStorageAvailable.value = true
   } catch {
-    storageAvailable.value = false
+    guidanceStorageAvailable.value = false
   }
 })
+const LAYOUT_STORAGE_KEY = 'queens:expanded-board:v1'
+const layoutStorageAvailable = shallowRef(true)
+function readExpandedBoard() {
+  try {
+    return localStorage.getItem(LAYOUT_STORAGE_KEY) === 'true'
+  } catch {
+    layoutStorageAvailable.value = false
+    return false
+  }
+}
+const expandedBoard = shallowRef(readExpandedBoard())
+watch(expandedBoard, (value) => {
+  try {
+    localStorage.setItem(LAYOUT_STORAGE_KEY, String(value))
+    layoutStorageAvailable.value = true
+  } catch {
+    layoutStorageAvailable.value = false
+  }
+})
+const storageAvailable = computed(
+  () => guidanceStorageAvailable.value && layoutStorageAvailable.value,
+)
 export function useGamePreferences() {
-  return { guidance, storageAvailable }
+  return { guidance, expandedBoard, storageAvailable }
 }

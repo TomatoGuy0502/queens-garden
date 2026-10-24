@@ -50,6 +50,20 @@ test('two players share cells, personal undo, markers, hints and team completion
     await preferences.getByRole('button', { name: '完成', exact: true }).click()
     await expect(guest.locator('html')).toHaveAttribute('data-theme', 'dark')
     await expect(page.locator('html')).toHaveAttribute('data-theme', 'light')
+    const hostBefore = (await page.locator('.board-stage').boundingBox())!
+    const guestBefore = (await guest.locator('.board-stage').boundingBox())!
+    await page.getByRole('button', { name: '遊玩設定', exact: true }).click()
+    const hostSettings = page.getByRole('dialog', { name: '遊玩設定', exact: true })
+    await hostSettings.getByRole('switch', { name: '放大棋盤', exact: true }).check()
+    await hostSettings.getByRole('button', { name: '完成', exact: true }).click()
+    const hostBoard = (await page.locator('.board-stage').boundingBox())!
+    const operations = (await page.locator('.coop-aside').boundingBox())!
+    expect(operations.y).toBeGreaterThan(hostBoard.y + hostBoard.height)
+    if (!isMobile) expect(hostBoard.width).toBeGreaterThan(hostBefore.width * 1.5)
+    expect((await guest.locator('.board-stage').boundingBox())!.width).toBeCloseTo(
+      guestBefore.width,
+      0,
+    )
     await page.getByRole('button', { name: '邀請隊友', exact: true }).click()
     const invite = page.getByRole('dialog', { name: '邀請隊友' })
     expect(await invite.getByLabel('房間連結').inputValue()).toBe(page.url())
