@@ -1,4 +1,5 @@
 import { expect, it } from 'vitest'
+import { renderSource } from '../i18n/source'
 import { evaluateDifficulty } from '../queens/difficulty'
 import { solve, uniqueSolution } from '../queens/solver'
 import {
@@ -39,9 +40,9 @@ it('builds every lesson with a goal that is not yet met, except read-only lesson
   for (const lesson of lessons) {
     expect(lesson.preset).toHaveLength(36)
     expect(lesson.body.length).toBeGreaterThan(0)
-    if (lesson.goal.type === 'continue') expect(lesson.task).toBe('')
+    if (lesson.goal.type === 'continue') expect(lesson.task).toBeNull()
     else {
-      expect(lesson.task).not.toBe('')
+      expect(lesson.task).not.toBeNull()
       expect(goalMet(lesson.goal, lesson.preset), lesson.id).toBe(false)
     }
   }
@@ -57,7 +58,7 @@ it('the technique lessons ask for exactly the cells the real deduction produced'
     const step = steps.find((s) => s.strategy === strategy)!
     expect(goal.cells).toEqual(step.cells)
     expect(lesson.highlight).toEqual(step.cells)
-    expect(lesson.body.join('')).toContain(step.reason)
+    expect(lesson.body).toContainEqual(step.reason)
   }
   const single = find('single').goal as Extract<TutorialGoal, { type: 'queen-at' }>
   expect(TUTORIAL_PUZZLE.regions.length).toBeGreaterThan(0)
@@ -84,7 +85,7 @@ it('the finishing lesson can be completed by following the offered hints', () =>
   let cells: CellState[] = [...find('finish').preset]
   for (let i = 0; i < 40 && !goalMet({ type: 'solved' }, cells); i++) {
     const hint = nextHint(cells)
-    expect(hint.action, hint.message).not.toBeNull()
+    expect(hint.action, renderSource(hint.message)).not.toBeNull()
     cells = cells.map((value, c) =>
       hint.cells.includes(c) ? (hint.action === 'place' ? 'queen' : 'marked') : value,
     )

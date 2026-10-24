@@ -1,3 +1,4 @@
+import { message, type Message } from '../../shared/message'
 import type { CellState, DeductionStep, DifficultyReport, Strategy } from './types'
 import { applyStep, contradiction, createState, type LogicState } from './deductions/state'
 import { adjacentExclusion } from './deductions/adjacency'
@@ -88,16 +89,16 @@ export function evaluateDifficulty(regions: number[][], maxLevel = 3): Difficult
 export function logicalHint(
   regions: number[][],
   cells: CellState[],
-): { step: DeductionStep | null; message: string } {
+): { step: DeductionStep | null; message: Message } {
   const state = createState(regions, cells)
   if (contradiction(state))
     return {
       step: null,
-      message: '目前有矛盾：皇冠互相衝突，或某列、欄、區域已沒有可用格。請先撤回皇冠或 X 標記。',
+      message: message('hint.contradiction'),
     }
   const step = nextDeduction(state)
   return {
     step,
-    message: step?.reason ?? '目前的邏輯策略找不到可安全解釋的下一步，請嘗試調整標記或繼續推理。',
+    message: step?.reason ?? message('hint.stuck'),
   }
 }

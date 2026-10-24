@@ -1,4 +1,5 @@
 import { expect, it } from 'vitest'
+import { ERROR_CODES } from '../../shared/message'
 import { DEFAULT_LOCALE, LOCALES, detectLocale } from '../i18n/locales'
 import en from '../i18n/messages/en'
 import ja from '../i18n/messages/ja'
@@ -11,7 +12,9 @@ function flatten(value: unknown, prefix = ''): [string, string][] {
     flatten(child, prefix ? `${prefix}.${key}` : key),
   )
 }
-const placeholders = (text: string) => [...text.matchAll(/\{(\w+)\}/g)].map((m) => m[1]).sort()
+// Which values a sentence uses, not how often: another language may mention one twice or once.
+const placeholders = (text: string) =>
+  [...new Set([...text.matchAll(/\{(\w+)\}/g)].map((m) => m[1]))].sort()
 const source = new Map(flatten(zhHant))
 
 it('picks the first supported browser language and falls back to English', () => {
@@ -36,3 +39,8 @@ for (const [code, catalog] of Object.entries(catalogs)) {
     }
   })
 }
+it('describes every error code a reader can be told about, in every language', () => {
+  for (const [code, catalog] of Object.entries(catalogs))
+    for (const error of ERROR_CODES)
+      expect((catalog.errors as Record<string, string>)[error], `${code}: ${error}`).toBeTruthy()
+})

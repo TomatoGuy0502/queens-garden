@@ -1,5 +1,6 @@
+import { message } from '../../../shared/message'
 import type { DeductionStep } from '../types'
-import { type LogicState, unitName } from './state'
+import { type LogicState, unitRef } from './state'
 export function lockedCandidates(state: LogicState): DeductionStep | null {
   for (let a = 0; a < state.units.length; a++) {
     const choices = state.units[a].filter((c) => state.candidates.has(c))
@@ -23,7 +24,10 @@ export function lockedCandidates(state: LogicState): DeductionStep | null {
           action: 'eliminate',
           cells: eliminated,
           units: [a, b],
-          reason: `${unitName(a, state.n)} 的所有候選格都位於${unitName(b, state.n)}，這頂皇冠會占用兩者，因此可排除${unitName(b, state.n)} 的其他候選格。`,
+          reason: message('reason.intersection', {
+            a: unitRef(a, state.n),
+            b: unitRef(b, state.n),
+          }),
         }
     }
   }

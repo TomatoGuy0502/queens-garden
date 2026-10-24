@@ -2,6 +2,8 @@
 import { usePlayerName } from '../composables/usePlayerName'
 import { computed, onMounted, onUnmounted, shallowRef, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { failureMessage } from '../../shared/message'
+import { useMessage } from '../i18n/message'
 import { useRouter } from 'vue-router'
 import { Clock3, Pause, Play, MousePointer2, LoaderCircle, LogOut } from '@lucide/vue'
 import AppHeader from '../components/AppHeader.vue'
@@ -21,6 +23,7 @@ import { useCoopGameStore } from '../stores/game'
 import { useGamePreferences } from '../composables/useGamePreferences'
 const props = defineProps<{ roomId: string }>()
 const { t } = useI18n()
+const render = useMessage()
 const room = useRoomStore(),
   game = useCoopGameStore(),
   router = useRouter()
@@ -45,7 +48,7 @@ const hintInfo = computed(() => {
 })
 const hintLevel = computed(() => (hintInfo.value ? game.state!.hint!.level : 0))
 const hintRevealed = computed(() => hintLevel.value >= HINT_LEVELS)
-const feedback = computed(() => hintInfo.value?.text ?? game.state?.message ?? '')
+const feedback = computed(() => hintInfo.value?.text ?? game.state?.message ?? null)
 const mistakes = computed(() => [...new Set([...game.conflicts, ...(game.state?.mistakes ?? [])])])
 const timer = setInterval(() => room.clock(), 200)
 watch(
@@ -105,7 +108,7 @@ async function join() {
   try {
     await room.join(props.roomId, name.value.trim())
   } catch (reason) {
-    joinError.value = (reason as Error).message
+    joinError.value = render(failureMessage(reason))
   } finally {
     joining.value = false
   }
@@ -194,7 +197,7 @@ async function reset() {
         </button>
       </form>
       <p v-if="joinError || room.error" role="alert" class="error-notice">
-        {{ joinError || room.error }}
+        {{ joinError || render(room.error) }}
       </p>
     </section>
     <template v-else>
@@ -207,7 +210,7 @@ async function reset() {
         {{ $t('coop.room.disconnected') }}
         <button class="text-button" @click="room.reconnect">{{ $t('coop.room.reconnect') }}</button>
       </p>
-      <p v-if="room.error" class="error-notice" role="alert">{{ room.error }}</p>
+      <p v-if="room.error" class="error-notice" role="alert">{{ render(room.error) }}</p>
       <div class="coop-layout" :class="{ expanded: expandedBoard }">
         <section class="coop-play">
           <RoomLobby
@@ -344,7 +347,7 @@ async function reset() {
                 <span v-if="hintInfo" class="hint-level">{{
                   $t('game.feedback.hint', { level: hintLevel })
                 }}</span
-                >{{ feedback }}
+                >{{ render(feedback) }}
               </p>
               <button v-if="hintRevealed && !blocked" class="text-button" @click="applyHint">
                 {{ $t('game.feedback.apply') }}
@@ -361,7 +364,7 @@ async function reset() {
             role="status"
             class="error-notice"
           >
-            {{ game.state.message }}
+            {{ render(game.state.message) }}
           </p>
         </section>
         <aside class="coop-aside">

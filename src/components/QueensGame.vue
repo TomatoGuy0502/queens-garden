@@ -14,6 +14,7 @@ import ThemeToggle from './ThemeToggle.vue'
 import DailyChallenge from './DailyChallenge.vue'
 import TutorialPrompt from './TutorialPrompt.vue'
 import ResumePrompt from './ResumePrompt.vue'
+import { useMessage } from '../i18n/message'
 import { useGamePreferences } from '../composables/useGamePreferences'
 import { useGameStats } from '../composables/useGameStats'
 import { useProgressAutosave } from '../composables/useProgressAutosave'
@@ -33,6 +34,7 @@ import { storeToRefs } from 'pinia'
 import { GENERATOR_VERSION } from '../queens/version'
 import { DIFFICULTIES } from '../queens/levels'
 import type { Difficulty } from '../queens/types'
+const render = useMessage()
 const game = useSoloGameStore()
 useProgressAutosave(game)
 const progress = useSoloProgress()
@@ -296,7 +298,7 @@ onMounted(() => {
             <h2>{{ $t('game.idle.title') }}</h2>
             <p>{{ $t('game.idle.body') }}</p>
           </div>
-          <div v-if="error" class="error-notice" role="alert">{{ error }}</div>
+          <div v-if="error" class="error-notice" role="alert">{{ render(error) }}</div>
           <GameToolbar
             :blocked="blocked || !puzzle"
             :assisting="assisting"
@@ -332,13 +334,15 @@ onMounted(() => {
               ><span class="feedback-label">{{
                 hint ? $t('game.feedback.hint', { level: hintLevel }) : $t('game.feedback.message')
               }}</span>
-              <p>{{ feedback }}</p>
+              <p>{{ render(feedback) }}</p>
               <details v-if="hintRevealed && hint?.evidence?.length" class="hint-evidence">
                 <summary>
                   {{ $t('game.feedback.evidence', { count: hint.evidence.length }) }}
                 </summary>
                 <ol>
-                  <li v-for="(step, index) in hint.evidence" :key="index">{{ step.reason }}</li>
+                  <li v-for="(step, index) in hint.evidence" :key="index">
+                    {{ render(step.reason) }}
+                  </li>
                 </ol>
               </details>
               <button

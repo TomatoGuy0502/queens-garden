@@ -1,5 +1,6 @@
+import { message } from '../../../shared/message'
 import type { DeductionStep } from '../types'
-import { type LogicState, unitName } from './state'
+import { type LogicState, unitsRef } from './state'
 /** Pigeonhole/Hall subsets of two or three units across any pair of unit families. */
 export function hallSets(state: LogicState): DeductionStep | null {
   const n = state.n
@@ -61,7 +62,14 @@ export function hallSets(state: LogicState): DeductionStep | null {
       action: 'eliminate',
       cells: eliminated,
       units: selected,
-      reason: `${selected.map((i) => unitName(i, n)).join('、')} 的 ${size} 頂皇冠被限制在 ${targetIds.map((id) => unitName(target * n + id, n)).join('、')}，必須各占一個，因此這些單位中的其他候選格可以排除。`,
+      reason: message('reason.hall', {
+        units: unitsRef(selected, n),
+        size,
+        targets: unitsRef(
+          targetIds.map((id) => target * n + id),
+          n,
+        ),
+      }),
     }
   }
 }

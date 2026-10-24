@@ -19,9 +19,15 @@ import {
   type RoomReply,
   type ServerEvents,
 } from '../shared/coop'
+import { errorMessage, type ErrorCode } from '../shared/message'
 import { RoomError, type RoomRepository } from './model'
 import { RoomManager } from './rooms'
 import type { Compute } from './compute'
+/** A refused handshake; socket.io passes `data` on to the client's connect_error handler. */
+function refusal(reason: ErrorCode | RoomError) {
+  const error = typeof reason === 'string' ? new RoomError(reason) : reason
+  return Object.assign(new Error(error.code), { data: { message: error.localized } })
+}
 export async function createApp(options: {
   repository: RoomRepository
   compute: Compute
@@ -59,14 +65,15 @@ export async function createApp(options: {
   }
   app.setErrorHandler((error, _request, reply) => {
     if (error && typeof error === 'object' && 'statusCode' in error && error.statusCode === 429)
-      return reply.code(429).send({ error: '操作太頻繁，請稍後再試。' })
-    if (error instanceof ZodError) return reply.code(400).send({ error: '輸入資料格式不正確。' })
+      return reply.code(429).send({ error: errorMessage('RATE_LIMIT'), code: 'RATE_LIMIT' })
+    if (error instanceof ZodError)
+      return reply.code(400).send({ error: errorMessage('INVALID_INPUT'), code: 'INVALID_INPUT' })
     if (error instanceof RoomError)
       return reply
         .code(error.code === 'NOT_FOUND' ? 404 : error.code === 'UNAUTHORIZED' ? 401 : 409)
-        .send({ error: error.message, code: error.code })
+        .send({ error: error.localized, code: error.code })
     app.log.error(error)
-    return reply.code(500).send({ error: '伺服器無法完成操作，請稍後再試。' })
+    return reply.code(500).send({ error: errorMessage('SERVER_ERROR'), code: 'SERVER_ERROR' })
   })
   app.get('/api/health', () => ({ ok: true }))
   app.post(
@@ -88,13 +95,13 @@ export async function createApp(options: {
   io.use((socket, next) => {
     const parsed = credentialsSchema.safeParse(socket.handshake.auth)
     if (!parsed.success) {
-      next(new Error('房間身分格式不正確。'))
+      next(refusal('INVALID_CREDENTIALS'))
       return
     }
     socket.data.credentials = parsed.data
     void manager.connect(parsed.data, socket.id).then(
       () => next(),
-      (error) => next(error instanceof Error ? error : new Error('連線失敗。')),
+      (error) => next(refusal(error instanceof RoomError ? error : 'CONNECT_FAILED')),
     )
   })
   io.on('connection', (socket) => {
@@ -105,7 +112,7 @@ export async function createApp(options: {
       lastHover = 0
     const errorReply = (error: unknown): RoomReply => ({
       ok: false,
-      error: error instanceof RoomError ? error.message : '操作失敗，請稍後再試。',
+      error: error instanceof RoomError ? error.localized : errorMessage('SERVER_ERROR'),
       code: error instanceof RoomError ? error.code : 'SERVER_ERROR',
     })
     void socket.join(credentials.roomId)
@@ -117,7 +124,7 @@ export async function createApp(options: {
       })
       .catch((error) => {
         socket.emit('room:error', {
-          message: error instanceof Error ? error.message : '同步失敗。',
+          message: error instanceof RoomError ? error.localized : errorMessage('SYNC_FAILED'),
         })
         socket.disconnect()
       })
@@ -128,12 +135,12 @@ export async function createApp(options: {
         count = 0
       }
       if (++count > 80) {
-        ack({ ok: false, error: '操作太頻繁，請稍後再試。', code: 'RATE_LIMIT' })
+        ack({ ok: false, error: errorMessage('RATE_LIMIT'), code: 'RATE_LIMIT' })
         return
       }
       const parsed = commandSchema.safeParse(raw)
       if (!parsed.success) {
-        ack({ ok: false, error: '操作格式不正確。', code: 'INVALID_COMMAND' })
+        ack({ ok: false, error: errorMessage('INVALID_COMMAND'), code: 'INVALID_COMMAND' })
         return
       }
       void manager.command(credentials, parsed.data).then(
@@ -176,7 +183,9 @@ export async function createApp(options: {
     await app.register(fastifyStatic, { root: resolve('dist'), wildcard: false })
     app.setNotFoundHandler((request, reply) => {
       if (request.url.startsWith('/api/') || request.url.startsWith('/assets/'))
-        return reply.code(404).send({ error: '找不到資源。' })
+        return reply
+          .code(404)
+          .send({ error: errorMessage('RESOURCE_NOT_FOUND'), code: 'RESOURCE_NOT_FOUND' })
       return reply.sendFile('index.html')
     })
   }

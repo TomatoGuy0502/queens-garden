@@ -128,7 +128,7 @@ it('static assets do not consume API limits and rate-limit errors remain HTTP 42
     },
     compute: {
       generate: () => Promise.reject(new Error('not used')),
-      hint: () => Promise.resolve({ step: null, message: '' }),
+      hint: () => Promise.resolve({ step: null, message: { key: 'hint.stuck' } }),
       close: () => Promise.resolve(),
     },
   })

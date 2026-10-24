@@ -18,7 +18,7 @@ it('runs the actual migration on PostgreSQL and persists private snapshots and a
   const repository = databaseRepository(drizzle(client, { schema }))
   const manager = new RoomManager(repository, {
     generate: () => Promise.resolve(generatePuzzle({ size: 6, seed: 42 })),
-    hint: () => Promise.resolve({ step: null, message: '' }),
+    hint: () => Promise.resolve({ step: null, message: { key: 'hint.stuck' } }),
     close: () => Promise.resolve(),
   })
   const host = await manager.create('Alice', { size: 6, difficulty: 'easy' })

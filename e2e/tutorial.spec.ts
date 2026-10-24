@@ -1,4 +1,5 @@
 import { test, expect, type Page } from '@playwright/test'
+import { renderSource } from '../src/i18n/source'
 import { solve } from '../src/queens/solver'
 import { TUTORIAL_PUZZLE, buildLessons } from '../src/queens/tutorial'
 
@@ -53,7 +54,7 @@ test('the tutorial walks through rules, marks, conflicts and three techniques to
   for (const id of ['adjacency', 'intersection'] as const) {
     const current = lesson(id)
     if (current.goal.type !== 'mark-all') throw new Error('unexpected goal')
-    await title(page, current.title)
+    await title(page, renderSource(current.title))
     await expect(next(page)).toBeDisabled()
     for (const c of current.goal.cells.slice(0, -1)) {
       await cell(page, c).click()
@@ -69,7 +70,7 @@ test('the tutorial walks through rules, marks, conflicts and three techniques to
 
   const single = lesson('single')
   if (single.goal.type !== 'queen-at') throw new Error('unexpected goal')
-  await title(page, single.title)
+  await title(page, renderSource(single.title))
   await cell(page, single.goal.cell).click()
   await done(page)
   await next(page).click()

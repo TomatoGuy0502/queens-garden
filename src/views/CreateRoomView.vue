@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { shallowRef } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { failureMessage } from '../../shared/message'
+import { useMessage } from '../i18n/message'
 import { useRouter } from 'vue-router'
 import { usePlayerName } from '../composables/usePlayerName'
 import RoomCodeInput from '../components/coop/RoomCodeInput.vue'
@@ -11,6 +13,7 @@ import type { RoomSettings } from '../../shared/coop'
 import { DIFFICULTIES } from '../queens/levels'
 import type { Difficulty } from '../queens/types'
 const { t } = useI18n()
+const render = useMessage()
 const room = useRoomStore(),
   router = useRouter()
 const name = usePlayerName()
@@ -29,7 +32,7 @@ async function create() {
     })
     await router.push(`/rooms/${id}`)
   } catch (reason) {
-    error.value = (reason as Error).message
+    error.value = render(failureMessage(reason))
   } finally {
     busy.value = false
   }

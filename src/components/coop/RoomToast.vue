@@ -1,7 +1,10 @@
 <script setup lang="ts">
 import { onUnmounted, watch } from 'vue'
 import { X } from '@lucide/vue'
-const props = defineProps<{ notice: { id: number; message: string } | null }>()
+import type { Message } from '../../../shared/message'
+import { useMessage } from '../../i18n/message'
+const props = defineProps<{ notice: { id: number; message: Message } | null }>()
+const render = useMessage()
 const emit = defineEmits<{ dismiss: [] }>()
 let timer: ReturnType<typeof setTimeout> | undefined
 function stop() {
@@ -27,7 +30,7 @@ onUnmounted(stop)
           @focusin="stop"
           @focusout="schedule"
         >
-          <span>{{ notice.message }}</span>
+          <span>{{ render(notice.message) }}</span>
           <button class="icon-button" :aria-label="$t('coop.toast.close')" @click="emit('dismiss')">
             <X :size="17" />
           </button>

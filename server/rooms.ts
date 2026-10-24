@@ -1,6 +1,7 @@
 import { createHash, randomBytes, randomInt, randomUUID, timingSafeEqual } from 'node:crypto'
 import type { PuzzleSource } from './puzzleCatalog'
 import { MAX_ROOM_PLAYERS } from '../shared/coop'
+import { failureMessage, message } from '../shared/message'
 import type {
   BoardAction,
   Change,
@@ -46,7 +47,7 @@ function freshGame(room: StoredRoom) {
   room.moves = 0
   room.hints = 0
   room.hint = null
-  room.message = ''
+  room.message = null
   room.mistakes = []
 }
 export class RoomManager {
@@ -77,10 +78,9 @@ export class RoomManager {
     return result
   }
   private async load(id: string) {
-    if (!ROOM_CODE_PATTERN.test(id)) throw new RoomError('房間代碼格式不正確。', 'NOT_FOUND')
+    if (!ROOM_CODE_PATTERN.test(id)) throw new RoomError('NOT_FOUND')
     const room = await this.repository.get(id)
-    if (!room || room.expiresAt < Date.now())
-      throw new RoomError('房間不存在或已過期。', 'NOT_FOUND')
+    if (!room || room.expiresAt < Date.now()) throw new RoomError('NOT_FOUND')
     return room
   }
   private authorize(room: StoredRoom, credentials: Credentials) {
@@ -92,7 +92,7 @@ export class RoomManager {
         Buffer.from(hash(credentials.token), 'hex'),
       )
     )
-      throw new RoomError('無法驗證房間身分，請重新加入。', 'UNAUTHORIZED')
+      throw new RoomError('UNAUTHORIZED')
     return member
   }
   private online(id: string, playerId: string) {
@@ -198,7 +198,7 @@ export class RoomManager {
       })
       if (access) return access
     }
-    throw new RoomError('暫時無法取得房間代碼，請稍後再試。', 'ROOM_CODE_EXHAUSTED')
+    throw new RoomError('ROOM_CODE_EXHAUSTED')
   }
   async join(id: string, name: string): Promise<RoomAccess> {
     return this.serial(id, async () => {
@@ -208,7 +208,7 @@ export class RoomManager {
         (p) => p.id === room.hostId || this.online(id, p.id) || Date.now() - p.lastSeenAt < 300000,
       )
       if (room.players.length >= MAX_ROOM_PLAYERS)
-        throw new RoomError(`房間已滿，最多 ${MAX_ROOM_PLAYERS} 人合作。`, 'ROOM_FULL')
+        throw new RoomError('ROOM_FULL', { max: MAX_ROOM_PLAYERS })
       const { stored, token } = player(name)
       room.players.push(stored)
       if (!room.hostId) room.hostId = stored.id
@@ -242,7 +242,7 @@ export class RoomManager {
       if (!this.online(room.id, room.hostId)) room.hostId = member.id
       if (room.phase === 'generating' && !this.generating.has(room.gameId)) {
         room.phase = 'waiting'
-        room.message = '服務已重新啟動，房主可重新產生關卡。'
+        room.message = message('notice.serviceRestarted')
       }
       try {
         return await this.commit(room, 'connected', member.id)
@@ -278,25 +278,24 @@ export class RoomManager {
       previous.playerId !== credentials.playerId ||
       previous.fingerprint !== hash(JSON.stringify(command))
     )
-      throw new RoomError('操作識別碼已被使用。', 'ACTION_ID_REUSED')
+      throw new RoomError('ACTION_ID_REUSED')
     return true
   }
   private remember(room: StoredRoom, credentials: Credentials, command: RoomCommand) {
-    if (Object.keys(room.receipts).length >= 4000)
-      throw new RoomError('本局操作已達上限，請開始下一局。', 'ACTION_LIMIT')
+    if (Object.keys(room.receipts).length >= 4000) throw new RoomError('ACTION_LIMIT')
     room.receipts[command.actionId] = {
       playerId: credentials.playerId,
       fingerprint: hash(JSON.stringify(command)),
     }
   }
   private host(room: StoredRoom, memberId: string) {
-    if (room.hostId !== memberId) throw new RoomError('只有房主可以進行這項操作。', 'HOST_ONLY')
+    if (room.hostId !== memberId) throw new RoomError('HOST_ONLY')
   }
   private round(room: StoredRoom, gameId: string) {
-    if (room.gameId !== gameId) throw new RoomError('這是上一局的操作，已忽略。', 'STALE_GAME')
+    if (room.gameId !== gameId) throw new RoomError('STALE_GAME')
   }
   private editable(room: StoredRoom) {
-    if (room.phase !== 'playing') throw new RoomError('請先開始或繼續遊戲。', 'NOT_PLAYING')
+    if (room.phase !== 'playing') throw new RoomError('NOT_PLAYING')
   }
   private completion(room: StoredRoom) {
     const queens = room.cells.flatMap((cell, index) =>
@@ -310,7 +309,7 @@ export class RoomManager {
     if (solved && room.phase !== 'completed') {
       room.phase = 'completed'
       room.finishedAt = Date.now()
-      room.message = '團隊已完成關卡。'
+      room.message = message('notice.teamCompleted')
     } else if (!solved && room.phase === 'completed') {
       room.pausedMs += Date.now() - room.finishedAt!
       room.finishedAt = null
@@ -319,8 +318,8 @@ export class RoomManager {
     }
   }
   private apply(room: StoredRoom, memberId: string, id: string, changes: BoardAction['changes']) {
-    if (!changes.length) throw new RoomError('格子狀態沒有變更。')
-    if (room.actions.length >= 1000) throw new RoomError('本局操作歷史已達上限，請開始下一局。')
+    if (!changes.length) throw new RoomError('NO_CHANGE')
+    if (room.actions.length >= 1000) throw new RoomError('HISTORY_LIMIT')
     for (const change of changes) {
       room.cells[change.index] = change.after
       room.versions[change.index]++
@@ -336,7 +335,7 @@ export class RoomManager {
     room.boardRevision++
     room.moves++
     room.hint = null
-    room.message = ''
+    room.message = null
     room.mistakes = []
     this.completion(room)
   }
@@ -352,21 +351,21 @@ export class RoomManager {
       switch (command.type) {
         case 'configure':
           this.host(room, member.id)
-          if (room.phase !== 'waiting') throw new RoomError('只能在等待室調整關卡。')
+          if (room.phase !== 'waiting') throw new RoomError('NOT_WAITING')
           room.settings = command.settings
           break
         case 'start':
           this.host(room, member.id)
-          if (room.phase !== 'waiting') throw new RoomError('目前無法開始新局。')
+          if (room.phase !== 'waiting') throw new RoomError('CANNOT_START')
           room.phase = 'generating'
           room.gameId = randomUUID()
-          room.message = ''
+          room.message = null
           launch = true
           break
         case 'restart': {
           this.host(room, member.id)
           if (!room.puzzle || !['playing', 'paused', 'completed'].includes(room.phase))
-            throw new RoomError('目前沒有可以重新開始的棋盤。')
+            throw new RoomError('NO_BOARD')
           const puzzle = room.puzzle
           freshGame(room)
           room.puzzle = puzzle
@@ -374,7 +373,7 @@ export class RoomManager {
           room.versions = Array<number>(puzzle.size ** 2).fill(0)
           room.phase = 'playing'
           room.startedAt = Date.now()
-          room.message = '房主已重新開始本關。'
+          room.message = message('notice.hostRestarted')
           break
         }
         case 'reset':
@@ -386,11 +385,11 @@ export class RoomManager {
           if (room.hostId === member.id)
             room.hostId =
               room.players.find((p) => this.online(room.id, p.id))?.id ?? room.players[0]?.id ?? ''
-          room.message = `${member.name} 已離開房間。`
+          room.message = message('notice.playerLeft', { name: member.name })
           break
         case 'pause':
           if (room.phase !== 'playing' && room.phase !== 'paused')
-            throw new RoomError('目前無法暫停或繼續。')
+            throw new RoomError('CANNOT_PAUSE')
           if (command.paused && room.phase === 'playing') {
             room.phase = 'paused'
             room.pausedAt = Date.now()
@@ -399,13 +398,13 @@ export class RoomManager {
             room.pausedAt = null
             room.phase = 'playing'
           }
-          room.message = command.paused ? '遊戲已暫停。' : ''
+          room.message = command.paused ? message('notice.paused') : null
           break
         case 'setCell':
           this.editable(room)
-          if (command.index >= room.cells.length) throw new RoomError('格子超出棋盤範圍。')
+          if (command.index >= room.cells.length) throw new RoomError('CELL_OUT_OF_RANGE')
           if (room.versions[command.index] !== command.expectedVersion)
-            throw new RoomError('這一格已被其他操作更新，請依最新狀態再操作。', 'CELL_CONFLICT')
+            throw new RoomError('CELL_CONFLICT')
           this.apply(room, member.id, command.actionId, [
             { index: command.index, before: room.cells[command.index], after: command.nextState },
           ])
@@ -413,15 +412,15 @@ export class RoomManager {
         case 'undo':
         case 'redo': {
           if (room.phase !== 'playing' && room.phase !== 'completed')
-            throw new RoomError('請先繼續遊戲。')
+            throw new RoomError('GAME_PAUSED')
           const action = room.actions.find(
             (a) => a.id === command.targetId && a.playerId === member.id,
           )
           const undo = command.type === 'undo'
-          if (!action || action.undone === undo) throw new RoomError('沒有可復原或重做的操作。')
+          if (!action || action.undone === undo) throw new RoomError('NOTHING_TO_UNDO')
           const versions = undo ? action.versions : action.undoVersions
           if (action.changes.some((c, i) => room.versions[c.index] !== versions[i]))
-            throw new RoomError('這些格子已有後續修改，無法覆蓋。', 'UNDO_CONFLICT')
+            throw new RoomError('UNDO_CONFLICT')
           action.changes.forEach((c) => {
             room.cells[c.index] = undo ? c.before : c.after
             room.versions[c.index]++
@@ -433,7 +432,7 @@ export class RoomManager {
           room.moves++
           room.hint = null
           room.mistakes = []
-          room.message = ''
+          room.message = null
           this.completion(room)
           break
         }
@@ -445,9 +444,8 @@ export class RoomManager {
             hint.id !== command.hintId ||
             hint.boardRevision !== room.boardRevision
           )
-            throw new RoomError('提示已過期，請重新取得。', 'STALE_HINT')
-          if (hint.level < HINT_LEVELS)
-            throw new RoomError('請先看完整個提示，再套用這一步。', 'HINT_NOT_REVEALED')
+            throw new RoomError('STALE_HINT')
+          if (hint.level < HINT_LEVELS) throw new RoomError('HINT_NOT_REVEALED')
           const changes = hint.step.cells
             .map((index): Change => ({
               index,
@@ -491,7 +489,7 @@ export class RoomManager {
         const room = await this.load(id)
         if (room.gameId !== gameId || room.phase !== 'generating') return
         room.phase = 'waiting'
-        room.message = error instanceof Error ? error.message : '生成失敗，請重試。'
+        room.message = failureMessage(error, 'GENERATION_FAILED')
         await this.commit(room, 'generation_failed', room.hostId)
       }).catch(() => {})
     } finally {
@@ -534,8 +532,7 @@ export class RoomManager {
       this.round(room, command.gameId)
       if (this.receipt(room, credentials, command)) return this.snapshot(room)
       this.editable(room)
-      if (room.boardRevision !== context.room.boardRevision)
-        throw new RoomError('棋盤已改變，請重新取得提示。', 'STALE_HINT')
+      if (room.boardRevision !== context.room.boardRevision) throw new RoomError('STALE_HINT')
       this.remember(room, credentials, command)
       if (command.type === 'hint' && deepen) {
         const shown = room.hint
@@ -558,8 +555,8 @@ export class RoomManager {
         room.hint = null
         room.mistakes = mistakes
         room.message = mistakes.length
-          ? `找到 ${mistakes.length} 個與唯一解不符的皇冠或 X。`
-          : '目前的皇冠和 X 標記都正確。'
+          ? message('check.mistakes', { count: mistakes.length })
+          : message('check.correct')
       }
       return this.commit(room, command.type, credentials.playerId, command.actionId)
     })
@@ -569,7 +566,7 @@ export class RoomManager {
       member = this.authorize(room, credentials)
     this.round(room, gameId)
     if (!room.puzzle || index >= room.cells.length || room.phase !== 'playing')
-      throw new RoomError('目前無法指示格子。')
+      throw new RoomError('CANNOT_POINT')
     return { playerId: member.id, name: member.name, index, gameId, expiresAt: Date.now() + 2500 }
   }
   async flush() {

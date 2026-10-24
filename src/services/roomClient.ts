@@ -1,5 +1,5 @@
 import { io, type Socket } from 'socket.io-client'
-import { i18n } from '../i18n'
+import { LocalizedError, errorMessage, message, type Message } from '../../shared/message'
 import type {
   ClientEvents,
   Credentials,
@@ -16,7 +16,7 @@ export function connectRoom(
     state: (state: RoomSnapshot) => void
     point: (point: Point) => void
     hover: (hover: Hover) => void
-    status: (connected: boolean, error?: string) => void
+    status: (connected: boolean, error?: Message) => void
   },
 ) {
   const socket: Socket<ServerEvents, ClientEvents> = io({
@@ -32,7 +32,11 @@ export function connectRoom(
   socket.on('room:hover', handlers.hover)
   socket.on('connect', () => handlers.status(true))
   socket.on('disconnect', () => handlers.status(false))
-  socket.on('connect_error', (error) => handlers.status(false, error.message))
+  // A refused handshake carries the reason as data; anything else is a plain network failure.
+  socket.on('connect_error', (error) => {
+    const data = (error as { data?: { message?: Message } }).data
+    handlers.status(false, data?.message ?? errorMessage('CONNECT_FAILED'))
+  })
   socket.on('room:error', (error) => handlers.status(false, error.message))
   let hoverTimer: ReturnType<typeof setTimeout> | undefined
   let queuedHover: { gameId: string; index: number | null } | null = null
@@ -50,12 +54,12 @@ export function connectRoom(
   return {
     command(command: RoomCommand): Promise<RoomReply> {
       if (!socket.connected)
-        return Promise.reject(new Error(i18n.global.t('coop.errors.disconnected')))
+        return Promise.reject(new LocalizedError(message('coop.errors.disconnected')))
       return new Promise((resolve, reject) =>
         socket
           .timeout(150000)
           .emit('room:command', command, (error: Error | null, response: RoomReply) =>
-            error ? reject(new Error(i18n.global.t('coop.errors.timeout'))) : resolve(response),
+            error ? reject(new LocalizedError(message('coop.errors.timeout'))) : resolve(response),
           ),
       )
     },

@@ -1,42 +1,55 @@
 <script setup lang="ts">
 import { CircleCheck, Lightbulb } from '@lucide/vue'
+import type { Message } from '../../shared/message'
+import { useMessage } from '../i18n/message'
 import type { TutorialLesson } from '../queens/tutorial'
 defineProps<{
   lesson: TutorialLesson
   index: number
   total: number
   met: boolean
-  hint: { message: string; cells: number[] } | null
+  hint: { message: Message; cells: number[] } | null
   isFirst: boolean
   isLast: boolean
 }>()
 const emit = defineEmits<{ next: []; previous: []; restart: []; hint: [] }>()
+const render = useMessage()
 </script>
 <template>
   <section class="lesson" aria-labelledby="lesson-title">
-    <p class="progress">第 {{ index + 1 }} / {{ total }} 課</p>
-    <h2 id="lesson-title">{{ lesson.title }}</h2>
-    <p v-for="paragraph in lesson.body" :key="paragraph" class="body">{{ paragraph }}</p>
+    <p class="progress">{{ $t('tutorial.progress', { index: index + 1, total }) }}</p>
+    <h2 id="lesson-title">{{ render(lesson.title) }}</h2>
+    <p v-for="(paragraph, number) in lesson.body" :key="number" class="body">
+      {{ render(paragraph) }}
+    </p>
     <div v-if="lesson.task" class="task" role="status" aria-live="polite">
       <CircleCheck v-if="met" :size="18" aria-hidden="true" />
       <span v-else class="todo" aria-hidden="true"></span>
-      <span>{{ met ? '完成了！可以進入下一課。' : lesson.task }}</span>
+      <span>{{ met ? $t('tutorial.done') : render(lesson.task) }}</span>
     </div>
     <div v-if="lesson.hints" class="hint-area">
-      <button class="text-button" @click="emit('hint')"><Lightbulb :size="16" />給我提示</button>
-      <p v-if="hint" class="hint" role="status">{{ hint.message }}</p>
+      <button class="text-button" @click="emit('hint')">
+        <Lightbulb :size="16" />{{ $t('tutorial.hint') }}
+      </button>
+      <p v-if="hint" class="hint" role="status">{{ render(hint.message) }}</p>
     </div>
     <div v-if="isLast" class="actions finish">
-      <RouterLink class="primary" to="/solo">開始遊戲</RouterLink>
-      <RouterLink class="secondary" to="/">回到首頁</RouterLink>
+      <RouterLink class="primary" to="/solo">{{ $t('tutorial.start') }}</RouterLink>
+      <RouterLink class="secondary" to="/">{{ $t('tutorial.home') }}</RouterLink>
     </div>
     <div v-else class="actions">
-      <button class="text-button" :disabled="isFirst" @click="emit('previous')">上一課</button>
-      <button v-if="lesson.task" class="text-button" @click="emit('restart')">重設這一課</button>
-      <button class="primary" :disabled="!met" @click="emit('next')">下一課 →</button>
+      <button class="text-button" :disabled="isFirst" @click="emit('previous')">
+        {{ $t('tutorial.previous') }}
+      </button>
+      <button v-if="lesson.task" class="text-button" @click="emit('restart')">
+        {{ $t('tutorial.restart') }}
+      </button>
+      <button class="primary" :disabled="!met" @click="emit('next')">
+        {{ $t('tutorial.next') }}
+      </button>
     </div>
     <button v-if="!isLast && lesson.task && !met" class="skip text-button" @click="emit('next')">
-      跳過這一課
+      {{ $t('tutorial.skip') }}
     </button>
   </section>
 </template>

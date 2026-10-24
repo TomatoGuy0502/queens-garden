@@ -19,7 +19,7 @@ for (const size of [6, 7, 8, 9, 10, 12]) {
         outcome = `success, score ${puzzle.difficultyScore}`
       } catch (error) {
         expect(error).toBeInstanceOf(Error)
-        expect((error as Error).message).toMatch(/^已達生成預算/)
+        expect(error).toMatchObject({ localized: { key: 'errors.GENERATION_BUDGET' } })
       }
       console.info(`${size} ${difficulty}: ${outcome} (${Math.round(performance.now() - start)}ms)`)
     }, 120000)

@@ -1,3 +1,4 @@
+import { errorMessage, type ErrorCode, type Message, type MessageParam } from '../shared/message'
 import type { BoardAction, GameSnapshot, RoomSettings, SharedHint } from '../shared/coop'
 import type { CellState, QueensPuzzle } from '../src/queens/types'
 export interface StoredPlayer {
@@ -28,7 +29,7 @@ export interface StoredRoom {
   moves: number
   hints: number
   hint: SharedHint | null
-  message: string
+  message: Message | null
   mistakes: number[]
   receipts: Record<string, { playerId: string; fingerprint: string }>
 }
@@ -51,11 +52,14 @@ export interface RoomRepository {
   save(room: StoredRoom, event: RoomEvent): Promise<void>
   deleteExpired(now: number): Promise<void>
 }
+/** A refusal the room's players can be told about; the text is chosen by each reader's language. */
 export class RoomError extends Error {
+  readonly localized: Message
   constructor(
-    message: string,
-    public code = 'INVALID_ACTION',
+    public code: ErrorCode = 'INVALID_ACTION',
+    params?: Record<string, MessageParam>,
   ) {
-    super(message)
+    super(code)
+    this.localized = errorMessage(code, params)
   }
 }

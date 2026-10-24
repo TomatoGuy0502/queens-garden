@@ -1,5 +1,6 @@
+import { message } from '../../../shared/message'
 import type { DeductionStep } from '../types'
-import { type LogicState, unitName } from './state'
+import { type LogicState, unitRef } from './state'
 
 /** A queen cannot touch every possible location of another required queen. */
 export function adjacentExclusion(state: LogicState): DeductionStep | null {
@@ -31,7 +32,7 @@ export function adjacentExclusion(state: LogicState): DeductionStep | null {
         action: 'eliminate',
         cells: eliminated,
         units: [index],
-        reason: `${unitName(index, n)} 必須有一頂皇冠；框選格與它的每個候選位置都直接相鄰，放皇冠一定會造成接觸，因此可標記 X。`,
+        reason: message('reason.adjacency', { unit: unitRef(index, n) }),
       }
   }
   return null

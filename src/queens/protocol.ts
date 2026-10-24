@@ -1,3 +1,4 @@
+import type { Message } from '../../shared/message'
 import type { CellState, DeductionStep, GenerateOptions, PuzzleDefinition } from './types'
 export type WorkerRequest = { id: number } & (
   | { type: 'generate'; options: GenerateOptions }
@@ -6,9 +7,9 @@ export type WorkerRequest = { id: number } & (
 )
 export interface WorkerResponse {
   id: number
-  error?: string
+  error?: Message
   puzzle?: PuzzleDefinition
   step?: DeductionStep | null
-  message?: string
+  message?: Message
   mistakes?: number[]
 }

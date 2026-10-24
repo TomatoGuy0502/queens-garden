@@ -43,7 +43,7 @@ describe('bounded seeded generation', () => {
   })
   it('fails explicitly under a tiny budget, never returns an unchecked board', () => {
     expect(() => generatePuzzle({ size: 12, seed: 1, maxAttempts: 1, mutationBudget: 0 })).toThrow(
-      /預算/,
+      expect.objectContaining({ localized: { key: 'errors.GENERATION_BUDGET' } }),
     )
     expect(() => generatePuzzle({ size: 99, seed: 1 })).toThrow()
   })

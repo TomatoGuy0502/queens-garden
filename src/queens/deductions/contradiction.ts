@@ -1,5 +1,6 @@
+import { message } from '../../../shared/message'
 import type { DeductionStep } from '../types'
-import { type LogicState, applyStep, contradiction, place, unitName } from './state'
+import { type LogicState, applyStep, contradiction, place, unitRef } from './state'
 import { adjacentExclusion } from './adjacency'
 import { singleCandidate } from './singles'
 import { lockedCandidates } from './intersections'
@@ -23,7 +24,9 @@ export function contradictionReasoning(state: LogicState): DeductionStep | null 
     if (contradiction(trial)) {
       const emptyUnit = trial.units.findIndex((unit) => !unit.some((c) => trial.candidates.has(c)))
       const consequence =
-        emptyUnit >= 0 ? `${unitName(emptyUnit, state.n)}沒有候選格` : '皇冠之間互相衝突'
+        emptyUnit >= 0
+          ? message('reason.noCandidates', { unit: unitRef(emptyUnit, state.n) })
+          : message('reason.queensConflict')
       return {
         strategy: 'contradiction',
         level: 3,
@@ -31,7 +34,12 @@ export function contradictionReasoning(state: LogicState): DeductionStep | null 
         cells: [cell],
         units: [],
         evidence,
-        reason: `假設第 ${Math.floor(cell / state.n) + 1} 列、第 ${(cell % state.n) + 1} 欄有皇冠，經 ${evidence.length} 步單一候選、相鄰排除與交集推理後，會造成${consequence}。這個假設矛盾，因此可排除此格。`,
+        reason: message('reason.contradiction', {
+          row: Math.floor(cell / state.n) + 1,
+          col: (cell % state.n) + 1,
+          steps: evidence.length,
+          consequence,
+        }),
       }
     }
   }

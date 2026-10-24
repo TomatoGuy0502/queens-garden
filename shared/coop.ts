@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import type { Message } from './message'
 import { ROOM_CODE_PATTERN } from './roomCode'
 import { DIFFICULTIES } from '../src/queens/levels'
 import type { CellState, DeductionStep, PuzzleDefinition } from '../src/queens/types'
@@ -73,7 +74,7 @@ export interface SharedHint {
   id: string
   boardRevision: number
   step: DeductionStep | null
-  message: string
+  message: Message
   /** 1 = where to look, 2 = the technique, 3 = the answer; 0 when there is no logical step. */
   level: number
 }
@@ -89,7 +90,8 @@ export interface GameSnapshot {
   moves: number
   hints: number
   hint: SharedHint | null
-  message: string
+  /** The latest room-wide notice; null when there is none. */
+  message: Message | null
   mistakes: number[]
 }
 export interface RoomSnapshot {
@@ -104,7 +106,7 @@ export interface RoomSnapshot {
 }
 export type RoomReply =
   | { ok: true; state: RoomSnapshot }
-  | { ok: false; error: string; code: string }
+  | { ok: false; error: Message; code: string }
 export interface RoomAccess {
   credentials: Credentials
   state: RoomSnapshot
@@ -128,7 +130,7 @@ export interface ServerEvents {
   'room:hover': (hover: Hover) => void
   'room:state': (state: RoomSnapshot) => void
   'room:point': (point: Point) => void
-  'room:error': (error: { message: string }) => void
+  'room:error': (error: { message: Message }) => void
 }
 export interface ClientEvents {
   'room:hover': (hover: z.infer<typeof hoverSchema>) => void

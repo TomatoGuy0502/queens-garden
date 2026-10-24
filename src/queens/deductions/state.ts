@@ -60,10 +60,6 @@ export function applyStep(state: LogicState, step: DeductionStep): void {
   if (step.action === 'place') step.cells.forEach((c) => place(state, c))
   else step.cells.forEach((c) => state.candidates.delete(c))
 }
-export function unitName(index: number, n: number): string {
-  return index < n
-    ? `第 ${index + 1} 列`
-    : index < 2 * n
-      ? `第 ${index - n + 1} 欄`
-      : `區域 ${String.fromCharCode(65 + index - 2 * n)}`
-}
+/** Rows, columns and regions are named by the reader's language when a message is rendered. */
+export const unitRef = (unit: number, n: number) => ({ unit, n })
+export const unitsRef = (units: number[], n: number) => ({ units, n })

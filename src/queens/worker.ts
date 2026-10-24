@@ -1,4 +1,5 @@
 /// <reference lib="webworker" />
+import { LocalizedError, errorMessage, message } from '../../shared/message'
 import { generatePuzzle } from './generator'
 import { logicalHint } from './difficulty'
 import { createState } from './deductions/state'
@@ -15,8 +16,9 @@ self.onmessage = (event: MessageEvent<WorkerRequest>) => {
       const { solution: _solution, analysis: _analysis, ...definition } = current
       response.puzzle = definition
     } else {
-      if (!current) throw new Error('請先產生關卡。')
-      if (request.cells.length !== current.size * current.size) throw new Error('遊戲狀態不合法。')
+      if (!current) throw new LocalizedError(errorMessage('NO_PUZZLE'))
+      if (request.cells.length !== current.size * current.size)
+        throw new LocalizedError(errorMessage('INVALID_STATE'))
       if (request.type === 'check') {
         response.mistakes = request.cells.flatMap((state, index) => {
           const isQueen =
@@ -24,19 +26,20 @@ self.onmessage = (event: MessageEvent<WorkerRequest>) => {
           return (state === 'queen' && !isQueen) || (state === 'marked' && isQueen) ? [index] : []
         })
         response.message = response.mistakes.length
-          ? `找到 ${response.mistakes.length} 個與唯一解不符的皇冠或 X 標記。`
-          : '目前的皇冠和 X 標記都正確，繼續吧。'
+          ? message('check.mistakes', { count: response.mistakes.length })
+          : message('check.correct')
       } else {
         const allowed = createState(current.regions, request.cells).candidates
         const feasibility = solve(current.regions, 1, allowed)
         if (!feasibility.exhausted && !feasibility.solutionCount) {
           response.step = null
-          response.message = '目前配置無法完成：至少一頂皇冠或 X 標記造成矛盾。請先檢查或撤回操作。'
+          response.message = message('hint.impossible')
         } else Object.assign(response, logicalHint(current.regions, request.cells))
       }
     }
   } catch (error) {
-    response.error = error instanceof Error ? error.message : '運算失敗，請再試一次。'
+    response.error =
+      error instanceof LocalizedError ? error.localized : errorMessage('COMPUTE_ERROR')
   }
   self.postMessage(response)
 }

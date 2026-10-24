@@ -1,6 +1,6 @@
 import { computed, onMounted, onUnmounted, shallowRef } from 'vue'
 import { useRouter } from 'vue-router'
-import { i18n } from '../i18n'
+import { LocalizedError, failureMessage, message as say, type Message } from '../../shared/message'
 import type { CellState, DeductionStep, Difficulty, PuzzleDefinition } from '../queens/types'
 import type { WorkerRequest, WorkerResponse } from '../queens/protocol'
 import { nextCell } from '../queens/cells'
@@ -12,8 +12,6 @@ import {
 } from '../queens/progress'
 import { HINT_LEVELS, hintView } from '../queens/strategies'
 import { conflictCells } from '../queens/validator'
-
-const { t } = i18n.global
 
 export function useQueensGame() {
   const router = useRouter()
@@ -31,8 +29,8 @@ export function useQueensGame() {
     attempt = shallowRef(0)
   /** Date key when the puzzle on the board is that day's challenge. */
   const daily = shallowRef<string | null>(null)
-  const message = shallowRef(''),
-    error = shallowRef('')
+  const message = shallowRef<Message | null>(null),
+    error = shallowRef<Message | null>(null)
   const hint = shallowRef<DeductionStep | null>(null),
     // 0 = no hint; 1 = where to look; 2 = which technique; 3 = the full answer.
     hintLevel = shallowRef(0),
@@ -75,10 +73,10 @@ export function useQueensGame() {
   const hintCells = computed(() => hintInfo.value?.cells ?? [])
   const hintRevealed = computed(() => !!hint.value && hintLevel.value >= HINT_LEVELS)
 
-  function stopWorker(reason = t('game.errors.aborted')) {
+  function stopWorker(reason: Message = say('game.errors.aborted')) {
     worker?.terminate()
     worker = null
-    for (const pending of requests.values()) pending.reject(new Error(reason))
+    for (const pending of requests.values()) pending.reject(new LocalizedError(reason))
     requests.clear()
   }
   function rpc(
@@ -92,12 +90,12 @@ export function useQueensGame() {
         const pending = requests.get(event.data.id)
         if (!pending) return
         requests.delete(event.data.id)
-        if (event.data.error) pending.reject(new Error(event.data.error))
+        if (event.data.error) pending.reject(new LocalizedError(event.data.error))
         else pending.resolve(event.data)
       }
       worker.onerror = () => {
-        stopWorker(t('game.errors.workerStart'))
-        error.value = t('game.errors.workerFailed')
+        stopWorker(say('game.errors.workerStart'))
+        error.value = say('game.errors.workerFailed')
         busy.value = false
         assisting.value = false
       }
@@ -113,7 +111,7 @@ export function useQueensGame() {
     hint.value = null
     hintLevel.value = 0
     mistakes.value = []
-    message.value = ''
+    message.value = null
   }
   function resetSession() {
     cells.value = Array<CellState>(puzzle.value!.size ** 2).fill('empty')
@@ -169,7 +167,7 @@ export function useQueensGame() {
     busy.value = true
     assisting.value = false
     paused.value = false
-    error.value = ''
+    error.value = null
     clearFeedback()
     const generation = ++generationId
     cells.value = []
@@ -193,7 +191,7 @@ export function useQueensGame() {
       return 'ready'
     } catch (reason) {
       if (generation !== generationId) return 'stale'
-      error.value = (reason as Error).message
+      error.value = failureMessage(reason, 'COMPUTE_ERROR')
       return 'failed'
     } finally {
       if (generation === generationId) busy.value = false
@@ -203,7 +201,7 @@ export function useQueensGame() {
     generationId++
     stopWorker()
     busy.value = false
-    error.value = t('game.errors.cancelled')
+    error.value = say('game.errors.cancelled')
   }
   function edit(index: number, action: 'cycle' | 'mark' = 'cycle') {
     if (blocked.value || !puzzle.value || index < 0 || index >= cells.value.length) return
@@ -213,7 +211,7 @@ export function useQueensGame() {
     cells.value = cells.value.map((cell, i) => (i === index ? next : cell))
     moves.value++
     clearFeedback()
-    if (won.value) message.value = t('game.won')
+    if (won.value) message.value = say('game.won')
   }
   function undo() {
     if (busy.value || paused.value || !history.value.length) return
@@ -245,7 +243,7 @@ export function useQueensGame() {
     try {
       const response = await rpc({ type, cells: [...cells.value] })
       if (atRevision !== revision) return
-      message.value = response.message ?? ''
+      message.value = response.message ?? null
       hint.value = response.step ?? null
       mistakes.value = response.mistakes ?? []
       if (type === 'hint') {
@@ -253,7 +251,7 @@ export function useQueensGame() {
         hintLevel.value = response.step ? 1 : 0
       }
     } catch (reason) {
-      if (atRevision === revision) message.value = (reason as Error).message
+      if (atRevision === revision) message.value = failureMessage(reason, 'COMPUTE_ERROR')
     } finally {
       assisting.value = false
     }

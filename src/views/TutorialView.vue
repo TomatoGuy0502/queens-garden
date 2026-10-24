@@ -17,8 +17,8 @@ watch(isLast, (last) => last && markDone())
 <template>
   <main class="page-shell">
     <AppHeader />
-    <h1>新手教學</h1>
-    <p class="page-description">跟著做幾個小練習，學會規則和基本推理。</p>
+    <h1>{{ $t('tutorial.title') }}</h1>
+    <p class="page-description">{{ $t('tutorial.intro') }}</p>
     <div class="tutorial">
       <QueensBoard
         :key="lesson.id"

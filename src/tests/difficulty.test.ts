@@ -7,6 +7,7 @@ import {
   evaluateDifficulty,
   logicalHint,
 } from '../queens/difficulty'
+import { renderSource } from '../i18n/source'
 import type { DeductionStep } from '../queens/types'
 import { applyStep, createState, contradiction } from '../queens/deductions/state'
 import { nextDeduction } from '../queens/difficulty'
@@ -53,10 +54,10 @@ it('hints prioritize conflicting queens and over-marked units', () => {
   const p = generatePuzzle({ size: 6, seed: 1 })
   const cells = Array<import('../queens/types').CellState>(36).fill('empty')
   cells[0] = cells[1] = 'queen'
-  expect(logicalHint(p.regions, cells).message).toContain('矛盾')
+  expect(renderSource(logicalHint(p.regions, cells).message)).toContain('矛盾')
   cells.fill('empty')
   cells.fill('marked', 0, 6)
-  expect(logicalHint(p.regions, cells).message).toContain('矛盾')
+  expect(renderSource(logicalHint(p.regions, cells).message)).toContain('矛盾')
 })
 
 it('Hall sets safely eliminate candidates even on a board with multiple solutions', async () => {
@@ -106,7 +107,7 @@ const step = (strategy: DeductionStep['strategy']): DeductionStep => ({
   action: 'eliminate',
   cells: [],
   units: [],
-  reason: '',
+  reason: { key: 'reason.single' },
 })
 const steps = (hall: number, contradiction: number) => [
   ...Array.from({ length: hall }, () => step('hall')),

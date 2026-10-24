@@ -1,7 +1,7 @@
 import { expect, it } from 'vitest'
-import { unitName } from '../queens/deductions/state'
+import { renderSource } from '../i18n/source'
 import { generatePuzzle } from '../queens/generator'
-import { HINT_LEVELS, STRATEGY_INFO, hintView, unitCells } from '../queens/strategies'
+import { HINT_LEVELS, hintView, strategyLabel, unitCells } from '../queens/strategies'
 import type { Strategy } from '../queens/types'
 
 const puzzles = [
@@ -48,19 +48,38 @@ it('reveals a hint gradually and only shows the answer at the last level', () =>
     const second = hintView(step, 2, puzzle.regions)
     const last = hintView(step, HINT_LEVELS, puzzle.regions)
     expect(last).toEqual({ text: step.reason, cells: step.cells })
+    const answer = renderSource(step.reason)
+    const label = renderSource(strategyLabel(step.strategy))
     for (const early of [first, second]) {
-      expect(early.text).not.toBe(step.reason)
-      expect(early.text).not.toContain(step.reason)
+      expect(early.text).not.toEqual(step.reason)
+      expect(renderSource(early.text)).not.toContain(answer)
     }
-    expect(second.text).toContain(STRATEGY_INFO[step.strategy].label)
-    expect(first.text).not.toContain(STRATEGY_INFO[step.strategy].label)
+    expect(renderSource(second.text)).toContain(label)
+    expect(renderSource(first.text)).not.toContain(label)
     if (step.units.length) {
-      for (const unit of step.units) expect(first.text).toContain(unitName(unit, n))
+      expect(first.text).toEqual({
+        key: 'hint.look',
+        params: { units: { units: step.units, n } },
+      })
       expect(first.cells).toEqual(second.cells)
       expect(new Set(first.cells)).toEqual(
         new Set(step.units.flatMap((unit) => unitCells(unit, puzzle.regions))),
       )
     } else expect(first.cells).toEqual([])
+  }
+})
+it('names rows, columns and regions in the source language', () => {
+  const { step, puzzle } = steps.find(({ step }) => step.units.length)!
+  const text = renderSource(hintView(step, 1, puzzle.regions).text)
+  for (const unit of step.units) {
+    const n = puzzle.size
+    const expected =
+      unit < n
+        ? `第 ${unit + 1} 列`
+        : unit < 2 * n
+          ? `第 ${unit - n + 1} 欄`
+          : `區域 ${String.fromCharCode(65 + unit - 2 * n)}`
+    expect(text).toContain(expected)
   }
 })
 it('clamps levels outside the range', () => {

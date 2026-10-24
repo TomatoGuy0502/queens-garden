@@ -1,3 +1,4 @@
+import { LocalizedError, errorMessage } from '../../shared/message'
 import { evaluateDifficulty } from './difficulty'
 import { generatePlacement, random } from './random'
 import { growRegions, mutateRegions } from './regionGrower'
@@ -70,5 +71,8 @@ export function generatePuzzle(options: GenerateOptions): QueensPuzzle {
       }
     }
   }
-  throw new Error('已達生成預算，找不到通過驗證的關卡。請更換 Seed 或調整設定。')
+  throw new LocalizedError(
+    errorMessage('GENERATION_BUDGET'),
+    'Generation budget reached without finding a verified puzzle. Try another seed or settings.',
+  )
 }

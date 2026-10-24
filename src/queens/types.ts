@@ -1,3 +1,4 @@
+import type { Message } from '../../shared/message'
 export type QueenPlacement = number[]
 export type Difficulty = 'easy' | 'medium' | 'hard' | 'expert'
 export type CellState = 'empty' | 'marked' | 'queen'
@@ -33,7 +34,7 @@ export interface DeductionStep {
   cells: number[]
   /** Rows (0..n-1), columns (n..2n-1) and regions (2n..3n-1) the reasoning is about. */
   units: number[]
-  reason: string
+  reason: Message
   evidence?: DeductionStep[]
 }
 export interface DifficultyReport {

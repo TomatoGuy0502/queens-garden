@@ -1,4 +1,5 @@
 import { computed, shallowRef } from 'vue'
+import type { Message } from '../../shared/message'
 import { nextCell } from '../queens/cells'
 import { buildLessons, conflictsOf, goalMet, nextHint } from '../queens/tutorial'
 import type { CellState } from '../queens/types'
@@ -7,7 +8,7 @@ export function useTutorial() {
   const lessons = buildLessons()
   const index = shallowRef(0)
   const cells = shallowRef<CellState[]>([...lessons[0].preset])
-  const hint = shallowRef<{ message: string; cells: number[] } | null>(null)
+  const hint = shallowRef<{ message: Message; cells: number[] } | null>(null)
   const lesson = computed(() => lessons[index.value])
   const met = computed(() => goalMet(lesson.value.goal, cells.value))
   const conflicts = computed(() => conflictsOf(cells.value))

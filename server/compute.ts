@@ -1,7 +1,8 @@
 import { Worker } from 'node:worker_threads'
 import { resolve } from 'node:path'
+import type { Message } from '../shared/message'
 import type { CellState, DeductionStep, GenerateOptions, QueensPuzzle } from '../src/queens/types'
-export type HintResult = { step: DeductionStep | null; message: string }
+export type HintResult = { step: DeductionStep | null; message: Message }
 export type ComputeJob =
   | { type: 'generate'; options: GenerateOptions }
   | { type: 'generate-validated'; options: GenerateOptions }
@@ -67,7 +68,7 @@ export function workerPool(concurrency = 2, timeoutMs = 120000): CatalogCompute 
       }
       running.set(worker, { priority: task.priority, finish })
       const timer = setTimeout(
-        () => finish(new ComputeError('運算逾時，請更換設定後再試。', 'COMPUTE_TIMEOUT')),
+        () => finish(new ComputeError('Computation timed out.', 'COMPUTE_TIMEOUT')),
         task.priority === 'background' ? Math.min(timeoutMs, 15000) : timeoutMs,
       )
       // Node --watch also sends dependency messages through worker events.
@@ -86,26 +87,28 @@ export function workerPool(concurrency = 2, timeoutMs = 120000): CatalogCompute 
         )
       })
       worker.once('error', (error) =>
-        finish(error instanceof Error ? error : new Error('運算失敗。')),
+        finish(error instanceof Error ? error : new Error('Computation failed.')),
       )
       worker.once('exit', () => {
-        if (!finished) finish(new ComputeError('運算服務已停止。', 'COMPUTE_CLOSED'))
+        if (!finished) finish(new ComputeError('The compute service stopped.', 'COMPUTE_CLOSED'))
       })
       worker.postMessage(task.job)
     }
   }
   function execute<T>(job: ComputeJob, priority: ComputePriority = 'foreground'): Promise<T> {
     if (closed || foreground.length >= 16)
-      return Promise.reject(new ComputeError('運算服務忙碌，請稍後再試。', 'COMPUTE_BUSY'))
+      return Promise.reject(new ComputeError('The compute service is busy.', 'COMPUTE_BUSY'))
     if (priority === 'background' && (running.size || foreground.length || background.length))
-      return Promise.reject(new ComputeError('玩家請求優先。', 'BACKGROUND_PREEMPTED'))
+      return Promise.reject(
+        new ComputeError('Preempted by a player request.', 'BACKGROUND_PREEMPTED'),
+      )
     return new Promise<T>((resolve, reject) => {
       const task: Task = { job, priority, resolve: (value) => resolve(value as T), reject }
       if (priority === 'foreground') {
         foreground.push(task)
         for (const entry of running.values())
           if (entry.priority === 'background')
-            entry.finish(new ComputeError('玩家請求優先。', 'BACKGROUND_PREEMPTED'))
+            entry.finish(new ComputeError('Preempted by a player request.', 'BACKGROUND_PREEMPTED'))
       } else background.push(task)
       drain()
     })
@@ -118,16 +121,16 @@ export function workerPool(concurrency = 2, timeoutMs = 120000): CatalogCompute 
     hint: (regions, cells) => execute<HintResult>({ type: 'hint', regions, cells }),
     cancelBackground() {
       for (const task of background.splice(0))
-        task.reject(new ComputeError('玩家請求優先。', 'BACKGROUND_PREEMPTED'))
+        task.reject(new ComputeError('Preempted by a player request.', 'BACKGROUND_PREEMPTED'))
       for (const entry of running.values())
         if (entry.priority === 'background')
-          entry.finish(new ComputeError('玩家請求優先。', 'BACKGROUND_PREEMPTED'))
+          entry.finish(new ComputeError('Preempted by a player request.', 'BACKGROUND_PREEMPTED'))
     },
     isIdle: () => !running.size && !foreground.length && !background.length,
     async close() {
       closed = true
       for (const task of [...foreground.splice(0), ...background.splice(0)])
-        task.reject(new ComputeError('運算服務已關閉。', 'COMPUTE_CLOSED'))
+        task.reject(new ComputeError('The compute service is closed.', 'COMPUTE_CLOSED'))
       await Promise.all([...running.keys()].map((worker) => worker.terminate()))
     },
   }

@@ -39,8 +39,7 @@ export function databaseRepository<T extends PgQueryResultHKT>(
             setWhere: eq(schema.rooms.revision, room.revision - 1),
           })
           .returning({ id: schema.rooms.id })
-        if (!written.length)
-          throw new RoomError('房間已更新，請同步最新狀態後重試。', 'STATE_CONFLICT')
+        if (!written.length) throw new RoomError('STATE_CONFLICT')
         await tx
           .insert(schema.roomEvents)
           .values({ roomId: room.id, revision: room.revision, event })

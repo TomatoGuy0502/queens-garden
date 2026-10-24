@@ -1,6 +1,6 @@
 import { computed, shallowRef } from 'vue'
 import { defineStore } from 'pinia'
-import { i18n } from '../i18n'
+import { LocalizedError, failureMessage, message, type Message } from '../../shared/message'
 import {
   credentialsSchema,
   type Credentials,
@@ -23,12 +23,12 @@ export const useRoomStore = defineStore('room', () => {
     credentials = shallowRef<Credentials | null>(null)
   const connected = shallowRef(false),
     connecting = shallowRef(false),
-    error = shallowRef(''),
+    error = shallowRef<Message | null>(null),
     pending = shallowRef(0)
-  const notice = shallowRef<{ id: number; message: string } | null>(null)
+  const notice = shallowRef<{ id: number; message: Message } | null>(null)
   let noticeId = 0
-  function notify(message: string) {
-    notice.value = { id: ++noticeId, message }
+  function notify(text: Message) {
+    notice.value = { id: ++noticeId, message: text }
   }
   function dismissNotice() {
     notice.value = null
@@ -128,7 +128,7 @@ export const useRoomStore = defineStore('room', () => {
     close()
     credentials.value = value
     connecting.value = true
-    error.value = ''
+    error.value = null
     client = connectRoom(value, {
       state: accept,
       point(point) {
@@ -149,7 +149,7 @@ export const useRoomStore = defineStore('room', () => {
         connected.value = value
         connecting.value = false
         if (issue) error.value = issue
-        else if (value) error.value = ''
+        else if (value) error.value = null
       },
     })
   }
@@ -160,7 +160,7 @@ export const useRoomStore = defineStore('room', () => {
   function restore(id: string) {
     if (credentials.value?.roomId === id && client) return true
     close()
-    error.value = ''
+    error.value = null
     try {
       const stored: unknown = JSON.parse(sessionStorage.getItem(`queens:room:${id}`) ?? 'null')
       const parsed = credentialsSchema.safeParse(stored)
@@ -179,28 +179,29 @@ export const useRoomStore = defineStore('room', () => {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
     })
-    const data = (await response.json()) as RoomAccess & { error?: string }
-    if (!response.ok) throw new Error(data.error ?? i18n.global.t('coop.join.failed'))
+    const data = (await response.json()) as RoomAccess & { error?: Message }
+    if (!response.ok)
+      throw new LocalizedError(data.error ?? message('coop.join.failed'), 'Request failed')
     return data
   }
   async function create(name: string, settings: RoomSettings) {
-    error.value = ''
+    error.value = null
     const access = await post('/api/rooms', { name, ...settings })
     remember(access)
     return access.credentials.roomId
   }
   async function join(id: string, name: string) {
-    error.value = ''
+    error.value = null
     remember(await post(`/api/rooms/${encodeURIComponent(id)}/join`, { name }))
   }
   async function send(input: CommandInput) {
     if (!client || !connected.value) {
-      notify(i18n.global.t('coop.errors.waitReconnect'))
+      notify(message('coop.errors.waitReconnect'))
       return false
     }
     const gameId = input.gameId ?? game.state?.id
     if (!gameId) {
-      notify(i18n.global.t('coop.errors.syncing'))
+      notify(message('coop.errors.syncing'))
       return false
     }
     const currentClient = client
@@ -221,7 +222,7 @@ export const useRoomStore = defineStore('room', () => {
       return false
     } catch (reason) {
       if (client === currentClient) {
-        notify((reason as Error).message)
+        notify(failureMessage(reason))
         currentClient.sync()
       }
       return false

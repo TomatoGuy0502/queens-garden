@@ -1,3 +1,4 @@
+import { message, type Message } from '../../shared/message'
 import { applyStep, createState } from './deductions/state'
 import { evaluateDifficulty, logicalHint } from './difficulty'
 import { solve } from './solver'
@@ -35,10 +36,10 @@ export type TutorialGoal =
   | { type: 'solved' }
 export interface TutorialLesson {
   id: string
-  title: string
-  body: string[]
-  /** What the player must do, shown beside the board; empty for read-only lessons. */
-  task: string
+  title: Message
+  body: Message[]
+  /** What the player must do, shown beside the board; null for read-only lessons. */
+  task: Message | null
   goal: TutorialGoal
   preset: CellState[]
   highlight: number[]
@@ -81,8 +82,8 @@ function boardAfter(steps: DeductionStep[], count: number): CellState[] {
   return cells
 }
 export function nextHint(cells: CellState[]) {
-  const { step, message } = logicalHint(REGIONS, cells)
-  return { message, cells: step?.cells ?? [], action: step?.action ?? null }
+  const { step, message: text } = logicalHint(REGIONS, cells)
+  return { message: text, cells: step?.cells ?? [], action: step?.action ?? null }
 }
 
 export function buildLessons(): TutorialLesson[] {
@@ -91,117 +92,78 @@ export function buildLessons(): TutorialLesson[] {
   const intersection = steps.findIndex((step) => step.strategy === 'intersection')
   const single = steps.findIndex((step, i) => step.strategy === 'single' && i > intersection)
   if (adjacency < 0 || intersection < 0 || single < 0)
-    throw new Error('教學棋盤缺少需要示範的推理步驟。')
+    throw new Error('The tutorial board lacks a step to demonstrate.')
   const solved = empty()
   for (const [row, col] of solve(REGIONS).solutions[0].entries()) solved[row * size + col] = 'queen'
   const conflict = empty()
   conflict[2 * size + 2] = 'queen'
   conflict[3 * size + 3] = 'queen'
+  const text = (id: string, part: string, params?: Record<string, number>) =>
+    message(`tutorial.lessons.${id}.${part}`, params)
   const lesson = (
     id: string,
-    title: string,
-    body: string[],
+    paragraphs: (string | Message)[],
     goal: TutorialGoal,
-    task: string,
-    preset: CellState[] = empty(),
-    highlight: number[] = [],
-    hints = false,
-  ): TutorialLesson => ({ id, title, body, goal, task, preset, highlight, hints })
+    options: {
+      task?: boolean
+      count?: number
+      preset?: CellState[]
+      highlight?: number[]
+      hints?: boolean
+    } = {},
+  ): TutorialLesson => {
+    const params = options.count === undefined ? undefined : { count: options.count }
+    return {
+      id,
+      title: text(id, 'title'),
+      body: paragraphs.map((paragraph) =>
+        typeof paragraph === 'string' ? text(id, paragraph, params) : paragraph,
+      ),
+      goal,
+      task: options.task === false ? null : text(id, 'task', params),
+      preset: options.preset ?? empty(),
+      highlight: options.highlight ?? [],
+      hints: options.hints ?? false,
+    }
+  }
   const step = (index: number) => steps[index]
   return [
-    lesson(
-      'rules',
-      '認識規則',
-      [
-        '每一列、每一欄、每個顏色區域，都要放上恰好一頂皇冠。',
-        '任兩頂皇冠不能相鄰，上下左右和斜角都不行；較遠的對角線沒關係。',
-        '棋盤上有唯一一組正確擺法，只要靠推理就能找到，不需要猜。',
-      ],
-      { type: 'continue' },
-      '',
-    ),
-    lesson(
-      'queen',
-      '放下皇冠',
-      ['點一下任何一格，就會放上一頂皇冠。'],
-      { type: 'queen-any' },
-      '在棋盤上放一頂皇冠',
-    ),
-    lesson(
-      'mark',
-      '用 X 整理想法',
-      [
-        'X 代表「這一格一定不是皇冠」，幫你記住已經排除的位置。',
-        '再點一次皇冠格會變成 X，第三次清除。桌機也可以按滑鼠右鍵或鍵盤的 X 鍵直接標記。',
-      ],
-      { type: 'mark-any' },
-      '把任何一格標記成 X',
-    ),
-    lesson(
-      'adjacent',
-      '皇冠不能相鄰',
-      [
-        '這兩頂皇冠斜角相鄰，所以格子出現了紅色斜紋，表示衝突。',
-        '出現衝突時，可以點皇冠把它變成 X，或使用復原。',
-      ],
-      { type: 'no-conflict' },
-      '消除衝突，讓兩頂皇冠不再相鄰',
-      conflict,
-    ),
+    lesson('rules', ['p1', 'p2', 'p3'], { type: 'continue' }, { task: false }),
+    lesson('queen', ['p1'], { type: 'queen-any' }),
+    lesson('mark', ['p1', 'p2'], { type: 'mark-any' }),
+    lesson('adjacent', ['p1', 'p2'], { type: 'no-conflict' }, { preset: conflict }),
     lesson(
       'adjacency',
-      '技巧一：相鄰排除',
-      [
-        '與其亂猜，不如先找出「一定不能放」的格子。',
-        step(adjacency).reason,
-        `框選的 ${step(adjacency).cells.length} 格就是這個推理排除的位置。`,
-      ],
+      ['p1', step(adjacency).reason, 'p3'],
       { type: 'mark-all', cells: step(adjacency).cells },
-      `把框選的 ${step(adjacency).cells.length} 格標記成 X`,
-      boardAfter(steps, adjacency),
-      step(adjacency).cells,
+      {
+        count: step(adjacency).cells.length,
+        preset: boardAfter(steps, adjacency),
+        highlight: step(adjacency).cells,
+      },
     ),
     lesson(
       'intersection',
-      '技巧二：區域與列的交集',
-      ['有時某個區域所有可放的位置，剛好都落在同一列（或同一欄）。', step(intersection).reason],
+      ['p1', step(intersection).reason],
       { type: 'mark-all', cells: step(intersection).cells },
-      `把框選的 ${step(intersection).cells.length} 格標記成 X`,
-      boardAfter(steps, intersection),
-      step(intersection).cells,
+      {
+        count: step(intersection).cells.length,
+        preset: boardAfter(steps, intersection),
+        highlight: step(intersection).cells,
+      },
     ),
     lesson(
       'single',
-      '技巧三：只剩一格',
-      ['當某一列、欄或區域只剩下一個可以放的格子，皇冠就一定在那裡。', step(single).reason],
+      ['p1', step(single).reason],
       { type: 'queen-at', cell: step(single).cells[0] },
-      '在框選的格子放上皇冠',
-      boardAfter(steps, single),
-      step(single).cells,
+      { preset: boardAfter(steps, single), highlight: step(single).cells },
     ),
     lesson(
       'finish',
-      '換你完成',
-      [
-        '剩下的格子交給你。持續交替使用上面三個技巧：先排除，再找只剩一格的地方。',
-        '卡住時可以按「給我提示」，它會告訴你下一步的理由。',
-      ],
+      ['p1', 'p2'],
       { type: 'solved' },
-      '放滿 6 頂皇冠，完成這盤',
-      boardAfter(steps, single + 1),
-      [],
-      true,
+      { preset: boardAfter(steps, single + 1), hints: true },
     ),
-    lesson(
-      'done',
-      '你學會了！',
-      [
-        '你已經學會規則、X 標記與三個基本推理技巧。',
-        '更難的題目還會用到更進階的推理，遇到時使用「給我一點提示」。現在可以開始真正的遊戲。',
-      ],
-      { type: 'continue' },
-      '',
-      solved,
-    ),
+    lesson('done', ['p1', 'p2'], { type: 'continue' }, { task: false, preset: solved }),
   ]
 }

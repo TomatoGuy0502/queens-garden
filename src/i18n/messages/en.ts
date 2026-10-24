@@ -340,5 +340,183 @@ const en: Messages<typeof zhHant> = {
       timeout: 'The server took too long to respond. Reconnect to sync.',
     },
   },
+  unit: {
+    row: 'row {index}',
+    column: 'column {index}',
+    region: 'region {letter}',
+    separator: ', ',
+  },
+  strategy: {
+    single: {
+      label: 'Single candidate',
+      summary:
+        'A row, column or region has only one cell left for its crown, so the crown must go there.',
+    },
+    adjacency: {
+      label: 'Adjacent elimination',
+      summary:
+        'Every candidate position of a unit touches the same cell, so a crown there would always make contact and it can be marked X.',
+    },
+    intersection: {
+      label: 'Region–line intersection',
+      summary:
+        'All candidates of one unit fall inside another unit, so the other unit’s remaining cells can be eliminated.',
+    },
+    hall: {
+      label: 'Hall set',
+      summary:
+        'The crowns of several units are confined to the same number of rows, columns or regions, so other cells in those units can be eliminated.',
+    },
+    contradiction: {
+      label: 'Contradiction',
+      summary:
+        'Assume a crown on one cell and follow the basic reasoning; if it ends in a contradiction, that cell cannot hold a crown.',
+    },
+  },
+  reason: {
+    single:
+      'In {unit}, once the occupied rows, columns and regions and the cells next to crowns are excluded, only one candidate cell remains. Place a crown at row {row}, column {col}.',
+    adjacency:
+      'A crown must go in {unit}, and the outlined cell touches every candidate position for it, so a crown there would always make contact. The outlined cell can be marked X.',
+    intersection:
+      'Every candidate cell of {a} lies within {b}. That crown will occupy {b}, so the other candidate cells in {b} can be eliminated.',
+    hall: 'The {size} crowns of {units} are confined to {targets}, taking one each, so the other candidate cells in those units can be eliminated.',
+    contradiction:
+      'Suppose there is a crown at row {row}, column {col}. After {steps} steps of single-candidate, adjacency and intersection reasoning, this leads to {consequence}. The assumption is contradictory, so this cell can be eliminated.',
+    noCandidates: '{unit} having no candidate cells',
+    queensConflict: 'crowns conflicting with each other',
+  },
+  hint: {
+    look: 'Take a look at {units}: there is a step you can deduce here.',
+    assume:
+      'Try assuming a crown on some cell and see whether it leads all the way to a contradiction.',
+    technique: 'This step can use "{label}": {summary}',
+    contradiction:
+      'There is a contradiction: crowns conflict, or a row, column or region has no cell left. Take back a crown or X first.',
+    stuck:
+      'The logic techniques cannot find a safe next step to explain. Try adjusting your marks or keep reasoning.',
+    impossible:
+      'This position cannot be completed: at least one crown or X mark causes a contradiction. Check or take back some moves first.',
+  },
+  check: {
+    mistakes: 'Found {count} crowns or X marks that do not match the unique solution.',
+    correct: 'Your crowns and X marks are all correct so far. Keep going!',
+  },
+  notice: {
+    serviceRestarted: 'The service restarted. The host can generate a puzzle again.',
+    teamCompleted: 'The team completed the puzzle.',
+    hostRestarted: 'The host restarted this round.',
+    playerLeft: '{name} left the room.',
+    paused: 'The game is paused.',
+  },
+  errors: {
+    NOT_FOUND: 'The room does not exist or has expired.',
+    UNAUTHORIZED: 'Could not verify your identity in the room. Please join again.',
+    ROOM_CODE_EXHAUSTED: 'Could not get a room code right now. Please try again later.',
+    ROOM_FULL: 'The room is full: up to {max} players can play together.',
+    ACTION_ID_REUSED: 'That action ID has already been used.',
+    ACTION_LIMIT: 'This round has reached its action limit. Please start the next round.',
+    HISTORY_LIMIT: 'This round’s action history is full. Please start the next round.',
+    HOST_ONLY: 'Only the host can do this.',
+    STALE_GAME: 'That action belongs to the previous round and was ignored.',
+    NOT_PLAYING: 'Start or resume the game first.',
+    NO_CHANGE: 'The cell state did not change.',
+    NOT_WAITING: 'The puzzle can only be changed in the lobby.',
+    CANNOT_START: 'A new round cannot be started right now.',
+    NO_BOARD: 'There is no board to restart right now.',
+    CANNOT_PAUSE: 'The game cannot be paused or resumed right now.',
+    CELL_OUT_OF_RANGE: 'That cell is outside the board.',
+    CELL_CONFLICT: 'That cell was just updated by another action. Please act on the latest state.',
+    GAME_PAUSED: 'Resume the game first.',
+    NOTHING_TO_UNDO: 'There is nothing to undo or redo.',
+    UNDO_CONFLICT: 'Those cells were changed afterwards, so they cannot be overwritten.',
+    STALE_HINT: 'That hint is out of date. Please ask for a new one.',
+    HINT_NOT_REVEALED: 'Read the whole hint before applying this step.',
+    CANNOT_POINT: 'Pointing at cells is not possible right now.',
+    STATE_CONFLICT: 'The room was updated. Sync to the latest state and try again.',
+    INVALID_ACTION: 'That action is not possible right now.',
+    RATE_LIMIT: 'Too many actions. Please try again shortly.',
+    INVALID_INPUT: 'The input is not valid.',
+    INVALID_COMMAND: 'The action is not valid.',
+    INVALID_CREDENTIALS: 'The room identity is not valid.',
+    SERVER_ERROR: 'The server could not complete that. Please try again later.',
+    CONNECT_FAILED: 'Could not connect.',
+    SYNC_FAILED: 'Could not sync.',
+    RESOURCE_NOT_FOUND: 'Resource not found.',
+    COMPUTE_TIMEOUT: 'The calculation timed out. Try different settings.',
+    COMPUTE_BUSY: 'The calculation service is busy. Please try again shortly.',
+    COMPUTE_CLOSED: 'The calculation service has stopped.',
+    COMPUTE_ERROR: 'The calculation failed. Please try again.',
+    GENERATION_FAILED: 'Generation failed. Please try again.',
+    GENERATION_BUDGET:
+      'The generation budget ran out without a verified puzzle. Try another seed or different settings.',
+    NO_PUZZLE: 'Generate a puzzle first.',
+    INVALID_STATE: 'The game state is not valid.',
+  },
+  tutorial: {
+    title: 'Tutorial',
+    intro: 'Work through a few small exercises to learn the rules and basic reasoning.',
+    progress: 'Lesson {index} / {total}',
+    done: 'Done! You can move on to the next lesson.',
+    hint: 'Get a hint',
+    start: 'Start playing',
+    home: 'Back to home',
+    previous: 'Previous',
+    restart: 'Reset this lesson',
+    next: 'Next lesson →',
+    skip: 'Skip this lesson',
+    lessons: {
+      rules: {
+        title: 'How the game works',
+        p1: 'Every row, every column and every color region must hold exactly one crown.',
+        p2: 'No two crowns may touch — not above, below, beside or diagonally. Crowns farther apart on a diagonal are fine.',
+        p3: 'Each board has exactly one correct arrangement, and you can always find it by reasoning — no guessing needed.',
+      },
+      queen: {
+        title: 'Place a crown',
+        p1: 'Click any cell to place a crown.',
+        task: 'Place a crown on the board',
+      },
+      mark: {
+        title: 'Use X to organize your thoughts',
+        p1: 'An X means "this cell is definitely not a crown" and helps you remember what you have ruled out.',
+        p2: 'Click a crown again to turn it into an X, and a third time to clear it. On a desktop you can also right-click or press the X key to mark directly.',
+        task: 'Mark any cell with an X',
+      },
+      adjacent: {
+        title: 'Crowns cannot touch',
+        p1: 'These two crowns touch diagonally, so the cells show red stripes to flag the conflict.',
+        p2: 'When there is a conflict, click a crown to turn it into an X, or use undo.',
+        task: 'Resolve the conflict so the two crowns no longer touch',
+      },
+      adjacency: {
+        title: 'Technique 1: adjacent elimination',
+        p1: 'Rather than guessing, first look for cells that can never hold a crown.',
+        p3: 'The {count} outlined cells are the ones this reasoning rules out.',
+        task: 'Mark the {count} outlined cells with an X',
+      },
+      intersection: {
+        title: 'Technique 2: region and line intersection',
+        p1: 'Sometimes every possible position of a region lies in a single row (or column).',
+        task: 'Mark the {count} outlined cells with an X',
+      },
+      single: {
+        title: 'Technique 3: only one cell left',
+        p1: 'When a row, column or region has only one cell left for its crown, the crown must be there.',
+        task: 'Place a crown on the outlined cell',
+      },
+      finish: {
+        title: 'Your turn',
+        p1: 'The rest is up to you. Keep alternating the three techniques above: eliminate first, then look for places with only one cell left.',
+        p2: 'If you get stuck, press "Get a hint" and it will explain the next step.',
+        task: 'Fill all 6 crowns to finish this board',
+      },
+      done: {
+        title: 'You did it!',
+        p1: 'You now know the rules, X marks and three basic deductions.',
+        p2: 'Harder puzzles use more advanced reasoning; when you meet it, use "Give me a hint". Now you can start a real game.',
+      },
+    },
+  },
 }
 export default en

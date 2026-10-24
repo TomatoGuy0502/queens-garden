@@ -379,7 +379,7 @@ it('five-character codes retry collisions with a bound and never replace an exis
   repository.save = (room, event) => {
     if (!conflicted) {
       conflicted = true
-      return Promise.reject(new RoomError('Concurrent insert', 'STATE_CONFLICT'))
+      return Promise.reject(new RoomError('STATE_CONFLICT'))
     }
     return original(room, event)
   }
