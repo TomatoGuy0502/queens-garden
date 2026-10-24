@@ -88,6 +88,18 @@ it('real Socket.IO clients receive shared state, authorized operations and trans
     )
     a.emit('room:point', { gameId: current!.game.id, index: 7 })
     expect(await point).toBe(7)
+    const revision = current!.revision
+    const hovering = new Promise<{ name: string; index: number | null }>((resolve) =>
+      b.once('room:hover', resolve),
+    )
+    a.emit('room:hover', { gameId: current!.game.id, index: 8 })
+    expect(await hovering).toMatchObject({ name: 'A', index: 8 })
+    const cleared = new Promise<{ index: number | null }>((resolve) =>
+      b.once('room:hover', resolve),
+    )
+    a.emit('room:hover', { gameId: current!.game.id, index: null })
+    expect((await cleared).index).toBeNull()
+    expect(current!.revision).toBe(revision)
     expect(JSON.stringify(current)).not.toMatch(/tokenHash|"solution"/)
   } finally {
     a.disconnect()

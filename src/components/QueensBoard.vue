@@ -17,10 +17,16 @@ const props = withDefaults(
     canResume?: boolean
     pendingCells?: number[]
     points?: { index: number; name: string }[]
+    hovers?: { index: number | null; name: string }[]
   }>(),
-  { canResume: true, pendingCells: () => [], points: () => [] },
+  { canResume: true, pendingCells: () => [], points: () => [], hovers: () => [] },
 )
-const emit = defineEmits<{ play: [index: number]; mark: [index: number]; resume: [] }>()
+const emit = defineEmits<{
+  play: [index: number]
+  mark: [index: number]
+  resume: []
+  hover: [index: number | null]
+}>()
 const focusIndex = shallowRef(0),
   board = useTemplateRef<HTMLDivElement>('board')
 const rows = computed(() =>
@@ -48,6 +54,10 @@ const boundaryPath = computed(() => {
   }
   return segments.join(' ')
 })
+function focus(index: number) {
+  focusIndex.value = index
+  emit('hover', index)
+}
 async function navigate(index: number, event: KeyboardEvent) {
   const n = props.puzzle.size,
     row = Math.floor(index / n),
@@ -84,6 +94,7 @@ async function navigate(index: number, event: KeyboardEvent) {
           :aria-colcount="puzzle.size"
           :class="{ concealed: paused }"
           :inert="paused || busy"
+          @pointerleave="emit('hover', null)"
         >
           <div
             v-for="(row, r) in rows"
@@ -104,12 +115,16 @@ async function navigate(index: number, event: KeyboardEvent) {
               :point-names="
                 points?.filter((point) => point.index === cell.index).map((point) => point.name)
               "
+              :hover-names="
+                hovers.filter((hover) => hover.index === cell.index).map((hover) => hover.name)
+              "
               :highlighted="highlighted.includes(cell.index)"
               :mistake="mistakes.includes(cell.index)"
               @play="emit('play', $event)"
               @mark="emit('mark', $event)"
               @navigate="navigate"
-              @focus="focusIndex = $event"
+              @focus="focus"
+              @hover="emit('hover', $event)"
             />
           </div>
           <svg

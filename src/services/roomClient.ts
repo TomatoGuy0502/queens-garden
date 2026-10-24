@@ -3,6 +3,7 @@ import type {
   ClientEvents,
   Credentials,
   Point,
+  Hover,
   RoomCommand,
   RoomReply,
   RoomSnapshot,
@@ -13,6 +14,7 @@ export function connectRoom(
   handlers: {
     state: (state: RoomSnapshot) => void
     point: (point: Point) => void
+    hover: (hover: Hover) => void
     status: (connected: boolean, error?: string) => void
   },
 ) {
@@ -26,10 +28,23 @@ export function connectRoom(
   })
   socket.on('room:state', handlers.state)
   socket.on('room:point', handlers.point)
+  socket.on('room:hover', handlers.hover)
   socket.on('connect', () => handlers.status(true))
   socket.on('disconnect', () => handlers.status(false))
   socket.on('connect_error', (error) => handlers.status(false, error.message))
   socket.on('room:error', (error) => handlers.status(false, error.message))
+  let hoverTimer: ReturnType<typeof setTimeout> | undefined
+  let queuedHover: { gameId: string; index: number | null } | null = null
+  let lastHoverAt = 0
+  function flushHover() {
+    clearTimeout(hoverTimer)
+    hoverTimer = undefined
+    if (socket.connected && queuedHover) {
+      socket.volatile.emit('room:hover', queuedHover)
+      lastHoverAt = performance.now()
+    }
+    queuedHover = null
+  }
   socket.connect()
   return {
     command(command: RoomCommand): Promise<RoomReply> {
@@ -50,7 +65,15 @@ export function connectRoom(
     point(gameId: string, index: number) {
       if (socket.connected) socket.volatile.emit('room:point', { gameId, index })
     },
+    hover(gameId: string, index: number | null) {
+      queuedHover = { gameId, index }
+      const delay = index === null ? 0 : Math.max(0, 100 - (performance.now() - lastHoverAt))
+      if (!delay) flushHover()
+      else if (!hoverTimer) hoverTimer = setTimeout(flushHover, delay)
+    },
     close() {
+      clearTimeout(hoverTimer)
+      queuedHover = null
       socket.removeAllListeners()
       socket.disconnect()
     },

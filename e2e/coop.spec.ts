@@ -383,3 +383,46 @@ test('simultaneous edits show dismissible toasts without moving the board, inclu
     await context.close()
   }
 })
+
+test('peer hover and keyboard focus show names and coordinates without edits or layout movement', async ({
+  page,
+  browser,
+  isMobile,
+}) => {
+  const { guest, context } = await pair(page, browser, isMobile)
+  try {
+    const y = (await guest.getByRole('grid').boundingBox())!.y
+    await cell(page, 7).hover()
+    await expect(cell(guest, 7)).toHaveAttribute('data-hovered', 'true')
+    await expect(cell(guest, 7)).toContainText('Alice 停留')
+    await guest.screenshot({ path: test.info().outputPath('peer-hover.png'), fullPage: true })
+    await expect(
+      guest.locator('.presence-bar > span').filter({ hasText: 'Alice' }).locator('.hover-position'),
+    ).toHaveText('停在 2,2')
+    await expect(cell(guest, 7)).toHaveAttribute('data-state', 'empty')
+    expect((await guest.getByRole('grid').boundingBox())!.y).toBeCloseTo(y, 1)
+    // A stationary pointer stays visible beyond the five-second expiry via its heartbeat.
+    await page.waitForTimeout(5500)
+    await expect(cell(guest, 7)).toHaveAttribute('data-hovered', 'true')
+    await cell(page, 8).hover()
+    await expect(cell(guest, 7)).toHaveAttribute('data-hovered', 'false')
+    await expect(cell(guest, 8)).toHaveAttribute('data-hovered', 'true')
+    await page.mouse.move(0, 0)
+    await expect(guest.locator('[data-hovered="true"]')).toHaveCount(0)
+    await cell(page, 14).focus()
+    await expect(cell(guest, 14)).toHaveAttribute('data-hovered', 'true')
+    await cell(page, 14).press('ArrowRight')
+    await expect(cell(guest, 15)).toHaveAttribute('data-hovered', 'true')
+    await page.getByRole('button', { name: '暫停合作', exact: true }).click()
+    await expect(guest.locator('[data-hovered="true"]')).toHaveCount(0)
+    await page.getByRole('button', { name: '繼續合作', exact: true }).click()
+    await cell(page, 7).hover()
+    await expect(cell(guest, 7)).toHaveAttribute('data-hovered', 'true')
+    await page.close()
+    await expect(guest.locator('[data-hovered="true"]')).toHaveCount(0)
+    await expect(guest.getByRole('grid')).toBeVisible()
+    await expect(guest.locator('[data-state="queen"]')).toHaveCount(0)
+  } finally {
+    await context.close()
+  }
+})

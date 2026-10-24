@@ -10,11 +10,18 @@ const props = defineProps<{
   state: CellState
   guidanceReasons: GuidanceReason[]
   pointNames?: string[]
+  hoverNames?: string[]
   active: boolean
   highlighted: boolean
   mistake: boolean
   disabled: boolean
 }>()
+const participantLabel = computed(() =>
+  [
+    ...(props.pointNames ?? []).map((name) => `${name} 指示`),
+    ...(props.hoverNames ?? []).map((name) => `${name} 停留`),
+  ].join('・'),
+)
 const cellLabel = computed(() => {
   const { index, size, region, state, guidanceReasons } = props
   const stateLabel = state === 'queen' ? '皇冠' : state === 'marked' ? 'X 標記' : '空格'
@@ -28,6 +35,7 @@ const emit = defineEmits<{
   mark: [index: number]
   navigate: [index: number, event: KeyboardEvent]
   focus: [index: number]
+  hover: [index: number | null]
 }>()
 const colors = [
   '#dbcaed',
@@ -51,6 +59,7 @@ const colors = [
     :data-index="index"
     :data-region="region"
     :data-state="state"
+    :data-hovered="!!hoverNames?.length"
     :data-pointed="!!pointNames?.length"
     :data-guided="guidanceReasons.length > 0"
     :class="{
@@ -59,6 +68,7 @@ const colors = [
       highlighted,
       mistake,
       pointing: !!pointNames?.length,
+      hovering: !!hoverNames?.length,
     }"
     :style="{ backgroundColor: colors[region] }"
     :tabindex="active ? 0 : -1"
@@ -69,9 +79,12 @@ const colors = [
     @contextmenu.prevent="emit('mark', index)"
     @keydown="emit('navigate', index, $event)"
     @focus="emit('focus', index)"
+    @blur="emit('hover', null)"
+    @pointerenter="$event.pointerType !== 'touch' && emit('hover', index)"
+    @pointerleave="$event.pointerType !== 'touch' && emit('hover', null)"
   >
-    <span v-if="pointNames?.length" class="point-label" aria-live="polite">{{
-      pointNames.join('、')
+    <span v-if="participantLabel" class="point-label" :title="participantLabel">{{
+      participantLabel
     }}</span>
     <span class="region-label" aria-hidden="true">{{ String.fromCharCode(65 + region) }}</span>
     <span class="coordinate-label" aria-hidden="true"
@@ -112,6 +125,14 @@ const colors = [
   background-image:
     repeating-linear-gradient(135deg, transparent, transparent 5px, #39333b28 5px, #39333b28 7px),
     linear-gradient(#f8f7f344, #f8f7f344);
+}
+.hovering::before {
+  content: '';
+  position: absolute;
+  inset: 5px;
+  border: 2px solid #76528b;
+  border-radius: 2px;
+  pointer-events: none;
 }
 .pointing::after {
   content: '';

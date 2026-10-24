@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import { usePlayerName } from '../composables/usePlayerName'
-import { computed, onUnmounted, shallowRef, watch } from 'vue'
+import { computed, onMounted, onUnmounted, shallowRef, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { Clock3, Pause, Play, MousePointer2, LoaderCircle, LogOut } from '@lucide/vue'
 import AppHeader from '../components/AppHeader.vue'
+import PlayerPresence from '../components/coop/PlayerPresence.vue'
 import RoomToast from '../components/coop/RoomToast.vue'
 import RoomLobby from '../components/coop/RoomLobby.vue'
 import QueensBoard from '../components/QueensBoard.vue'
@@ -39,7 +40,19 @@ watch(
   },
   { immediate: true },
 )
+function clearHover() {
+  room.hover(null)
+}
+function onVisibility() {
+  if (document.hidden) clearHover()
+}
+onMounted(() => {
+  window.addEventListener('blur', clearHover)
+  document.addEventListener('visibilitychange', onVisibility)
+})
 onUnmounted(() => {
+  window.removeEventListener('blur', clearHover)
+  document.removeEventListener('visibilitychange', onVisibility)
   clearInterval(timer)
   room.close()
 })
@@ -132,16 +145,12 @@ async function reset() {
         {{ joinError || room.error }}
       </p>
     </section>
-    <template v-else
-      ><div class="presence-bar" aria-label="房間玩家">
-        <span
-          v-for="player in room.room.players"
-          :key="player.id"
-          :class="{ offline: !player.connected }"
-          ><i></i>{{ player.name }}{{ player.id === room.credentials?.playerId ? '（你）' : ''
-          }}<small>{{ player.connected ? '已連線' : '離線' }}</small></span
-        >
-      </div>
+    <template v-else>
+      <PlayerPresence
+        :players="room.room.players"
+        :me-id="room.credentials?.playerId"
+        :hovers="room.hovers"
+        :size="game.state?.puzzle?.size ?? 0" />
       <p v-if="!room.connected" class="connection-notice" role="status">
         連線中斷，正在重新連線。重新連線後會同步最新棋盤。
         <button class="text-button" @click="room.reconnect">重新連線</button>
@@ -205,8 +214,10 @@ async function reset() {
               :can-resume="!!canResume"
               :pending-cells="room.pendingCells"
               :points="room.points"
+              :hovers="room.peerHovers"
               :highlighted="game.state.hint?.step?.cells ?? []"
               :mistakes="mistakes"
+              @hover="room.hover"
               @play="play"
               @mark="room.edit($event, true)"
               @resume="pause"
@@ -348,36 +359,6 @@ async function reset() {
   font-size: 20px;
   margin: 0 0 20px;
   font-weight: 550;
-}
-.presence-bar {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 20px;
-  padding: 15px 0;
-  border-top: 1px solid var(--line);
-  border-bottom: 1px solid var(--line);
-  margin-bottom: 28px;
-}
-.presence-bar > span {
-  min-width: 0;
-  overflow-wrap: anywhere;
-  display: flex;
-  align-items: center;
-  gap: 7px;
-  font-size: 12px;
-}
-.presence-bar i {
-  width: 6px;
-  height: 6px;
-  background: #6d987e;
-  border-radius: 50%;
-}
-.presence-bar .offline i {
-  background: #aaa;
-}
-.presence-bar small {
-  font-size: 10px;
-  color: var(--muted);
 }
 .connection-notice {
   padding: 12px;

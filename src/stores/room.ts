@@ -4,6 +4,7 @@ import {
   credentialsSchema,
   type Credentials,
   type Point,
+  type Hover,
   type RoomAccess,
   type RoomCommand,
   type RoomSettings,
@@ -31,6 +32,12 @@ export const useRoomStore = defineStore('room', () => {
   function dismissNotice() {
     notice.value = null
   }
+  const hovers = shallowRef<Hover[]>([])
+  let hoverIndex: number | null = null,
+    hoverSentAt = 0
+  const peerHovers = computed(() =>
+    hovers.value.filter((hover) => hover.playerId !== credentials.value?.playerId),
+  )
   const points = shallowRef<Point[]>([]),
     pendingCells = shallowRef<number[]>([]),
     assisting = shallowRef(false)
@@ -70,7 +77,14 @@ export const useRoomStore = defineStore('room', () => {
         (snapshot.revision === room.value.revision && snapshot.serverNow < room.value.serverNow))
     )
       return
-    if (game.state?.id !== snapshot.game.id) points.value = []
+    if (game.state?.id !== snapshot.game.id || snapshot.game.phase !== 'playing') {
+      points.value = []
+      hovers.value = []
+      hoverIndex = null
+    } else
+      hovers.value = hovers.value.filter((hover) =>
+        snapshot.players.some((p) => p.id === hover.playerId && p.connected),
+      )
     const { game: round, ...metadata } = snapshot
     room.value = metadata
     game.accept(round)
@@ -85,6 +99,8 @@ export const useRoomStore = defineStore('room', () => {
     pendingCells.value = []
     assisting.value = false
     points.value = []
+    hovers.value = []
+    hoverIndex = null
     room.value = null
     credentials.value = null
     game.clear()
@@ -115,7 +131,14 @@ export const useRoomStore = defineStore('room', () => {
             { ...point, expiresAt: Date.now() + 2500 },
           ]
       },
+      hover(value) {
+        if (value.gameId !== game.state?.id || game.state?.phase !== 'playing') return
+        hovers.value = hovers.value.filter((hover) => hover.playerId !== value.playerId)
+        if (value.index !== null)
+          hovers.value = [...hovers.value, { ...value, expiresAt: Date.now() + 5000 }]
+      },
       status(value, issue) {
+        if (!value) hovers.value = []
         connected.value = value
         connecting.value = false
         if (issue) error.value = issue
@@ -237,8 +260,27 @@ export const useRoomStore = defineStore('room', () => {
   function point(index: number) {
     if (game.state?.phase === 'playing') client?.point(game.state.id, index)
   }
+  function hover(index: number | null) {
+    if (index !== null && game.state?.phase !== 'playing') return
+    if (index === hoverIndex) return
+    hoverIndex = index
+    if (connected.value && game.state?.phase === 'playing') {
+      client?.hover(game.state.id, index)
+      hoverSentAt = Date.now()
+    }
+  }
   function clock() {
     game.clock()
+    hovers.value = hovers.value.filter((hover) => hover.expiresAt > Date.now())
+    if (
+      hoverIndex !== null &&
+      connected.value &&
+      game.state?.phase === 'playing' &&
+      Date.now() - hoverSentAt >= 1500
+    ) {
+      client?.hover(game.state.id, hoverIndex)
+      hoverSentAt = Date.now()
+    }
     points.value = points.value.filter((p) => p.expiresAt > Date.now())
   }
   async function leave() {
@@ -263,6 +305,9 @@ export const useRoomStore = defineStore('room', () => {
     pendingCells,
     assisting,
     points,
+    hovers,
+    peerHovers,
+    hover,
     isHost,
     me,
     canStart,

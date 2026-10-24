@@ -109,12 +109,21 @@ export interface Point {
   gameId: string
   expiresAt: number
 }
+export const hoverSchema = z.object({
+  gameId: z.uuid(),
+  index: z.number().int().min(0).max(143).nullable(),
+})
+export interface Hover extends Omit<Point, 'index'> {
+  index: number | null
+}
 export interface ServerEvents {
+  'room:hover': (hover: Hover) => void
   'room:state': (state: RoomSnapshot) => void
   'room:point': (point: Point) => void
   'room:error': (error: { message: string }) => void
 }
 export interface ClientEvents {
+  'room:hover': (hover: z.infer<typeof hoverSchema>) => void
   'room:command': (command: RoomCommand, ack: (reply: RoomReply) => void) => void
   'room:point': (point: z.infer<typeof pointSchema>) => void
   'room:sync': (ack: (reply: RoomReply) => void) => void

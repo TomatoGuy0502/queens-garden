@@ -1,3 +1,4 @@
+import { HoverPresence } from './hoverPresence'
 import Fastify from 'fastify'
 import rateLimit from '@fastify/rate-limit'
 import fastifyStatic from '@fastify/static'
@@ -10,6 +11,7 @@ import {
   credentialsSchema,
   joinRoomSchema,
   pointSchema,
+  hoverSchema,
   roomCodeSchema,
   type ClientEvents,
   type Credentials,
@@ -29,6 +31,7 @@ export async function createApp(options: {
   const app = Fastify({ logger: options.logger ?? false, trustProxy: true, bodyLimit: 8192 })
   await app.register(rateLimit, { global: false, max: 120, timeWindow: '1 minute' })
   const manager = new RoomManager(options.repository, options.compute)
+  const presence = new HoverPresence()
   const origins = new Set(
     [
       options.origin,
@@ -49,6 +52,7 @@ export async function createApp(options: {
       callback(null, !request.headers.origin || origins.has(request.headers.origin)),
   })
   manager.onState = (state) => {
+    presence.update(state)
     io.to(state.id).emit('room:state', state)
   }
   app.setErrorHandler((error, _request, reply) => {
@@ -95,7 +99,8 @@ export async function createApp(options: {
     const credentials = socket.data.credentials
     let count = 0,
       windowStart = Date.now(),
-      lastPoint = 0
+      lastPoint = 0,
+      lastHover = 0
     const errorReply = (error: unknown): RoomReply => ({
       ok: false,
       error: error instanceof RoomError ? error.message : '操作失敗，請稍後再試。',
@@ -104,7 +109,10 @@ export async function createApp(options: {
     void socket.join(credentials.roomId)
     void manager
       .state(credentials)
-      .then((state) => socket.emit('room:state', state))
+      .then((state) => {
+        socket.emit('room:state', state)
+        for (const hover of presence.current(credentials.roomId)) socket.emit('room:hover', hover)
+      })
       .catch((error) => {
         socket.emit('room:error', {
           message: error instanceof Error ? error.message : '同步失敗。',
@@ -148,7 +156,17 @@ export async function createApp(options: {
         .then((point) => io.to(credentials.roomId).emit('room:point', point))
         .catch(() => {})
     })
+    socket.on('room:hover', (raw) => {
+      const parsed = hoverSchema.safeParse(raw)
+      if (!parsed.success) return
+      if (parsed.data.index !== null && Date.now() - lastHover < 80) return
+      lastHover = Date.now()
+      const hover = presence.move(credentials, socket.id, parsed.data)
+      if (hover) io.to(credentials.roomId).emit('room:hover', hover)
+    })
     socket.on('disconnect', () => {
+      const hover = presence.disconnect(credentials, socket.id)
+      if (hover) io.to(credentials.roomId).emit('room:hover', hover)
       void manager.disconnect(credentials, socket.id).catch((error) => app.log.error(error))
     })
   })
@@ -161,6 +179,7 @@ export async function createApp(options: {
     })
   }
   const cleanup = setInterval(() => {
+    presence.cleanup()
     void manager.cleanup().catch((error) => app.log.error(error))
   }, 60000)
   cleanup.unref()
