@@ -15,6 +15,10 @@ services:
         value: '24'
       - key: WORKER_CONCURRENCY
         value: '1'
+      - key: PUZZLE_PREFILL
+        value: '1'
+      - key: PUZZLE_STOCK_TARGET
+        value: '3'
       # Set both values from the Neon production branch in Render's environment settings.
       - key: DATABASE_URL
         sync: false

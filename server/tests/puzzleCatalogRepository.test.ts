@@ -64,6 +64,10 @@ it('runs all actual migrations on PostgreSQL and retains catalog rows independen
     expect((await client.query('select count(*)::int as count from puzzle_recipes')).rows).toEqual([
       { count: 2 },
     ])
+    await client.exec('delete from puzzle_recipes; delete from puzzle_catalog')
+    const direct = databaseCatalogRepository(drizzle(client, { schema }))
+    await direct.save(catalogRecord(generatePuzzle(options)), { served: true })
+    expect(await direct.takeFresh(options)).toBeNull()
   } finally {
     await client.close()
   }
@@ -78,4 +82,11 @@ it('rejects invalid metadata, region shapes, solutions and difficulty labels', (
     { ...puzzle, regions: Array.from({ length: 6 }, () => Array(6).fill(0)) },
   ])
     expect(() => validateCatalogPuzzle(bad, options)).toThrow()
+})
+
+it('saves on-demand generation as already served so another room cannot claim it as fresh stock', async () => {
+  const repository = await fileCatalogRepository()
+  await repository.save(catalogRecord(generatePuzzle(options)), { served: true })
+  expect(await repository.takeFresh(options)).toBeNull()
+  expect((await repository.exact(options))?.puzzle.seed).toBe(42)
 })

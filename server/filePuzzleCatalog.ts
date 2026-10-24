@@ -48,12 +48,12 @@ export async function fileCatalogRepository(path?: string): Promise<CatalogRepos
     entry.record.puzzle.version === GENERATOR_VERSION &&
     catalogRecord(entry.record.puzzle).hash === entry.record.hash
   return {
-    save: (record) =>
+    save: (record, options = {}) =>
       transaction(() => {
         const previous = state.boards[record.hash]
         state.boards[record.hash] = {
           record: structuredClone(record),
-          uses: previous?.uses ?? 0,
+          uses: (previous?.uses ?? 0) + (options.served ? 1 : 0),
           enabled: true,
         }
         const { id, seed, generation } = record.puzzle

@@ -1,3 +1,4 @@
+import type { PuzzleSource } from './puzzleCatalog'
 import { HoverPresence } from './hoverPresence'
 import Fastify from 'fastify'
 import rateLimit from '@fastify/rate-limit'
@@ -24,13 +25,14 @@ import type { Compute } from './compute'
 export async function createApp(options: {
   repository: RoomRepository
   compute: Compute
+  puzzles?: PuzzleSource
   staticFiles?: boolean
   origin?: string
   logger?: boolean
 }) {
   const app = Fastify({ logger: options.logger ?? false, trustProxy: true, bodyLimit: 8192 })
   await app.register(rateLimit, { global: false, max: 120, timeWindow: '1 minute' })
-  const manager = new RoomManager(options.repository, options.compute)
+  const manager = new RoomManager(options.repository, options.compute, undefined, options.puzzles)
   const presence = new HoverPresence()
   const origins = new Set(
     [

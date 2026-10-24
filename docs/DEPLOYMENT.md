@@ -63,3 +63,11 @@ E2E 會實際建立測試房間與事件、操作棋盤、完成團隊關卡並�
 只有 `NODE_ENV=production` 的服務使用 `DATABASE_URL`。`LOCAL_TEST_MODE=1` 優先於其他設定，連 production build 都強制使用本地檔案，供端到端測試使用；此模式也會拒絕任何 migration。Playwright 自動執行 production build，使用獨立的 5174 Node 服務及檔案，不會重用 5173／3001 的開發服務。
 
 本次合作流程與代碼格式修改僅調整 JSON 快照資料，無新增 SQL schema migration；舊 12 碼房間直接停止接受，不轉換或沿用舊連結。
+
+## 題庫 migration 與預生成
+
+新增 migration `0002_strange_the_renegades.sql`，只新增 `puzzle_catalog`、`puzzle_recipes` 與索引，不改寫或刪除既有房間資料。已在本地 PGlite PostgreSQL 套用完整 migration journal 並驗證保存、去重、領題、Seed 重播與房間清除後仍保留題庫；另於 production 的隔離臨時 Neon 分支驗證 migration、8 個並行領題僅 1 個成功、以及精確 Seed 重播；測試分支已刪除。未直接套用 production migration。Render 仍於 start command 的 `npm run db:migrate` 使用 direct URL 套用已提交 migration。
+
+Blueprint 預設 `PUZZLE_PREFILL=1`、`PUZZLE_STOCK_TARGET=3`，8×8 各難度共最多 9 題未使用庫存。設定為 `0` 可暫停背景補貨，不影響存題、Seed 查詢或即時生成。滿庫後不繼續輪詢題庫；原有房間過期清理排程維持原樣。
+
+本地／E2E 的題庫預設為 `${ROOM_FILE}.puzzles.json`，不會使用 production credentials。Playwright 關閉自動補貨，另以真實 Node Worker、檔案儲存及 PGlite 測試補貨與玩家優先處理，避免一般 E2E 依賴隨機背景時序。

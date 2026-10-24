@@ -22,8 +22,10 @@ export default defineConfig({
           NODE_ENV: 'production',
           PORT: '5174',
           LOCAL_TEST_MODE: '1',
+          PUZZLE_PREFILL: '0',
           PUBLIC_ORIGIN: 'http://127.0.0.1:5174',
           ROOM_FILE: '.data/e2e-rooms-v2.json',
+          PUZZLE_CATALOG_FILE: '.data/e2e-rooms-v2.json.puzzles.json',
         },
       },
 })

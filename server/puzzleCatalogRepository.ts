@@ -30,7 +30,7 @@ export function databaseCatalogRepository<T extends PgQueryResultHKT>(
     )
   const used = { useCount: sql`${board.useCount} + 1`, lastUsedAt: sql`now()` }
   return {
-    async save(record) {
+    async save(record, options = {}) {
       await db.transaction(async (tx) => {
         await tx
           .insert(board)
@@ -41,10 +41,18 @@ export function databaseCatalogRepository<T extends PgQueryResultHKT>(
             size: record.puzzle.size,
             difficulty: record.puzzle.difficulty,
             payload: record.puzzle,
+            useCount: options.served ? 1 : 0,
+            lastUsedAt: options.served ? new Date() : undefined,
           })
           .onConflictDoUpdate({
             target: board.hash,
-            set: { enabled: true, payload: record.puzzle, verifiedAt: new Date() },
+            set: {
+              enabled: true,
+              payload: record.puzzle,
+              verifiedAt: new Date(),
+              useCount: options.served ? sql`${board.useCount} + 1` : board.useCount,
+              lastUsedAt: options.served ? new Date() : board.lastUsedAt,
+            },
           })
         const { id, seed, generation } = record.puzzle
         await tx

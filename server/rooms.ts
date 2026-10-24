@@ -1,4 +1,5 @@
 import { createHash, randomBytes, randomInt, randomUUID, timingSafeEqual } from 'node:crypto'
+import type { PuzzleSource } from './puzzleCatalog'
 import { MAX_ROOM_PLAYERS } from '../shared/coop'
 import type {
   BoardAction,
@@ -60,6 +61,7 @@ export class RoomManager {
         { length: ROOM_CODE_LENGTH },
         () => ROOM_CODE_ALPHABET[randomInt(ROOM_CODE_ALPHABET.length)],
       ).join(''),
+    private puzzles?: PuzzleSource,
   ) {}
   private serial<T>(id: string, work: () => Promise<T>): Promise<T> {
     const result = (this.queues.get(id) ?? Promise.resolve()).then(work)
@@ -450,8 +452,12 @@ export class RoomManager {
     this.generating.add(gameId)
     try {
       const initial = await this.load(id)
-      const seed = randomBytes(4).readUInt32LE()
-      const puzzle = await this.compute.generate({ ...initial.settings, seed })
+      const puzzle = this.puzzles
+        ? await this.puzzles.get(initial.settings)
+        : await this.compute.generate({
+            ...initial.settings,
+            seed: initial.settings.seed ?? randomBytes(4).readUInt32LE(),
+          })
       await this.serial(id, async () => {
         const room = await this.load(id)
         if (room.gameId !== gameId || room.phase !== 'generating') return

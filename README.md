@@ -124,7 +124,7 @@ console.log(puzzle.analysis.steps) // strategy、level、place/eliminate、cells
 
 ## 驗證與限制
 
-測試涵蓋 59 個 Vitest 核心測試、25 個後端測試及 40 個 Playwright E2E（桌面與手機）；TypeScript、Oxlint＋ESLint、Oxfmt format check 與 production build 通過。E2E 包含 browser console errors 與 uncaught page errors 檢查。
+測試涵蓋 59 個 Vitest 核心測試、37 個後端測試及 40 個 Playwright E2E（桌面與手機）；TypeScript、Oxlint＋ESLint、Oxfmt format check 與 production build 通過。E2E 包含 browser console errors 與 uncaught page errors 檢查。
 
 測試包含：獨立 permutation oracle 與 Solver 的全解對照、無解/多解/唯一解、遠距對角線、跨 Seed/大小批次生成、250 次邊界變異的連通性、各難度最小面積與變異下限、完整 recipe 序列化重現、所有難度標籤與最低層級驗證、提示/排除的解保留、Hall sets 與基礎相鄰排除的多解安全性，以及預算耗盡的明確失敗。E2E 另驗證自動換 Seed、指定 Seed 重現、分享連結、實際解碼畫面上的 QR Code、剪貼簿拒絕時的備用操作與提示區間距。另測試視覺引導各範圍、標記保留、Undo/Redo 更新、重新載入後的偏好設定與儲存權限被拒絕時的行為。
 
@@ -185,3 +185,17 @@ src/
 Neon 設定、Render 部署與正式服務驗證方式見 [部署說明](docs/DEPLOYMENT.md)。
 
 本地 E2E 自動建置並使用獨立的 Node 服務 5174 與 `.data/e2e-rooms-v2.json`，不重用平時開發服務；`LOCAL_TEST_MODE=1` 強制使用檔案，忽略所有資料庫 URL。後端 PostgreSQL 整合測試使用記憶體內 PGlite，不連接 Neon production。
+
+## 合作題庫與預生成
+
+合作模式的題目由 server 生成、再次驗證後存入獨立題庫，不隨房間 24 小時過期刪除。`puzzle_catalog` 保存依生成器版本、驗證版本、大小及原始區域矩陣計算的 SHA-256 指紋、私人解答、完整推理紀錄與使用次數；`puzzle_recipes` 保存每個 Seed 對應的重現參數。相同區域矩陣可去重，不同 Seed 的重現資料仍各自保留。單人模式仍由瀏覽器 Worker 動態生成，不自動上傳。
+
+一般新局優先以交易鎖取一題尚未使用的庫存，缺貨時即時生成、驗證及保存。庫存送出前仍在 Worker 重新驗證連通性、每區最小面積、唯一解、目標配置與邏輯難度；錯誤紀錄會停用並重新生成，不直接交付。指定 Seed 則精確查詢該大小、難度、版本與 Seed，不能以其他庫存替代。合作 API 的建立／configure 設定可帶入選填 `seed`；一般介面未指定時使用新題，單人指定 Seed 與分享流程維持原樣。
+
+預設只為 8×8 的 easy、medium、hard 各保留 3 題未使用的庫存。服務開始接受連線後才排程補貨，不阻塞啟動與 health check；每次只生成一題，僅閒置時執行。玩家的取題、生成或提示請求會取消背景運算並優先處理，即使只有一個 Worker 也不需等背景完成。背景單題最多 15 秒；失敗會退避，連續 3 次失敗後停止，直到新的取題請求才重新嘗試。生成器本身仍有固定嘗試／變異／搜尋上限。
+
+庫存滿時停止補貨與題庫輪詢，領題後再排程補回。`PUZZLE_PREFILL=0` 可關閉補貨，`PUZZLE_STOCK_TARGET=1..5` 可調整每個難度的水位。題庫中的已使用題目保留供 Seed 重播，但不重新塞回「新題」庫存；這不是固定手寫題庫，也沒有取消動態生成能力。
+
+正式環境使用 Neon PostgreSQL，只有短交易用於去重、領題和計數，生成／解題不占用資料庫鎖。本地預設使用 `${ROOM_FILE}.puzzles.json`，可由 `PUZZLE_CATALOG_FILE` 指定其他路徑；E2E 與日常開發沿用各自的獨立房間檔案，題庫也隨之隔離。題庫不暴露公開的解答 API，房間快照仍只包含 `PuzzleDefinition`。
+
+目前未提供題庫瀏覽、收藏或永久個人紀錄 UI。題庫保存從此版本開始新產生的合作題目，不回填已過期的歷史房間。尚未做自動保留期限／容量淘汰，PostgreSQL 題庫會隨實際接受的題目增加；候選盤面與背景工作不會無限制堆積。

@@ -12,7 +12,11 @@ export const sizeSchema = z.union([
   z.literal(12),
 ])
 export const difficultySchema = z.enum(['easy', 'medium', 'hard'])
-export const settingsSchema = z.object({ size: sizeSchema, difficulty: difficultySchema })
+export const settingsSchema = z.object({
+  size: sizeSchema,
+  difficulty: difficultySchema,
+  seed: z.number().int().min(0).max(0xffffffff).optional(),
+})
 export const createRoomSchema = settingsSchema.extend({ name: z.string().trim().min(1).max(24) })
 export const joinRoomSchema = z.object({ name: z.string().trim().min(1).max(24) })
 export const roomCodeSchema = z.string().trim().toUpperCase().regex(ROOM_CODE_PATTERN)

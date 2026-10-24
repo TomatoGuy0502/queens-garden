@@ -16,7 +16,7 @@ export interface CatalogRecord {
   puzzle: QueensPuzzle
 }
 export interface CatalogRepository {
-  save(record: CatalogRecord): Promise<void>
+  save(record: CatalogRecord, options?: { served?: boolean }): Promise<void>
   takeFresh(bucket: CatalogBucket): Promise<CatalogRecord | null>
   exact(request: CatalogRequest & { seed: number }): Promise<CatalogRecord | null>
   use(hash: string): Promise<void>
