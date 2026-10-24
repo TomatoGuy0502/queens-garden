@@ -394,7 +394,12 @@ test('visual guidance is configurable, preserves marks, tracks undo and persists
   await expect(page.locator('[data-guided="true"]')).toHaveCount(0)
   await page.reload()
   await expect(page.getByRole('grid')).toBeVisible({ timeout: 30000 })
+  // The unfinished game comes back with its marks, so the queen needs one more cycle.
+  await expect(cell(page, 14)).toHaveAttribute('data-state', 'marked')
+  await expect(cell(page, 7)).toHaveAttribute('data-state', 'marked')
   await cell(page, 14).click()
+  await cell(page, 14).click()
+  await expect(cell(page, 14)).toHaveAttribute('data-state', 'queen')
   expect(await guided()).toEqual([12, 13, 15, 16, 17])
   await page.getByRole('button', { name: '遊玩設定', exact: true }).click()
   await expect(dialog.getByRole('switch', { name: '顯示皇冠排除範圍' })).toBeChecked()

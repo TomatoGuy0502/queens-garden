@@ -11,8 +11,12 @@ import GameShare from './GameShare.vue'
 import GamePreferences from './GamePreferences.vue'
 import DailyChallenge from './DailyChallenge.vue'
 import TutorialPrompt from './TutorialPrompt.vue'
+import ResumePrompt from './ResumePrompt.vue'
 import { useGamePreferences } from '../composables/useGamePreferences'
 import { useGameStats } from '../composables/useGameStats'
+import { useProgressAutosave } from '../composables/useProgressAutosave'
+import { useSoloProgress } from '../composables/useSoloProgress'
+import { restoreProgress, sameGame, type SavedProgress } from '../queens/progress'
 import {
   DAILY_MAX_ATTEMPTS,
   dailyConfig,
@@ -28,6 +32,8 @@ import { GENERATOR_VERSION } from '../queens/version'
 import { DIFFICULTIES, DIFFICULTY_LABELS } from '../queens/levels'
 import type { Difficulty } from '../queens/types'
 const game = useSoloGameStore()
+useProgressAutosave(game)
+const progress = useSoloProgress()
 onUnmounted(() => game.$dispose())
 const { guidance, expandedBoard, storageAvailable } = useGamePreferences()
 const {
@@ -125,17 +131,30 @@ const highlighted = computed(() => (paused.value ? [] : hintCells.value))
 const allMistakes = computed(() => [...new Set([...conflicts.value, ...mistakes.value])])
 // The daily challenge is a fixed board, so its page offers no settings until the player leaves it.
 const inDaily = shallowRef(false)
+// An unfinished game found in storage, waiting for the player to continue or discard it.
+const pendingResume = shallowRef<SavedProgress | null>(null)
 function startGame(
   size: number,
   difficulty: Difficulty,
   seed: number,
   dailyDate: string | null = null,
+  saved?: SavedProgress,
 ) {
+  pendingResume.value = null
   inDaily.value = dailyDate !== null
   displayDifficulty.value = difficulty
   versionMismatch.value = false
   restartConfirm.value = false
-  return game.newGame(size, difficulty, seed, dailyDate)
+  return game.newGame(size, difficulty, seed, dailyDate, saved && restoreProgress(saved))
+}
+function resume(saved: SavedProgress) {
+  // Only today's challenge keeps its daily label; an older unfinished day is a normal puzzle.
+  const dailyDate = saved.daily === dateKey() ? saved.daily : null
+  return startGame(saved.size, saved.difficulty, saved.seed, dailyDate, saved)
+}
+function discardSaved() {
+  progress.clear()
+  void startGame(initialSize, initialDifficulty, initialSeed)
 }
 async function startDaily() {
   const key = dateKey()
@@ -158,9 +177,21 @@ function nextGame() {
   )
 }
 onMounted(() => {
-  if (dailyParam === 'today') void startDaily()
-  else if (!versionMismatch.value)
-    void startGame(initialSize, initialDifficulty, initialSeed, linkedDaily)
+  const saved = progress.read()
+  if (dailyParam === 'today') {
+    const today = dateKey()
+    if (saved?.daily === today && isDailyPuzzle(today, saved)) void resume(saved)
+    else void startDaily()
+  } else if (versionMismatch.value) return
+  else if (
+    saved &&
+    params.has('seed') &&
+    sameGame(saved, { size: initialSize, difficulty: initialDifficulty, seed: initialSeed })
+  )
+    void resume(saved)
+  // Without a specific puzzle in the link, ask before replacing the unfinished game.
+  else if (saved && !params.has('seed')) pendingResume.value = saved
+  else void startGame(initialSize, initialDifficulty, initialSeed, linkedDaily)
 })
 </script>
 <template>
@@ -210,6 +241,12 @@ onMounted(() => {
               目前版本 {{ GENERATOR_VERSION }} 無法保證重現舊版本的關卡。請從右側設定開始新遊戲。
             </p>
           </div>
+          <ResumePrompt
+            v-else-if="pendingResume"
+            :saved="pendingResume"
+            @resume="resume(pendingResume)"
+            @discard="discardSaved"
+          />
           <div v-else-if="busy" class="empty-board" role="status">
             <div class="generating-art">
               <CrownIcon /><LoaderCircle class="spinner" :size="21" />

@@ -3,6 +3,12 @@ import { useRouter } from 'vue-router'
 import type { CellState, DeductionStep, Difficulty, PuzzleDefinition } from '../queens/types'
 import type { WorkerRequest, WorkerResponse } from '../queens/protocol'
 import { nextCell } from '../queens/cells'
+import {
+  MAX_SAVED_HISTORY,
+  encodeCells,
+  type RestoredProgress,
+  type SavedProgress,
+} from '../queens/progress'
 import { HINT_LEVELS, hintView } from '../queens/strategies'
 import { conflictCells } from '../queens/validator'
 
@@ -119,12 +125,42 @@ export function useQueensGame() {
     attempt.value++
     clearFeedback()
   }
+  function applyProgress(saved: RestoredProgress) {
+    cells.value = saved.cells
+    history.value = saved.history
+    future.value = saved.future
+    moves.value = saved.moves
+    hints.value = saved.hints
+    elapsedMs = saved.elapsedMs
+    seconds.value = Math.floor(elapsedMs / 1000)
+    lastTick = performance.now()
+  }
+  /** Everything needed to continue this game later, or null while there is no board. */
+  function exportProgress(): SavedProgress | null {
+    const current = puzzle.value
+    if (!current || busy.value) return null
+    return {
+      version: current.version,
+      size: current.size,
+      difficulty: current.difficulty,
+      seed: current.seed,
+      daily: daily.value,
+      cells: encodeCells(cells.value),
+      history: history.value.slice(-MAX_SAVED_HISTORY).map(encodeCells),
+      future: future.value.slice(-MAX_SAVED_HISTORY).map(encodeCells),
+      elapsedMs: Math.floor(elapsedMs),
+      moves: moves.value,
+      hints: hints.value,
+      savedAt: Date.now(),
+    }
+  }
   /** `stale` means a newer request or a cancel took over, so callers must not retry. */
   async function newGame(
     size: number,
     difficulty: Difficulty,
     seed: number,
     dailyDate: string | null = null,
+    restore?: RestoredProgress,
   ): Promise<'ready' | 'failed' | 'stale'> {
     stopWorker()
     busy.value = true
@@ -142,6 +178,7 @@ export function useQueensGame() {
       puzzle.value = result.puzzle!
       daily.value = dailyDate
       resetSession()
+      if (restore) applyProgress(restore)
       const params = new URLSearchParams({
         size: String(size),
         difficulty,
@@ -281,6 +318,7 @@ export function useQueensGame() {
     mistakes,
     blocked,
     newGame,
+    exportProgress,
     cancelGeneration,
     restart: resetSession,
     edit,
