@@ -1,3 +1,4 @@
+import { evaluateDifficulty } from './difficulty'
 import { generatePlacement, random } from './random'
 import { growRegions, mutateRegions } from './regionGrower'
 import { solve, uniqueSolution } from './solver'
@@ -15,7 +16,11 @@ export function generatePuzzle(options: GenerateOptions): QueensPuzzle {
     let count = solve(regions, 24).solutionCount
     for (let mutation = 0; mutation <= mutationBudget; mutation++) {
       if (count === 1 && uniqueSolution(regions, solution) && validRegions(regions)) {
-        return { id: `${GENERATOR_VERSION}-${size}-${seed}`, version: GENERATOR_VERSION, size, seed, regions, solution, difficulty: 'easy', difficultyScore: 0 }
+        const analysis = evaluateDifficulty(regions)
+        if (analysis.difficulty !== 'unrated' && (!options.difficulty || options.difficulty === analysis.difficulty)) {
+          return { id: `${GENERATOR_VERSION}-${size}-${seed}-${options.difficulty ?? 'any'}`, version: GENERATOR_VERSION, size, seed, regions, solution, difficulty: analysis.difficulty, difficultyScore: analysis.score, analysis }
+        }
+        break
       }
       const candidate = mutateRegions(regions, solution, rng)
       if (!candidate) continue

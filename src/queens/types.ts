@@ -11,7 +11,7 @@ export interface PuzzleDefinition {
   difficulty: Difficulty
   difficultyScore: number
 }
-export interface QueensPuzzle extends PuzzleDefinition { solution: QueenPlacement }
+export interface QueensPuzzle extends PuzzleDefinition { solution: QueenPlacement; analysis: DifficultyReport }
 export interface SolveResult { solutionCount: number; solutions: QueenPlacement[]; nodes: number; exhausted: boolean }
 export type Strategy = 'single' | 'intersection' | 'hall' | 'contradiction'
 export interface DeductionStep {
