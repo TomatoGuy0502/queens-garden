@@ -1,7 +1,10 @@
 export type QueenPlacement = number[]
 export type Difficulty = 'easy' | 'medium' | 'hard'
 export type CellState = 'empty' | 'marked' | 'queen'
-export interface Position { row: number; col: number }
+export interface Position {
+  row: number
+  col: number
+}
 export interface PuzzleDefinition {
   id: string
   version: string
@@ -11,8 +14,16 @@ export interface PuzzleDefinition {
   difficulty: Difficulty
   difficultyScore: number
 }
-export interface QueensPuzzle extends PuzzleDefinition { solution: QueenPlacement; analysis: DifficultyReport }
-export interface SolveResult { solutionCount: number; solutions: QueenPlacement[]; nodes: number; exhausted: boolean }
+export interface QueensPuzzle extends PuzzleDefinition {
+  solution: QueenPlacement
+  analysis: DifficultyReport
+}
+export interface SolveResult {
+  solutionCount: number
+  solutions: QueenPlacement[]
+  nodes: number
+  exhausted: boolean
+}
 export type Strategy = 'single' | 'intersection' | 'hall' | 'contradiction'
 export interface DeductionStep {
   strategy: Strategy
@@ -27,4 +38,10 @@ export interface DifficultyReport {
   steps: DeductionStep[]
   solved: boolean
 }
-export interface GenerateOptions { size: number; seed: number; difficulty?: Difficulty; maxAttempts?: number; mutationBudget?: number }
+export interface GenerateOptions {
+  size: number
+  seed: number
+  difficulty?: Difficulty
+  maxAttempts?: number
+  mutationBudget?: number
+}

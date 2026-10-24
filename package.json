@@ -1,7 +1,7 @@
 {
   "name": "queens-garden",
-  "private": true,
   "version": "1.0.0",
+  "private": true,
   "type": "module",
   "scripts": {
     "dev": "vite --host 0.0.0.0",
@@ -10,15 +10,19 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "lint": "oxlint --deny-warnings src e2e *.ts",
-    "e2e": "playwright test"
+    "e2e": "playwright test",
+    "format": "oxfmt .",
+    "format:check": "oxfmt --check ."
   },
   "dependencies": {
+    "@lucide/vue": "^1.61.0",
     "vue": "^3.5.44"
   },
   "devDependencies": {
     "@playwright/test": "^1.64.1",
     "@types/node": "^26.6.5",
     "@vitejs/plugin-vue": "^6.0.10",
+    "oxfmt": "^0.74.0",
     "oxlint": "^1.89.0",
     "typescript": "^6.0.3",
     "unocss": "^66.11.0",
