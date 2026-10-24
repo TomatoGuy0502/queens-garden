@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, shallowRef } from 'vue'
-import { Clock3, Pause, Play, ArrowUpRight, LoaderCircle } from '@lucide/vue'
+import { Clock3, Pause, Play, LoaderCircle } from '@lucide/vue'
 import CrownIcon from './CrownIcon.vue'
 import QueensBoard from './QueensBoard.vue'
 import GameSettings from './GameSettings.vue'
@@ -41,6 +41,7 @@ const initialSize = [6, 7, 8, 9, 10, 12].includes(requestedSize) ? requestedSize
 const requestedDifficulty = params.get('difficulty')
 const initialDifficulty: Difficulty =
   requestedDifficulty === 'medium' || requestedDifficulty === 'hard' ? requestedDifficulty : 'easy'
+const displayDifficulty = shallowRef<Difficulty>(initialDifficulty)
 const requestedSeed = params.get('seed')
 const initialSeed =
   requestedSeed !== null && /^\d+$/.test(requestedSeed) && Number(requestedSeed) <= 0xffffffff
@@ -52,6 +53,7 @@ const difficulties = { easy: '輕鬆', medium: '適中', hard: '挑戰' }
 const highlighted = computed(() => (paused.value ? [] : (hint.value?.cells ?? [])))
 const allMistakes = computed(() => [...new Set([...conflicts.value, ...mistakes.value])])
 function startGame(size: number, difficulty: Difficulty, seed: number) {
+  displayDifficulty.value = difficulty
   versionMismatch.value = false
   restartConfirm.value = false
   return game.newGame(size, difficulty, seed)
@@ -80,11 +82,7 @@ onMounted(() => {
         ><span>queens<span class="brand-dot">.</span></span></a
       >
       <div class="header-actions">
-        <GamePreferences v-model="guidance" :storage-available="storageAvailable" /><a
-          class="how-to"
-          href="#rules"
-          >玩法說明 <ArrowUpRight :size="14"
-        /></a>
+        <GamePreferences v-model="guidance" :storage-available="storageAvailable" />
       </div>
     </header>
     <main>
@@ -93,9 +91,7 @@ onMounted(() => {
         <section class="play-area" aria-label="遊戲區域" :aria-busy="busy">
           <div class="game-meta">
             <div class="puzzle-meta">
-              <span class="difficulty-badge">{{
-                puzzle ? difficulties[puzzle.difficulty] : '準備中'
-              }}</span
+              <span class="difficulty-badge">{{ difficulties[displayDifficulty] }}</span
               ><span class="board-size"
                 >{{ puzzle?.size ?? initialSize }} × {{ puzzle?.size ?? initialSize }}</span
               ><span v-if="puzzle" class="queen-count"
@@ -258,14 +254,6 @@ onMounted(() => {
   align-items: center;
   gap: 20px;
   margin-left: auto;
-}
-.how-to {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 11px;
-  text-decoration: none;
-  color: var(--muted);
 }
 .page-intro {
   display: flex;
