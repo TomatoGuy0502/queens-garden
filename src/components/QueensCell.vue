@@ -6,7 +6,6 @@ defineProps<{
   size: number
   region: number
   state: CellState
-  edges: boolean[]
   active: boolean
   highlighted: boolean
   mistake: boolean
@@ -44,10 +43,6 @@ const colors = [
       queen: state === 'queen',
       highlighted,
       mistake,
-      'edge-top': edges[0],
-      'edge-right': edges[1],
-      'edge-bottom': edges[2],
-      'edge-left': edges[3],
     }"
     :style="{ backgroundColor: colors[region] }"
     :tabindex="active ? 0 : -1"
@@ -110,18 +105,6 @@ const colors = [
     500 9px/1.1 ui-sans-serif,
     system-ui;
   opacity: 0.55;
-}
-.edge-top {
-  border-top: 2px solid #39333b;
-}
-.edge-right {
-  border-right: 2px solid #39333b;
-}
-.edge-bottom {
-  border-bottom: 2px solid #39333b;
-}
-.edge-left {
-  border-left: 2px solid #39333b;
 }
 .highlighted {
   box-shadow: inset 0 0 0 4px #774695;

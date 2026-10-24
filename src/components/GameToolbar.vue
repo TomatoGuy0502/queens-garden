@@ -1,7 +1,6 @@
 <script setup lang="ts">
-import { Undo2, Redo2, RotateCcw, Lightbulb, ScanLine, Crown, X } from '@lucide/vue'
+import { Undo2, Redo2, RotateCcw, Lightbulb, ScanLine } from '@lucide/vue'
 defineProps<{
-  mode: 'queen' | 'marked'
   blocked: boolean
   assisting: boolean
   canUndo: boolean
@@ -9,7 +8,6 @@ defineProps<{
   canRestart: boolean
 }>()
 const emit = defineEmits<{
-  mode: [value: 'queen' | 'marked']
   undo: []
   redo: []
   restart: []
@@ -19,23 +17,7 @@ const emit = defineEmits<{
 </script>
 <template>
   <div class="toolbar" role="toolbar" aria-label="遊戲工具">
-    <div class="mode-toggle" aria-label="放置模式" role="group">
-      <button
-        :class="{ active: mode === 'queen' }"
-        :aria-pressed="mode === 'queen'"
-        :disabled="blocked"
-        @click="emit('mode', 'queen')"
-      >
-        <Crown :size="17" /> 皇冠</button
-      ><button
-        :class="{ active: mode === 'marked' }"
-        :aria-pressed="mode === 'marked'"
-        :disabled="blocked"
-        @click="emit('mode', 'marked')"
-      >
-        <X :size="17" /> 標記
-      </button>
-    </div>
+    <p class="interaction-note">點擊格子：皇冠 → X → 清除</p>
     <div class="history-tools">
       <button
         class="icon-button"
@@ -81,29 +63,11 @@ const emit = defineEmits<{
   margin-top: 19px;
   gap: 8px;
 }
-.mode-toggle {
-  display: flex;
-  background: #eeece8;
-  padding: 4px;
-  border-radius: 6px;
-  gap: 3px;
-}
-.mode-toggle button {
-  display: flex;
-  align-items: center;
-  gap: 7px;
-  border: 0;
-  background: transparent;
-  color: #8e8691;
-  font-size: 12px;
-  padding: 8px 14px;
-  border-radius: 4px;
-  cursor: pointer;
-}
-.mode-toggle .active {
-  background: #fffdfa;
-  color: var(--ink);
-  box-shadow: 0 1px 3px #30263a15;
+.interaction-note {
+  margin: 0;
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.6;
 }
 .history-tools {
   display: flex;

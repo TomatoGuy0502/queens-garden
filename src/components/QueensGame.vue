@@ -18,7 +18,6 @@ const {
   assisting,
   paused,
   time,
-  mode,
   queens,
   conflicts,
   won,
@@ -148,7 +147,7 @@ onMounted(() => {
             :mistakes="allMistakes"
             :busy="busy"
             @play="game.edit($event)"
-            @mark="game.edit($event, 'marked')"
+            @mark="game.edit($event, 'mark')"
             @resume="game.togglePause"
           />
           <div v-else class="empty-board">
@@ -158,13 +157,11 @@ onMounted(() => {
           </div>
           <div v-if="error" class="error-notice" role="alert">{{ error }}</div>
           <GameToolbar
-            :mode="mode"
             :blocked="blocked || !puzzle"
             :assisting="assisting"
             :can-restart="!!puzzle && !busy"
             :can-undo="!!history.length && !busy && !paused"
             :can-redo="!!future.length && !busy && !paused"
-            @mode="mode = $event"
             @undo="game.undo"
             @redo="game.redo"
             @restart="restartConfirm = true"

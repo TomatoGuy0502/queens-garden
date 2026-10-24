@@ -28,8 +28,9 @@ import { Crown, Rows3, Columns3, Shapes, MoveDiagonal } from '@lucide/vue'
     <details>
       <summary>操作與鍵盤快捷鍵</summary>
       <p>
-        點一下放皇冠，再點一下取消。切換「標記」模式可放 X，也可以用滑鼠右鍵。方向鍵移動，空白鍵或
-        Enter 操作，X 鍵標記。格內字母代表所屬區域。
+        點一下放皇冠，再點一下變成 X，第三下清除。滑鼠右鍵或 X
+        鍵可直接切換標記。方向鍵移動，空白鍵或 Enter
+        也會依序切換皇冠、X、空格。格內字母代表所屬區域。
       </p>
     </details>
   </section>

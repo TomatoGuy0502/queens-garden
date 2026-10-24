@@ -18,7 +18,6 @@ export function useQueensGame() {
     error = shallowRef('')
   const hint = shallowRef<DeductionStep | null>(null),
     mistakes = shallowRef<number[]>([])
-  const mode = shallowRef<'queen' | 'marked'>('queen')
   let worker: Worker | null = null,
     requestId = 0,
     revision = 0,
@@ -134,13 +133,22 @@ export function useQueensGame() {
     busy.value = false
     error.value = '已取消生成。請選擇設定後再試一次。'
   }
-  function edit(index: number, target = mode.value) {
+  function edit(index: number, action: 'cycle' | 'mark' = 'cycle') {
     if (blocked.value || !puzzle.value || index < 0 || index >= cells.value.length) return
     history.value = [...history.value, [...cells.value]].slice(-1000)
     future.value = []
-    cells.value = cells.value.map((cell, i) =>
-      i === index ? (cell === target ? 'empty' : target) : cell,
-    )
+    const current = cells.value[index]
+    const next: CellState =
+      action === 'mark'
+        ? current === 'marked'
+          ? 'empty'
+          : 'marked'
+        : current === 'empty'
+          ? 'queen'
+          : current === 'queen'
+            ? 'marked'
+            : 'empty'
+    cells.value = cells.value.map((cell, i) => (i === index ? next : cell))
     moves.value++
     clearFeedback()
     if (won.value) message.value = '完成了！每一頂皇冠都找到了自己的位置。'
@@ -221,7 +229,6 @@ export function useQueensGame() {
     paused,
     seconds,
     time,
-    mode,
     queens,
     conflicts,
     won,

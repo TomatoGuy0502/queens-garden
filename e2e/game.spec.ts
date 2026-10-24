@@ -27,7 +27,7 @@ async function readRegions(page: Page) {
   return Array.from({ length: n }, (_, r) => flat.slice(r * n, (r + 1) * n))
 }
 
-test('place, remove, mark, undo, redo, keyboard navigation and restart', async ({
+test('cycle empty queen marked empty, undo, redo, keyboard navigation and restart', async ({
   page,
   isMobile,
 }) => {
@@ -37,12 +37,16 @@ test('place, remove, mark, undo, redo, keyboard navigation and restart', async (
   await cell(page, 0).click()
   await expect(cell(page, 0)).toHaveAttribute('data-state', 'queen')
   await cell(page, 0).click()
+  await expect(cell(page, 0)).toHaveAttribute('data-state', 'marked')
+  await cell(page, 0).click()
   await expect(cell(page, 0)).toHaveAttribute('data-state', 'empty')
-  await page.getByRole('button', { name: '標記', exact: true }).click()
+  await expect(page.getByRole('group', { name: '放置模式' })).toHaveCount(0)
+  await cell(page, 1).click()
+  await expect(cell(page, 1)).toHaveAttribute('data-state', 'queen')
   await cell(page, 1).click()
   await expect(cell(page, 1)).toHaveAttribute('data-state', 'marked')
   await page.getByRole('button', { name: '復原', exact: true }).click()
-  await expect(cell(page, 1)).toHaveAttribute('data-state', 'empty')
+  await expect(cell(page, 1)).toHaveAttribute('data-state', 'queen')
   await page.getByRole('button', { name: '重做', exact: true }).click()
   await expect(cell(page, 1)).toHaveAttribute('data-state', 'marked')
   if (!isMobile) {
@@ -51,16 +55,29 @@ test('place, remove, mark, undo, redo, keyboard navigation and restart', async (
     await cell(page, 0).focus()
     await page.keyboard.press('ArrowDown')
     await expect(cell(page, 6)).toBeFocused()
+    await page.keyboard.press('Space')
+    await expect(cell(page, 6)).toHaveAttribute('data-state', 'queen')
+    await page.keyboard.press('Space')
+    await expect(cell(page, 6)).toHaveAttribute('data-state', 'marked')
+    await page.keyboard.press('Enter')
+    await expect(cell(page, 6)).toHaveAttribute('data-state', 'empty')
     await page.keyboard.press('x')
     await expect(cell(page, 6)).toHaveAttribute('data-state', 'marked')
   }
+  await expect(page.locator('.timer > span')).not.toHaveText('00:00')
   await page.getByRole('button', { name: '重新開始', exact: true }).click()
-  await page
+  const confirm = page
     .locator('.restart-confirm')
     .getByRole('button', { name: '重新開始', exact: true })
-    .click()
+  await expect(confirm).toBeVisible()
+  // Capture the reset after Vue's DOM flush, before real time can advance another second.
+  const resetTime = await confirm.evaluate(async (button: HTMLButtonElement) => {
+    button.click()
+    await Promise.resolve()
+    return document.querySelector('.timer > span')?.textContent
+  })
+  expect(resetTime).toBe('00:00')
   await expect(page.locator('[data-state="empty"]')).toHaveCount(36)
-  await expect(page.locator('.timer')).toContainText('00:00')
   expect(errors).toEqual([])
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
 })
@@ -69,7 +86,10 @@ test('invalid placement never wins; valid solution completes with summary', asyn
   for (let i = 0; i < 6; i++) await cell(page, i).click()
   await expect(page.getByText('所有皇冠，都恰如其分。')).not.toBeVisible()
   await expect(page.locator('.cell.mistake')).toHaveCount(6)
-  for (let i = 0; i < 6; i++) await cell(page, i).click()
+  for (let i = 0; i < 6; i++) {
+    await cell(page, i).click()
+    await cell(page, i).click()
+  }
   const regions = await readRegions(page)
   const result = solve(regions)
   expect(result.solutionCount).toBe(1)

@@ -20,15 +20,25 @@ const rows = computed(() =>
     regions.map((region, col) => ({
       index: row * props.puzzle.size + col,
       region,
-      edges: [
-        row === 0 || props.puzzle.regions[row - 1][col] !== region,
-        col === props.puzzle.size - 1 || regions[col + 1] !== region,
-        row === props.puzzle.size - 1 || props.puzzle.regions[row + 1][col] !== region,
-        col === 0 || regions[col - 1] !== region,
-      ],
     })),
   ),
 )
+// Draw each shared boundary once. Square caps overlap at vertices, closing every corner.
+const boundaryPath = computed(() => {
+  const { size: n, regions } = props.puzzle
+  const segments = [`M0 0H${n}V${n}H0Z`]
+  for (let row = 0; row < n; row++) {
+    for (let col = 0; col < n; col++) {
+      if (col < n - 1 && regions[row][col] !== regions[row][col + 1]) {
+        segments.push(`M${col + 1} ${row}v1`)
+      }
+      if (row < n - 1 && regions[row][col] !== regions[row + 1][col]) {
+        segments.push(`M${col} ${row + 1}h1`)
+      }
+    }
+  }
+  return segments.join(' ')
+})
 async function navigate(index: number, event: KeyboardEvent) {
   const n = props.puzzle.size,
     row = Math.floor(index / n),
@@ -59,7 +69,7 @@ async function navigate(index: number, event: KeyboardEvent) {
         ref="board"
         class="board"
         role="grid"
-        aria-label="Queens 棋盤；方向鍵移動、空白鍵放皇冠、X 鍵標記"
+        aria-label="Queens 棋盤；方向鍵移動、空白鍵或 Enter 循環皇冠、X、空格；X 鍵直接標記"
         :aria-rowcount="puzzle.size"
         :aria-colcount="puzzle.size"
         :class="{ concealed: paused }"
@@ -88,6 +98,22 @@ async function navigate(index: number, event: KeyboardEvent) {
             @focus="focusIndex = $event"
           />
         </div>
+        <svg
+          class="region-boundaries"
+          :viewBox="`0 0 ${puzzle.size} ${puzzle.size}`"
+          preserveAspectRatio="none"
+          aria-hidden="true"
+        >
+          <path
+            :d="boundaryPath"
+            fill="none"
+            stroke="#39333b"
+            stroke-width="4"
+            stroke-linecap="square"
+            stroke-linejoin="miter"
+            vector-effect="non-scaling-stroke"
+          />
+        </svg>
       </div>
       <div v-if="paused" class="pause-cover">
         <Pause :size="28" />
@@ -132,7 +158,16 @@ async function navigate(index: number, event: KeyboardEvent) {
 .board-row {
   display: grid;
 }
+.region-boundaries {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 3;
+}
 .board {
+  position: relative;
   transition: opacity 0.2s;
 }
 .concealed {
