@@ -24,22 +24,26 @@ onMounted(() => {
 <template>
   <section ref="result" class="result" aria-labelledby="result-title">
     <CrownIcon filled class="result-crown" />
-    <h2 id="result-title">關卡完成</h2>
-    <p>{{ time }} 完成 · {{ moves }} 次操作 · {{ hints }} 次提示</p>
+    <h2 id="result-title">{{ $t('result.title') }}</h2>
+    <p>{{ $t('result.summary', { time, moves, hints }) }}</p>
     <p v-if="record" class="record" :class="{ best: record.newBest }">
-      <template v-if="record.newBest"
-        >新紀錄！原本最佳 {{ formatDuration(record.previousBest!) }}</template
-      >
-      <template v-else-if="record.previousBest !== null"
-        >此大小與難度的最佳時間 {{ formatDuration(record.previousBest) }}</template
-      >
-      <template v-else>第一次完成這個大小與難度，成績已記錄</template>
+      <template v-if="record.newBest">{{
+        $t('result.newBest', { previous: formatDuration(record.previousBest!) })
+      }}</template>
+      <template v-else-if="record.previousBest !== null">{{
+        $t('result.best', { best: formatDuration(record.previousBest) })
+      }}</template>
+      <template v-else>{{ $t('result.first') }}</template>
     </p>
-    <p v-if="record?.streak" class="record best">每日挑戰完成！連續 {{ record.streak }} 天</p>
+    <p v-if="record?.streak" class="record best">
+      {{ $t('result.streak', { days: record.streak }) }}
+    </p>
     <button ref="nextButton" class="primary" :disabled="nextDisabled" @click="emit('next')">
-      {{ nextLabel ?? '再來一局 →' }}
+      {{ nextLabel ?? $t('result.next') }}
     </button>
-    <button ref="reviewButton" class="secondary" @click="emit('review')">查看棋盤</button>
+    <button ref="reviewButton" class="secondary" @click="emit('review')">
+      {{ $t('result.review') }}
+    </button>
   </section>
 </template>
 <style scoped>

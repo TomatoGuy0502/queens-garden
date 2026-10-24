@@ -131,7 +131,7 @@ async function navigate(index: number, event: KeyboardEvent) {
             ref="board"
             class="board"
             role="grid"
-            aria-label="Queens 棋盤；方向鍵移動、空白鍵或 Enter 循環皇冠、X、空格；X 鍵直接標記"
+            :aria-label="$t('board.label')"
             :aria-readonly="won && reviewing"
             :aria-rowcount="puzzle.size"
             :aria-colcount="puzzle.size"
@@ -194,10 +194,10 @@ async function navigate(index: number, event: KeyboardEvent) {
           </div>
           <div v-if="paused" class="pause-cover">
             <Pause :size="28" />
-            <h2>遊戲已暫停</h2>
-            <p>棋盤和計時都已暫停。</p>
+            <h2>{{ $t('board.pausedTitle') }}</h2>
+            <p>{{ $t('board.pausedBody') }}</p>
             <button class="primary" :disabled="canResume === false" @click="emit('resume')">
-              <Play :size="16" /> 繼續遊戲
+              <Play :size="16" /> {{ $t('board.resume') }}
             </button>
           </div>
         </div>
@@ -206,12 +206,17 @@ async function navigate(index: number, event: KeyboardEvent) {
     <div v-if="won && !reviewing" class="result-cover"><slot name="result" /></div>
   </div>
   <Teleport to="body">
-    <div v-if="won && reviewing" class="review-controls" role="region" aria-label="棋盤檢視工具">
-      <span>關卡已完成 · 唯讀檢視</span>
-      <button class="primary" @click="emit('endReview')">返回完成摘要</button>
+    <div
+      v-if="won && reviewing"
+      class="review-controls"
+      role="region"
+      :aria-label="$t('board.reviewLabel')"
+    >
+      <span>{{ $t('board.reviewing') }}</span>
+      <button class="primary" @click="emit('endReview')">{{ $t('board.back') }}</button>
     </div>
   </Teleport>
-  <p v-if="puzzle.size >= 8" class="scroll-note">較大的棋盤可左右滑動，保留舒適的點擊空間。</p>
+  <p v-if="puzzle.size >= 8" class="scroll-note">{{ $t('board.scroll') }}</p>
 </template>
 <style scoped>
 .review-controls {

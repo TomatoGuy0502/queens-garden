@@ -3,14 +3,20 @@ import { Crown, Rows3, Columns3, Shapes, MoveDiagonal } from '@lucide/vue'
 </script>
 <template>
   <section id="rules" class="rules" aria-labelledby="rules-title">
-    <h2 id="rules-title">遊戲規則</h2>
+    <h2 id="rules-title">{{ $t('rules.title') }}</h2>
     <ul>
-      <li><Rows3 :size="18" /><span>每一列，恰好一頂皇冠。</span></li>
-      <li><Columns3 :size="18" /><span>每一欄，恰好一頂皇冠。</span></li>
-      <li><Shapes :size="18" /><span>每個色區，恰好一頂皇冠。</span></li>
+      <li>
+        <Rows3 :size="18" /><span>{{ $t('rules.rows') }}</span>
+      </li>
+      <li>
+        <Columns3 :size="18" /><span>{{ $t('rules.columns') }}</span>
+      </li>
+      <li>
+        <Shapes :size="18" /><span>{{ $t('rules.regions') }}</span>
+      </li>
       <li>
         <MoveDiagonal :size="18" /><span
-          >皇冠不能相鄰，斜角也不行。<small>較遠的對角線位置可以放置。</small></span
+          >{{ $t('rules.adjacent') }}<small>{{ $t('rules.adjacentNote') }}</small></span
         >
       </li>
     </ul>
@@ -19,15 +25,11 @@ import { Crown, Rows3, Columns3, Shapes, MoveDiagonal } from '@lucide/vue'
         <span>×</span><span>×</span><span>×</span><span>×</span><span><Crown :size="22" /></span
         ><span>×</span><span>×</span><span>×</span><span>×</span>
       </div>
-      <span>皇冠周圍八格不能放置皇冠。</span>
+      <span>{{ $t('rules.example') }}</span>
     </div>
     <details>
-      <summary>操作與鍵盤快捷鍵</summary>
-      <p>
-        點一下放皇冠，再點一下變成 X，第三下清除。滑鼠右鍵或 X
-        鍵可直接切換標記。方向鍵移動，空白鍵或 Enter
-        也會依序切換皇冠、X、空格。格內字母代表所屬區域。
-      </p>
+      <summary>{{ $t('rules.shortcuts') }}</summary>
+      <p>{{ $t('rules.shortcutsBody') }}</p>
     </details>
   </section>
 </template>

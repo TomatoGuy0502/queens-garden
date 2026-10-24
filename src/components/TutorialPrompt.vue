@@ -9,12 +9,14 @@ const { stats } = useGameStats()
 const visible = computed(() => status.value === null && !Object.keys(stats.value.buckets).length)
 </script>
 <template>
-  <section v-if="visible" class="prompt" aria-label="新手教學">
+  <section v-if="visible" class="prompt" :aria-label="$t('tutorialPrompt.label')">
     <GraduationCap :size="22" aria-hidden="true" />
     <div>
-      <p>第一次玩？跟著幾分鐘的互動教學學會規則與推理。</p>
-      <RouterLink class="primary" to="/tutorial">開始教學</RouterLink>
-      <button class="text-button" @click="dismiss">不用了</button>
+      <p>{{ $t('tutorialPrompt.body') }}</p>
+      <RouterLink class="primary" to="/tutorial">{{ $t('tutorialPrompt.start') }}</RouterLink>
+      <button class="text-button" @click="dismiss">
+        {{ $t('tutorialPrompt.dismiss') }}
+      </button>
     </div>
   </section>
 </template>

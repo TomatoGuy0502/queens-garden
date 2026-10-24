@@ -15,12 +15,6 @@ export const DEFAULT_GUIDANCE: Readonly<BoardGuidance> = {
   regions: true,
   adjacent: true,
 }
-export const GUIDANCE_LABELS: Record<GuidanceReason, string> = {
-  row: '同一列',
-  column: '同一欄',
-  region: '同一色區',
-  adjacent: '周圍八格',
-}
 
 /** Only considers placed queens; never changes marks or consults the solution. */
 export function guidedCells(

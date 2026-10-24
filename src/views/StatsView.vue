@@ -2,7 +2,7 @@
 import { computed, shallowRef } from 'vue'
 import AppHeader from '../components/AppHeader.vue'
 import { useGameStats } from '../composables/useGameStats'
-import { BOARD_SIZES, DIFFICULTIES, DIFFICULTY_LABELS } from '../queens/levels'
+import { BOARD_SIZES, DIFFICULTIES } from '../queens/levels'
 import { averageSeconds, bucketKey, formatDuration } from '../queens/stats'
 const { stats, storageAvailable, reset } = useGameStats()
 const confirming = shallowRef(false)
@@ -34,23 +34,21 @@ function clear() {
 <template>
   <main class="page-shell">
     <AppHeader />
-    <h1>我的成績</h1>
-    <p class="page-description">
-      單人遊戲的完成紀錄只保存在這個瀏覽器，不會上傳。共完成 {{ total }} 局。
-    </p>
-    <p v-if="!storageAvailable" class="notice" role="status">
-      瀏覽器拒絕儲存，成績只會保留到關閉此頁面。
-    </p>
+    <h1>{{ $t('stats.title') }}</h1>
+    <p class="page-description">{{ $t('stats.intro', { total }) }}</p>
+    <p v-if="!storageAvailable" class="notice" role="status">{{ $t('stats.storage') }}</p>
     <div v-if="total" class="table-wrap">
       <table>
         <caption class="sr-only">
-          各棋盤大小與難度的最佳時間、平均時間與完成局數
+          {{
+            $t('stats.caption')
+          }}
         </caption>
         <thead>
           <tr>
-            <th scope="col">大小</th>
+            <th scope="col">{{ $t('stats.size') }}</th>
             <th v-for="difficulty in DIFFICULTIES" :key="difficulty" scope="col">
-              {{ DIFFICULTY_LABELS[difficulty] }}
+              {{ $t(`difficulty.${difficulty}`) }}
             </th>
           </tr>
         </thead>
@@ -60,8 +58,10 @@ function clear() {
             <td v-for="cell in row.cells" :key="cell.difficulty">
               <template v-if="cell.best">
                 <strong>{{ cell.best }}</strong>
-                <span>平均 {{ cell.average }}</span>
-                <span>{{ cell.completed }} 局 · {{ cell.withoutHints }} 局無提示</span>
+                <span>{{ $t('stats.average', { time: cell.average }) }}</span>
+                <span>{{
+                  $t('stats.completed', { count: cell.completed, withoutHints: cell.withoutHints })
+                }}</span>
               </template>
               <span v-else class="empty">—</span>
             </td>
@@ -70,16 +70,18 @@ function clear() {
       </table>
     </div>
     <div v-else class="empty-stats">
-      <p>還沒有完成紀錄。完成一局單人遊戲後，這裡會顯示各難度的最佳時間。</p>
-      <RouterLink class="primary" to="/solo">開始遊戲</RouterLink>
+      <p>{{ $t('stats.empty') }}</p>
+      <RouterLink class="primary" to="/solo">{{ $t('stats.start') }}</RouterLink>
     </div>
     <div v-if="total" class="reset">
       <template v-if="confirming">
-        <p>清除全部成績？這無法復原。</p>
-        <button class="text-button" @click="confirming = false">保留</button>
-        <button class="primary" @click="clear">清除</button>
+        <p>{{ $t('stats.confirm') }}</p>
+        <button class="text-button" @click="confirming = false">{{ $t('stats.keep') }}</button>
+        <button class="primary" @click="clear">{{ $t('stats.clear') }}</button>
       </template>
-      <button v-else class="text-button" @click="confirming = true">清除成績</button>
+      <button v-else class="text-button" @click="confirming = true">
+        {{ $t('stats.clearAll') }}
+      </button>
     </div>
   </main>
 </template>

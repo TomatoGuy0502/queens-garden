@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { CalendarCheck } from '@lucide/vue'
 import { useDailyChallenge } from '../composables/useDailyChallenge'
-import { DIFFICULTY_LABELS } from '../queens/levels'
 import { formatDuration } from '../queens/stats'
 defineProps<{ busy?: boolean; inGame?: boolean }>()
 const emit = defineEmits<{ start: [] }>()
@@ -11,24 +10,28 @@ const { today, config, result, streak } = useDailyChallenge()
   <section class="daily" aria-labelledby="daily-title">
     <CalendarCheck :size="24" aria-hidden="true" />
     <div class="daily-body">
-      <h2 id="daily-title">每日挑戰 · {{ today }}</h2>
+      <h2 id="daily-title">{{ $t('daily.title', { date: today }) }}</h2>
       <p>
-        今天是 {{ config.size }} × {{ config.size }} · {{ DIFFICULTY_LABELS[config.difficulty] }}，
-        所有人拿到同一題。
+        {{
+          $t('daily.today', {
+            size: config.size,
+            difficulty: $t(`difficulty.${config.difficulty}`),
+          })
+        }}
       </p>
       <p class="status" role="status">
-        <template v-if="result"
-          >已完成 {{ formatDuration(result.seconds) }} · {{ result.hints }} 次提示</template
-        >
-        <template v-else>今天還沒完成</template>
-        <template v-if="streak"> · 連續 {{ streak }} 天</template>
+        <template v-if="result">{{
+          $t('daily.done', { time: formatDuration(result.seconds), hints: result.hints })
+        }}</template>
+        <template v-else>{{ $t('daily.pending') }}</template>
+        <template v-if="streak">{{ $t('daily.streak', { days: streak }) }}</template>
       </p>
     </div>
     <button v-if="inGame" class="primary" :disabled="busy" @click="emit('start')">
-      {{ result ? '再玩一次' : '開始今日挑戰' }}
+      {{ result ? $t('daily.again') : $t('daily.start') }}
     </button>
     <RouterLink v-else class="primary" :to="{ path: '/solo', query: { daily: 'today' } }">
-      {{ result ? '再玩一次' : '開始今日挑戰' }}
+      {{ result ? $t('daily.again') : $t('daily.start') }}
     </RouterLink>
   </section>
 </template>

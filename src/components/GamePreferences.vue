@@ -8,18 +8,22 @@ const preferences = defineModel<BoardGuidance>({ required: true })
 defineProps<{ storageAvailable: boolean }>()
 const dialog = useTemplateRef<HTMLDialogElement>('dialog')
 const ranges = [
-  { key: 'rows', label: '同一列' },
-  { key: 'columns', label: '同一欄' },
-  { key: 'regions', label: '同一色區' },
-  { key: 'adjacent', label: '周圍八格' },
+  { key: 'rows', label: 'guidance.row' },
+  { key: 'columns', label: 'guidance.column' },
+  { key: 'regions', label: 'guidance.region' },
+  { key: 'adjacent', label: 'guidance.adjacent' },
 ] as const
 function update(key: keyof BoardGuidance, event: Event) {
   preferences.value = { ...preferences.value, [key]: (event.target as HTMLInputElement).checked }
 }
 </script>
 <template>
-  <button class="text-button preferences-button" aria-label="遊玩設定" @click="dialog?.showModal()">
-    <Settings2 :size="18" /><span>遊玩設定</span>
+  <button
+    class="text-button preferences-button"
+    :aria-label="$t('preferences.open')"
+    @click="dialog?.showModal()"
+  >
+    <Settings2 :size="18" /><span>{{ $t('preferences.open') }}</span>
   </button>
   <dialog
     ref="dialog"
@@ -28,28 +32,27 @@ function update(key: keyof BoardGuidance, event: Event) {
     aria-describedby="preferences-description"
   >
     <div class="preferences-header">
-      <h2 id="preferences-title">遊玩設定</h2>
-      <button class="icon-button" aria-label="關閉設定" @click="dialog?.close()">
+      <h2 id="preferences-title">{{ $t('preferences.title') }}</h2>
+      <button class="icon-button" :aria-label="$t('preferences.close')" @click="dialog?.close()">
         <X :size="19" />
       </button>
     </div>
     <label class="guidance-toggle layout-toggle">
       <span
-        >放大棋盤<small id="expanded-board-note"
-          >讓棋盤使用整行寬度，設定、合作操作與規則移到下方。</small
-        ></span
+        >{{ $t('preferences.expanded')
+        }}<small id="expanded-board-note">{{ $t('preferences.expandedNote') }}</small></span
       >
       <input
         v-model="expandedBoard"
         type="checkbox"
         role="switch"
-        aria-label="放大棋盤"
+        :aria-label="$t('preferences.expanded')"
         aria-describedby="expanded-board-note"
       />
     </label>
-    <p id="preferences-description">放置皇冠後，以淺色斜線標示受影響的格子。</p>
+    <p id="preferences-description">{{ $t('preferences.intro') }}</p>
     <label class="guidance-toggle" for="guidance-enabled"
-      ><span id="guidance-toggle-label">顯示皇冠排除範圍</span
+      ><span id="guidance-toggle-label">{{ $t('preferences.guidance') }}</span
       ><input
         id="guidance-enabled"
         type="checkbox"
@@ -59,26 +62,22 @@ function update(key: keyof BoardGuidance, event: Event) {
         @change="update('enabled', $event)"
     /></label>
     <fieldset :disabled="!preferences.enabled">
-      <legend>引導範圍</legend>
+      <legend>{{ $t('preferences.range') }}</legend>
       <label v-for="range in ranges" :key="range.key" class="range-option"
         ><input
           type="checkbox"
           :checked="preferences[range.key]"
           @change="update(range.key, $event)"
-        />{{ range.label }}</label
+        />{{ $t(range.label) }}</label
       >
     </fieldset>
-    <p class="guidance-note">
-      只提供視覺引導，不會自動新增 X 或限制點擊。移除皇冠、Undo 或 Redo 時會同步更新。
-    </p>
+    <p class="guidance-note">{{ $t('preferences.note') }}</p>
     <p class="storage-note" role="status">
-      {{
-        storageAvailable
-          ? '設定立即套用，並儲存於此瀏覽器。'
-          : '此瀏覽器無法儲存設定，本次遊戲仍會套用。'
-      }}
+      {{ $t(storageAvailable ? 'preferences.saved' : 'preferences.unsaved') }}
     </p>
-    <button class="primary done-button" @click="dialog?.close()">完成</button>
+    <button class="primary done-button" @click="dialog?.close()">
+      {{ $t('preferences.done') }}
+    </button>
   </dialog>
 </template>
 <style scoped>

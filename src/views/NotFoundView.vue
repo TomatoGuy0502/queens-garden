@@ -4,8 +4,8 @@ import AppHeader from '../components/AppHeader.vue'
 <template>
   <main class="page-shell">
     <AppHeader />
-    <h1>找不到這個頁面</h1>
-    <p class="page-description">請確認房間連結，或重新建立房間。</p>
-    <RouterLink to="/" class="primary">回到首頁</RouterLink>
+    <h1>{{ $t('notFound.title') }}</h1>
+    <p class="page-description">{{ $t('notFound.body') }}</p>
+    <RouterLink to="/" class="primary">{{ $t('notFound.home') }}</RouterLink>
   </main>
 </template>

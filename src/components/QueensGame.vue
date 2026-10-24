@@ -31,7 +31,7 @@ import {
 import { useSoloGameStore } from '../stores/solo'
 import { storeToRefs } from 'pinia'
 import { GENERATOR_VERSION } from '../queens/version'
-import { DIFFICULTIES, DIFFICULTY_LABELS } from '../queens/levels'
+import { DIFFICULTIES } from '../queens/levels'
 import type { Difficulty } from '../queens/types'
 const game = useSoloGameStore()
 useProgressAutosave(game)
@@ -128,7 +128,6 @@ watch(
     lastRecord.value = null
   },
 )
-const difficulties = DIFFICULTY_LABELS
 const highlighted = computed(() => (paused.value ? [] : hintCells.value))
 const allMistakes = computed(() => [...new Set([...conflicts.value, ...mistakes.value])])
 // The daily challenge is a fixed board, so its page offers no settings until the player leaves it.
@@ -199,27 +198,33 @@ onMounted(() => {
 <template>
   <div class="app-shell">
     <header class="site-header">
-      <RouterLink to="/" class="brand" aria-label="Queens 首頁"
+      <RouterLink to="/" class="brand" :aria-label="$t('brand.home')"
         ><span class="brand-icon"><CrownIcon /></span
         ><span>queens<span class="brand-dot">.</span></span></RouterLink
       >
       <div class="header-actions">
-        <RouterLink to="/tutorial" class="text-button coop-link">新手教學</RouterLink>
-        <RouterLink to="/stats" class="text-button coop-link">我的成績</RouterLink>
-        <RouterLink to="/rooms/new" class="text-button coop-link">多人合作</RouterLink>
+        <RouterLink to="/tutorial" class="text-button coop-link">{{
+          $t('nav.tutorial')
+        }}</RouterLink>
+        <RouterLink to="/stats" class="text-button coop-link">{{ $t('nav.stats') }}</RouterLink>
+        <RouterLink to="/rooms/new" class="text-button coop-link">{{ $t('nav.coop') }}</RouterLink>
         <LanguageSwitcher />
         <ThemeToggle />
         <GamePreferences v-model="guidance" :storage-available="storageAvailable" />
       </div>
     </header>
     <main>
-      <div class="page-intro"><h1>Queens 益智遊戲</h1></div>
+      <div class="page-intro">
+        <h1>{{ $t('app.title') }}</h1>
+      </div>
       <div class="game-layout" :class="{ expanded: expandedBoard }">
-        <section class="play-area" aria-label="遊戲區域" :aria-busy="busy">
+        <section class="play-area" :aria-label="$t('game.area')" :aria-busy="busy">
           <div class="game-meta">
             <div class="puzzle-meta">
-              <span v-if="daily" class="difficulty-badge daily-badge">每日挑戰</span
-              ><span class="difficulty-badge">{{ difficulties[displayDifficulty] }}</span
+              <span v-if="daily" class="difficulty-badge daily-badge">{{
+                $t('game.dailyBadge')
+              }}</span
+              ><span class="difficulty-badge">{{ $t(`difficulty.${displayDifficulty}`) }}</span
               ><span class="board-size"
                 >{{ puzzle?.size ?? initialSize }} × {{ puzzle?.size ?? initialSize }}</span
               ><span v-if="puzzle" class="queen-count"
@@ -230,7 +235,7 @@ onMounted(() => {
               <Clock3 :size="15" /><span>{{ time }}</span
               ><button
                 class="icon-button pause-button"
-                :aria-label="paused ? '繼續遊戲' : '暫停遊戲'"
+                :aria-label="paused ? $t('game.resume') : $t('game.pause')"
                 :disabled="!puzzle || busy || won"
                 @click="game.togglePause"
               >
@@ -240,10 +245,8 @@ onMounted(() => {
           </div>
           <div v-if="versionMismatch" class="empty-board">
             <CrownIcon />
-            <h2>此連結使用不同版本的生成器</h2>
-            <p>
-              目前版本 {{ GENERATOR_VERSION }} 無法保證重現舊版本的關卡。請從右側設定開始新遊戲。
-            </p>
+            <h2>{{ $t('game.versionMismatch.title') }}</h2>
+            <p>{{ $t('game.versionMismatch.body', { version: GENERATOR_VERSION }) }}</p>
           </div>
           <ResumePrompt
             v-else-if="pendingResume"
@@ -255,8 +258,8 @@ onMounted(() => {
             <div class="generating-art">
               <CrownIcon /><LoaderCircle class="spinner" :size="21" />
             </div>
-            <h2>正在產生關卡</h2>
-            <p>生成區域、驗證唯一解，再評估邏輯難度。</p>
+            <h2>{{ $t('game.generating.title') }}</h2>
+            <p>{{ $t('game.generating.body') }}</p>
             <span class="loading-bars"><i></i><i></i><i></i></span>
           </div>
           <QueensBoard
@@ -282,7 +285,7 @@ onMounted(() => {
                 :moves="moves"
                 :hints="hints"
                 :record="lastRecord ?? undefined"
-                :next-label="inDaily ? '自由遊玩 →' : undefined"
+                :next-label="inDaily ? $t('game.freePlay') : undefined"
                 @next="nextGame"
                 @review="reviewing = true"
               />
@@ -290,8 +293,8 @@ onMounted(() => {
           </QueensBoard>
           <div v-else class="empty-board">
             <CrownIcon />
-            <h2>尚未開始遊戲</h2>
-            <p>選擇棋盤大小與難度後開始。</p>
+            <h2>{{ $t('game.idle.title') }}</h2>
+            <p>{{ $t('game.idle.body') }}</p>
           </div>
           <div v-if="error" class="error-notice" role="alert">{{ error }}</div>
           <GameToolbar
@@ -309,10 +312,13 @@ onMounted(() => {
             @check="game.assist('check')"
           />
           <div v-if="restartConfirm" class="restart-confirm">
-            <p>清空棋盤並重新計時？</p>
+            <p>{{ $t('game.restart.prompt') }}</p>
             <div>
-              <button class="text-button" @click="restartConfirm = false">繼續這局</button
-              ><button class="primary" @click="confirmRestart">重新開始</button>
+              <button class="text-button" @click="restartConfirm = false">
+                {{ $t('game.restart.keep') }}</button
+              ><button class="primary" @click="confirmRestart">
+                {{ $t('game.restart.confirm') }}
+              </button>
             </div>
           </div>
           <div
@@ -324,11 +330,13 @@ onMounted(() => {
           >
             <template v-if="feedback"
               ><span class="feedback-label">{{
-                hint ? `邏輯提示 ${hintLevel} / 3` : '遊戲訊息'
+                hint ? $t('game.feedback.hint', { level: hintLevel }) : $t('game.feedback.message')
               }}</span>
               <p>{{ feedback }}</p>
               <details v-if="hintRevealed && hint?.evidence?.length" class="hint-evidence">
-                <summary>展開假設推理的 {{ hint.evidence.length }} 個步驟</summary>
+                <summary>
+                  {{ $t('game.feedback.evidence', { count: hint.evidence.length }) }}
+                </summary>
                 <ol>
                   <li v-for="(step, index) in hint.evidence" :key="index">{{ step.reason }}</li>
                 </ol>
@@ -338,22 +346,23 @@ onMounted(() => {
                 class="text-button apply-hint"
                 @click="game.applyHint"
               >
-                套用這一步 →
+                {{ $t('game.feedback.apply') }}
               </button></template
             >
-            <p v-else-if="conflicts.length">皇冠有衝突。請檢查紅色斜紋的格子。</p>
+            <p v-else-if="conflicts.length">{{ $t('game.feedback.conflict') }}</p>
           </div>
           <div v-if="puzzle" class="puzzle-footer">
             <span
               >SEED {{ puzzle.seed }} <span class="dot-separator">·</span> v{{ puzzle.version }}
-              <span class="dot-separator">·</span> 難度分數 {{ puzzle.difficultyScore }}</span
+              <span class="dot-separator">·</span>
+              {{ $t('game.score', { score: puzzle.difficultyScore }) }}</span
             >
             <GameShare :puzzle="puzzle" />
           </div>
         </section>
         <aside class="side-panel">
           <button v-if="inDaily" class="text-button free-play" :disabled="busy" @click="nextGame">
-            離開每日挑戰，自由遊玩
+            {{ $t('game.leaveDaily') }}
           </button>
           <template v-else>
             <TutorialPrompt />

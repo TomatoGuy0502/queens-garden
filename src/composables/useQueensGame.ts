@@ -1,5 +1,6 @@
 import { computed, onMounted, onUnmounted, shallowRef } from 'vue'
 import { useRouter } from 'vue-router'
+import { i18n } from '../i18n'
 import type { CellState, DeductionStep, Difficulty, PuzzleDefinition } from '../queens/types'
 import type { WorkerRequest, WorkerResponse } from '../queens/protocol'
 import { nextCell } from '../queens/cells'
@@ -11,6 +12,8 @@ import {
 } from '../queens/progress'
 import { HINT_LEVELS, hintView } from '../queens/strategies'
 import { conflictCells } from '../queens/validator'
+
+const { t } = i18n.global
 
 export function useQueensGame() {
   const router = useRouter()
@@ -72,7 +75,7 @@ export function useQueensGame() {
   const hintCells = computed(() => hintInfo.value?.cells ?? [])
   const hintRevealed = computed(() => !!hint.value && hintLevel.value >= HINT_LEVELS)
 
-  function stopWorker(reason = '運算已取消。') {
+  function stopWorker(reason = t('game.errors.aborted')) {
     worker?.terminate()
     worker = null
     for (const pending of requests.values()) pending.reject(new Error(reason))
@@ -93,8 +96,8 @@ export function useQueensGame() {
         else pending.resolve(event.data)
       }
       worker.onerror = () => {
-        stopWorker('運算服務無法啟動，請重新產生關卡。')
-        error.value = '運算服務發生錯誤，請重新產生關卡。'
+        stopWorker(t('game.errors.workerStart'))
+        error.value = t('game.errors.workerFailed')
         busy.value = false
         assisting.value = false
       }
@@ -200,7 +203,7 @@ export function useQueensGame() {
     generationId++
     stopWorker()
     busy.value = false
-    error.value = '已取消生成。請選擇設定後再試一次。'
+    error.value = t('game.errors.cancelled')
   }
   function edit(index: number, action: 'cycle' | 'mark' = 'cycle') {
     if (blocked.value || !puzzle.value || index < 0 || index >= cells.value.length) return
@@ -210,7 +213,7 @@ export function useQueensGame() {
     cells.value = cells.value.map((cell, i) => (i === index ? next : cell))
     moves.value++
     clearFeedback()
-    if (won.value) message.value = '關卡完成。'
+    if (won.value) message.value = t('game.won')
   }
   function undo() {
     if (busy.value || paused.value || !history.value.length) return

@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { ArrowRight, Shuffle } from '@lucide/vue'
 import { shallowRef, watch } from 'vue'
-import { DIFFICULTIES, DIFFICULTY_LABELS } from '../queens/levels'
+import { useI18n } from 'vue-i18n'
+import { DIFFICULTIES } from '../queens/levels'
 import type { Difficulty } from '../queens/types'
 const props = defineProps<{
   busy: boolean
@@ -14,6 +15,7 @@ const emit = defineEmits<{
   start: [size: number, difficulty: Difficulty, seed: number]
   cancel: []
 }>()
+const { t } = useI18n()
 const size = shallowRef(props.initialSize),
   difficulty = shallowRef<Difficulty>(props.initialDifficulty),
   seed = shallowRef(String(props.initialSeed)),
@@ -35,7 +37,7 @@ function start() {
 }
 function loadSeed() {
   if (!/^\d+$/.test(seed.value) || Number(seed.value) > 0xffffffff) {
-    invalid.value = 'Seed 請輸入 0～4294967295 的整數。'
+    invalid.value = t('settings.seed.invalid')
     return
   }
   invalid.value = ''
@@ -44,17 +46,27 @@ function loadSeed() {
 </script>
 <template>
   <section class="settings-section" aria-labelledby="settings-title">
-    <h2 id="settings-title">遊戲設定</h2>
+    <h2 id="settings-title">{{ $t('settings.title') }}</h2>
     <form @submit.prevent="start">
       <fieldset :disabled="busy">
-        <label for="size">棋盤大小 <span>BOARD SIZE</span></label>
+        <label for="size"
+          >{{ $t('settings.size.label') }} <span>{{ $t('settings.size.caption') }}</span></label
+        >
         <select id="size" v-model="size">
           <option v-for="n in [6, 7, 8, 9, 10, 12]" :key="n" :value="n">
-            {{ n }} × {{ n }}{{ n === 12 ? ' · 進階' : '' }}
+            {{ n }} × {{ n }}{{ n === 12 ? ` · ${$t('settings.size.advanced')}` : '' }}
           </option>
         </select>
-        <label for="difficulty">難度 <span>DIFFICULTY</span></label>
-        <div id="difficulty" class="difficulty-options" role="group" aria-label="難度">
+        <label for="difficulty"
+          >{{ $t('settings.difficulty.label') }}
+          <span>{{ $t('settings.difficulty.caption') }}</span></label
+        >
+        <div
+          id="difficulty"
+          class="difficulty-options"
+          role="group"
+          :aria-label="$t('settings.difficulty.label')"
+        >
           <button
             v-for="item in DIFFICULTIES"
             :key="item"
@@ -63,10 +75,12 @@ function loadSeed() {
             :class="{ selected: difficulty === item }"
             @click="difficulty = item"
           >
-            {{ DIFFICULTY_LABELS[item] }}
+            {{ $t(`difficulty.${item}`) }}
           </button>
         </div>
-        <label for="seed">關卡種子 <span>SEED</span></label>
+        <label for="seed"
+          >{{ $t('settings.seed.label') }} <span>{{ $t('settings.seed.caption') }}</span></label
+        >
         <div class="seed-field">
           <input
             id="seed"
@@ -74,22 +88,29 @@ function loadSeed() {
             inputmode="numeric"
             autocomplete="off"
             aria-describedby="seed-note"
-          /><button type="button" aria-label="產生隨機 Seed" title="隨機 Seed" @click="newSeed">
+          /><button
+            type="button"
+            :aria-label="$t('settings.seed.random')"
+            :title="$t('settings.seed.randomTitle')"
+            @click="newSeed"
+          >
             <Shuffle :size="16" />
           </button>
         </div>
-        <p id="seed-note" class="field-note">新遊戲會自動換種子；指定種子請按「載入此種子」。</p>
-        <button type="button" class="text-button load-seed" @click="loadSeed">載入此種子</button>
+        <p id="seed-note" class="field-note">{{ $t('settings.seed.note') }}</p>
+        <button type="button" class="text-button load-seed" @click="loadSeed">
+          {{ $t('settings.seed.load') }}
+        </button>
         <p v-if="invalid" role="alert" class="error-text">{{ invalid }}</p>
         <button class="primary new-game" type="submit">
-          {{ busy ? '正在尋找唯一解…' : '開始新遊戲' }}<ArrowRight :size="17" />
+          {{ busy ? $t('settings.searching') : $t('settings.start') }}<ArrowRight :size="17" />
         </button>
       </fieldset>
     </form>
-    <button v-if="busy" class="text-button cancel" @click="emit('cancel')">取消生成</button>
-    <p class="generation-note">
-      每一道關卡即時生成，並經過唯一解驗證。部分大小與難度可能需要更長時間。
-    </p>
+    <button v-if="busy" class="text-button cancel" @click="emit('cancel')">
+      {{ $t('settings.cancel') }}
+    </button>
+    <p class="generation-note">{{ $t('settings.note') }}</p>
   </section>
 </template>
 <style scoped>

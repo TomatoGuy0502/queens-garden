@@ -84,3 +84,41 @@ test('switching language keeps working when browser storage is unavailable', asy
   await page.getByRole('link', { name: 'Co-op', exact: true }).click()
   await expect(language(page)).toHaveValue('en')
 })
+
+test.describe('solo game screens', () => {
+  test('are translated, including board labels, dialogs and the stats page', async ({ page }) => {
+    await page.goto('/solo?size=6&difficulty=easy&seed=42')
+    await expect(page.getByRole('gridcell').first()).toBeVisible({ timeout: 30000 })
+    await language(page).selectOption('en')
+    await expect(page.getByRole('heading', { name: 'Game settings' })).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Give me a hint' })).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Check for mistakes' })).toBeVisible()
+    await expect(page.locator('.puzzle-meta')).toContainText('Easy')
+    await expect(page.getByRole('gridcell').first()).toHaveAttribute(
+      'aria-label',
+      /^Row 1, column 1, region [A-F], empty$/,
+    )
+    await page.getByRole('gridcell').first().click()
+    await expect(page.getByRole('gridcell').first()).toHaveAttribute(
+      'aria-label',
+      /^Row 1, column 1, region [A-F], crown$/,
+    )
+    await page.getByRole('button', { name: 'Share puzzle' }).click()
+    await expect(page.getByRole('dialog', { name: 'Share puzzle' })).toBeVisible()
+    await page.getByRole('button', { name: 'Close share' }).click()
+
+    await language(page).selectOption('ja')
+    await expect(page.getByRole('heading', { name: 'ゲーム設定' })).toBeVisible()
+    await expect(page.getByRole('button', { name: 'ヒントをください' })).toBeVisible()
+    await expect(page.getByRole('gridcell').first()).toHaveAttribute(
+      'aria-label',
+      /^1 行目、1 列目、領域 [A-F]、クラウン$/,
+    )
+
+    await page.getByRole('link', { name: '成績', exact: true }).click()
+    await expect(page.getByRole('heading', { name: '成績', level: 1 })).toBeVisible()
+    await expect(page.getByText('まだ記録がありません')).toBeVisible()
+    await page.goto('/missing')
+    await expect(page.getByRole('heading', { name: 'ページが見つかりません' })).toBeVisible()
+  })
+})

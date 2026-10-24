@@ -1,31 +1,43 @@
 <script setup lang="ts">
 import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import CrownIcon from './CrownIcon.vue'
 import { dateKey } from '../queens/daily'
-import { DIFFICULTY_LABELS } from '../queens/levels'
 import type { SavedProgress } from '../queens/progress'
 import { formatDuration } from '../queens/stats'
 const props = defineProps<{ saved: SavedProgress }>()
 const emit = defineEmits<{ resume: []; discard: [] }>()
+const { t, locale } = useI18n()
 const summary = computed(() => {
   const { size, difficulty, elapsedMs, moves, savedAt, daily } = props.saved
-  const when = new Date(savedAt).toLocaleString('zh-TW', {
+  const when = new Date(savedAt).toLocaleString(locale.value, {
     month: 'numeric',
     day: 'numeric',
     hour: '2-digit',
     minute: '2-digit',
   })
-  return `${daily === dateKey() ? '每日挑戰 · ' : ''}${size} × ${size} · ${DIFFICULTY_LABELS[difficulty]} · 已進行 ${formatDuration(Math.floor(elapsedMs / 1000))} · ${moves} 次操作（${when} 儲存）`
+  return t('resume.summary', {
+    daily: daily === dateKey() ? t('resume.daily') : '',
+    size,
+    difficulty: t(`difficulty.${difficulty}`),
+    elapsed: formatDuration(Math.floor(elapsedMs / 1000)),
+    moves,
+    when,
+  })
 })
 </script>
 <template>
   <div class="empty-board resume" role="group" aria-labelledby="resume-title">
     <CrownIcon />
-    <h2 id="resume-title">繼續上一局？</h2>
+    <h2 id="resume-title">{{ $t('resume.title') }}</h2>
     <p>{{ summary }}</p>
     <div class="resume-actions">
-      <button class="primary" @click="emit('resume')">繼續這一局</button>
-      <button class="text-button" @click="emit('discard')">放棄，開始新遊戲</button>
+      <button class="primary" @click="emit('resume')">
+        {{ $t('resume.continue') }}
+      </button>
+      <button class="text-button" @click="emit('discard')">
+        {{ $t('resume.discard') }}
+      </button>
     </div>
   </div>
 </template>

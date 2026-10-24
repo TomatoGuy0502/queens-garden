@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { Undo2, Redo2, RotateCcw, Lightbulb, ScanLine } from '@lucide/vue'
 import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 const props = withDefaults(
   defineProps<{
     blocked: boolean
@@ -14,9 +15,9 @@ const props = withDefaults(
   }>(),
   { hintLevel: 0, hintRevealed: false },
 )
-const hintLabel = computed(
-  () => ['給我一點提示', '再多一點提示', '告訴我答案', '答案已顯示'][Math.min(props.hintLevel, 3)],
-)
+const { t } = useI18n()
+const HINT_KEYS = ['hintAsk', 'hintMore', 'hintAnswer', 'hintShown'] as const
+const hintLabel = computed(() => t(`toolbar.${HINT_KEYS[Math.min(props.hintLevel, 3)]}`))
 const emit = defineEmits<{
   undo: []
   redo: []
@@ -26,21 +27,21 @@ const emit = defineEmits<{
 }>()
 </script>
 <template>
-  <div class="toolbar" role="toolbar" aria-label="遊戲工具">
-    <p class="interaction-note">點擊格子：皇冠 → X → 清除 · 座標：列,欄</p>
+  <div class="toolbar" role="toolbar" :aria-label="$t('toolbar.label')">
+    <p class="interaction-note">{{ $t('toolbar.note') }}</p>
     <div class="history-tools">
       <button
         class="icon-button"
-        aria-label="復原"
-        title="復原"
+        :aria-label="$t('toolbar.undo')"
+        :title="$t('toolbar.undo')"
         :disabled="!canUndo"
         @click="emit('undo')"
       >
         <Undo2 :size="19" /></button
       ><button
         class="icon-button"
-        aria-label="重做"
-        title="重做"
+        :aria-label="$t('toolbar.redo')"
+        :title="$t('toolbar.redo')"
         :disabled="!canRedo"
         @click="emit('redo')"
       >
@@ -48,8 +49,8 @@ const emit = defineEmits<{
       ><span class="tool-divider"></span
       ><button
         class="icon-button"
-        aria-label="重新開始"
-        title="重新開始"
+        :aria-label="$t('toolbar.restart')"
+        :title="$t('toolbar.restart')"
         :disabled="!canRestart"
         @click="emit('restart')"
       >
@@ -59,9 +60,9 @@ const emit = defineEmits<{
   </div>
   <div class="assist-tools">
     <button :disabled="blocked || assisting || hintRevealed" @click="emit('hint')">
-      <Lightbulb :size="17" />{{ assisting ? '推理中…' : hintLabel }}</button
+      <Lightbulb :size="17" />{{ assisting ? $t('toolbar.thinking') : hintLabel }}</button
     ><button :disabled="blocked || assisting" @click="emit('check')">
-      <ScanLine :size="17" />檢查錯誤
+      <ScanLine :size="17" />{{ $t('toolbar.check') }}
     </button>
   </div>
 </template>

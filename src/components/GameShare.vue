@@ -1,18 +1,20 @@
 <script setup lang="ts">
 import { computed, shallowRef, useTemplateRef } from 'vue'
+import { useI18n } from 'vue-i18n'
 import QRCode from 'qrcode'
 import { Share2, Copy, Check, X } from '@lucide/vue'
 import type { PuzzleDefinition } from '../queens/types'
 const props = defineProps<{ puzzle?: PuzzleDefinition; roomId?: string }>()
+const { t } = useI18n()
 const dialog = useTemplateRef<HTMLDialogElement>('dialog')
 const linkInput = useTemplateRef<HTMLInputElement>('linkInput')
 const status = shallowRef(''),
   copied = shallowRef(false)
 const canShare = typeof navigator.share === 'function'
-const shareTitle = computed(() => (props.roomId ? '邀請隊友' : '分享關卡'))
+const shareTitle = computed(() => t(props.roomId ? 'share.room' : 'share.puzzle'))
 const shareUrl = computed(() => {
   if (props.roomId) return new URL(`/rooms/${props.roomId}`, location.origin).href
-  if (!props.puzzle) throw new Error('分享目標不存在。')
+  if (!props.puzzle) throw new Error('Nothing to share.')
   const url = new URL(location.pathname, location.origin)
   url.search = new URLSearchParams({
     size: String(props.puzzle.size),
@@ -41,23 +43,23 @@ async function copy() {
   try {
     await navigator.clipboard.writeText(shareUrl.value)
     copied.value = true
-    status.value = props.roomId ? '已複製房間連結。' : '已複製關卡連結。'
+    status.value = t(props.roomId ? 'share.roomCopied' : 'share.puzzleCopied')
   } catch {
     linkInput.value?.focus()
     linkInput.value?.select()
-    status.value = '無法自動複製，請複製已選取的連結。'
+    status.value = t('share.copyFailed')
   }
 }
 async function share() {
   try {
     await navigator.share({
-      title: props.roomId ? 'Queens 合作關卡' : 'Queens 關卡',
+      title: t(props.roomId ? 'share.roomTitle' : 'share.puzzleTitle'),
       url: shareUrl.value,
     })
-    status.value = '已分享關卡。'
+    status.value = t('share.shared')
   } catch (error) {
     if (!(error instanceof DOMException && error.name === 'AbortError'))
-      status.value = '無法開啟系統分享，請使用複製連結。'
+      status.value = t('share.shareFailed')
   }
 }
 </script>
@@ -73,16 +75,12 @@ async function share() {
   >
     <div class="share-header">
       <h2 id="share-title">{{ shareTitle }}</h2>
-      <button class="icon-button" aria-label="關閉分享" @click="dialog?.close()">
+      <button class="icon-button" :aria-label="$t('share.close')" @click="dialog?.close()">
         <X :size="19" />
       </button>
     </div>
     <p id="share-description">
-      {{
-        roomId
-          ? '分享連結或 QR Code，邀請隊友加入房間。'
-          : '連結包含棋盤大小、難度與種子，開啟後會得到相同關卡。'
-      }}
+      {{ $t(roomId ? 'share.roomDescription' : 'share.puzzleDescription') }}
     </p>
     <figure class="share-qr">
       <svg
@@ -91,15 +89,15 @@ async function share() {
         width="224"
         height="224"
         role="img"
-        :aria-label="roomId ? '房間 QR Code' : '關卡 QR Code'"
+        :aria-label="$t(roomId ? 'share.roomQr' : 'share.puzzleQr')"
         shape-rendering="crispEdges"
       >
         <rect x="-4" y="-4" :width="qr.size + 8" :height="qr.size + 8" fill="#fff" />
         <path :d="qr.path" fill="#30263a" />
       </svg>
-      <figcaption>{{ roomId ? '掃描加入房間' : '掃描開啟相同關卡' }}</figcaption>
+      <figcaption>{{ $t(roomId ? 'share.roomScan' : 'share.puzzleScan') }}</figcaption>
     </figure>
-    <label for="share-link">{{ roomId ? '房間連結' : '關卡連結' }}</label>
+    <label for="share-link">{{ $t(roomId ? 'share.roomLink' : 'share.puzzleLink') }}</label>
     <input
       id="share-link"
       ref="linkInput"
@@ -110,10 +108,10 @@ async function share() {
     <div class="share-actions">
       <button class="primary" @click="copy">
         <Check v-if="copied" :size="16" /><Copy v-else :size="16" />{{
-          copied ? '已複製' : '複製連結'
+          copied ? $t('share.copied') : $t('share.copy')
         }}</button
       ><button v-if="canShare" class="native-share" @click="share">
-        <Share2 :size="16" />系統分享
+        <Share2 :size="16" />{{ $t('share.native') }}
       </button>
     </div>
     <p class="share-status" role="status" aria-live="polite">{{ status }}</p>

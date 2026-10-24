@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import CrownIcon from './CrownIcon.vue'
-import { GUIDANCE_LABELS, type GuidanceReason } from '../queens/guidance'
+import { i18n } from '../i18n'
+import type { GuidanceReason } from '../queens/guidance'
 import type { CellState } from '../queens/types'
 const props = defineProps<{
   index: number
@@ -17,19 +18,31 @@ const props = defineProps<{
   disabled: boolean
   readOnly?: boolean
 }>()
+// A board holds up to 144 cells, so they read the shared translator instead of each calling useI18n.
+const { t } = i18n.global
 const participantLabel = computed(() =>
   [
-    ...(props.pointNames ?? []).map((name) => `${name} 指示`),
-    ...(props.hoverNames ?? []).map((name) => `${name} 停留`),
-  ].join('・'),
+    ...(props.pointNames ?? []).map((name) => t('cell.point', { name })),
+    ...(props.hoverNames ?? []).map((name) => t('cell.hover', { name })),
+  ].join(t('cell.people')),
 )
 const cellLabel = computed(() => {
   const { index, size, region, state, guidanceReasons } = props
-  const stateLabel = state === 'queen' ? '皇冠' : state === 'marked' ? 'X 標記' : '空格'
+  const stateLabel = t(
+    `cell.${state === 'queen' ? 'queen' : state === 'marked' ? 'marked' : 'empty'}`,
+  )
   const guidanceLabel = guidanceReasons.length
-    ? `，皇冠排除範圍：${guidanceReasons.map((reason) => GUIDANCE_LABELS[reason]).join('、')}`
+    ? t('cell.guidance', {
+        reasons: guidanceReasons.map((reason) => t(`guidance.${reason}`)).join(t('cell.list')),
+      })
     : ''
-  return `第 ${Math.floor(index / size) + 1} 列，第 ${(index % size) + 1} 欄，區域 ${String.fromCharCode(65 + region)}，${stateLabel}${guidanceLabel}`
+  return t('cell.label', {
+    row: Math.floor(index / size) + 1,
+    col: (index % size) + 1,
+    region: String.fromCharCode(65 + region),
+    state: stateLabel,
+    guidance: guidanceLabel,
+  })
 })
 const emit = defineEmits<{
   play: [index: number]
