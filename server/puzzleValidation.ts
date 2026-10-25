@@ -10,8 +10,7 @@ export class CatalogValidationError extends Error {
 /** Independently verify every archived or served puzzle inside a compute worker. */
 function validate(puzzle: QueensPuzzle, request: GenerateOptions): QueensPuzzle {
   if (
-    !puzzle ||
-    puzzle.version !== GENERATOR_VERSION ||
+    puzzle?.version !== GENERATOR_VERSION ||
     puzzle.size !== request.size ||
     puzzle.seed !== request.seed ||
     (request.difficulty && puzzle.difficulty !== request.difficulty) ||

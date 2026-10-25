@@ -88,7 +88,7 @@ export async function fileRepository(path: string): Promise<RoomRepository> {
         throw error
       }
     })
-    queue = work.catch(() => {})
+    queue = work.catch(() => undefined)
     return work
   }
   return {

@@ -6,10 +6,17 @@ import skipFormatting from 'eslint-config-prettier'
 export default withVueTs(
   {
     name: 'queens/ignores',
-    ignores: ['dist/**', 'node_modules/**', 'playwright-report/**', 'test-results/**'],
+    ignores: [
+      'dist/**',
+      'dist-server/**',
+      'node_modules/**',
+      'playwright-report/**',
+      'test-results/**',
+    ],
   },
   pluginVue.configs['flat/recommended'],
   vueTsConfigs.recommendedTypeChecked,
+  vueTsConfigs.stylisticTypeChecked,
   {
     name: 'queens/typescript',
     rules: {

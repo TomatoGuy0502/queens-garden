@@ -79,7 +79,7 @@ export class HoverPresence {
   disconnect(credentials: Credentials, socketId: string): Hover | null {
     const positions = this.positions.get(credentials.roomId),
       entry = positions?.get(credentials.playerId)
-    if (!entry || entry.socketId !== socketId) return null
+    if (entry?.socketId !== socketId) return null
     positions!.delete(credentials.playerId)
     if (!positions!.size) this.positions.delete(credentials.roomId)
     return { ...entry.hover, index: null, expiresAt: this.now() }

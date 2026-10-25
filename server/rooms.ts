@@ -54,7 +54,7 @@ export class RoomManager {
   private queues = new Map<string, Promise<void>>()
   private generating = new Set<string>()
   private connections = new Map<string, Map<string, Set<string>>>()
-  onState: (state: RoomSnapshot) => void = () => {}
+  onState: (state: RoomSnapshot) => void = () => undefined
   constructor(
     private repository: RoomRepository,
     private compute: Compute,
@@ -68,8 +68,8 @@ export class RoomManager {
   private serial<T>(id: string, work: () => Promise<T>): Promise<T> {
     const result = (this.queues.get(id) ?? Promise.resolve()).then(work)
     const tail = result.then(
-      () => {},
-      () => {},
+      () => undefined,
+      () => undefined,
     )
     this.queues.set(id, tail)
     void tail.then(() => {
@@ -491,7 +491,7 @@ export class RoomManager {
         room.phase = 'waiting'
         room.message = failureMessage(error, 'GENERATION_FAILED')
         await this.commit(room, 'generation_failed', room.hostId)
-      }).catch(() => {})
+      }).catch(() => undefined)
     } finally {
       this.generating.delete(gameId)
     }

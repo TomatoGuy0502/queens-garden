@@ -40,7 +40,7 @@ export async function fileCatalogRepository(path?: string): Promise<CatalogRepos
         throw error
       }
     })
-    queue = promise.catch(() => {})
+    queue = promise.catch(() => undefined)
     return promise
   }
   const eligible = (entry: State['boards'][string]) =>

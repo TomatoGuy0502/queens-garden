@@ -2,7 +2,10 @@ import { Worker } from 'node:worker_threads'
 import { resolve } from 'node:path'
 import type { Message } from '../shared/message'
 import type { CellState, DeductionStep, GenerateOptions, QueensPuzzle } from '../src/queens/types'
-export type HintResult = { step: DeductionStep | null; message: Message }
+export interface HintResult {
+  step: DeductionStep | null
+  message: Message
+}
 export type ComputeJob =
   | { type: 'generate'; options: GenerateOptions }
   | { type: 'generate-validated'; options: GenerateOptions }

@@ -50,7 +50,7 @@ export async function generateBatch(
   options: BatchOptions,
   compute: Pick<CatalogCompute, 'generateValidated' | 'validate'>,
   signal: AbortSignal,
-  report: (message: string) => void = () => {},
+  report: (message: string) => void = () => undefined,
 ): Promise<BatchResult> {
   batchOptionsSchema.parse(options)
   const puzzles: QueensPuzzle[] = []

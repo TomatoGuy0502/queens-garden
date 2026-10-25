@@ -234,7 +234,7 @@ export const useRoomStore = defineStore('room', () => {
   }
   async function edit(index: number, action: CellAction = 'cycle') {
     const state = game.state
-    if (!state || state.phase !== 'playing' || pendingCells.value.includes(index)) return
+    if (state?.phase !== 'playing' || pendingCells.value.includes(index)) return
     const before = state.cells[index]
     const nextState = nextCell(before, action)
     pendingCells.value = [...pendingCells.value, index]

@@ -16,8 +16,8 @@ export function connected(cells: number[], size: number): boolean {
   const allowed = new Set(cells),
     seen = new Set([cells[0]]),
     queue = [cells[0]]
-  for (let i = 0; i < queue.length; i++)
-    for (const next of neighbors(queue[i], size)) {
+  for (const current of queue)
+    for (const next of neighbors(current, size)) {
       if (allowed.has(next) && !seen.has(next)) {
         seen.add(next)
         queue.push(next)

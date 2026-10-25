@@ -49,7 +49,7 @@ export class PuzzleCatalog implements PuzzleSource {
       idleMs: 3000,
       retryMs: 30000,
       seed: () => randomBytes(4).readUInt32LE(),
-      report: () => {},
+      report: () => undefined,
       ...options,
     }
     if (
@@ -79,7 +79,7 @@ export class PuzzleCatalog implements PuzzleSource {
         .finally(() => {
           if (this.exactRequests.get(key) === work) this.exactRequests.delete(key)
         })
-        .catch(() => {})
+        .catch(() => undefined)
       return work
     }
     return this.obtain(request)

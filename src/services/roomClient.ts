@@ -75,7 +75,7 @@ export function connectRoom(
       queuedHover = { gameId, index }
       const delay = index === null ? 0 : Math.max(0, 100 - (performance.now() - lastHoverAt))
       if (!delay) flushHover()
-      else if (!hoverTimer) hoverTimer = setTimeout(flushHover, delay)
+      else hoverTimer ??= setTimeout(flushHover, delay)
     },
     close() {
       clearTimeout(hoverTimer)

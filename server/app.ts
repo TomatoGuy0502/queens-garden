@@ -163,7 +163,7 @@ export async function createApp(options: {
       void manager
         .point(credentials, parsed.data.gameId, parsed.data.index)
         .then((point) => io.to(credentials.roomId).emit('room:point', point))
-        .catch(() => {})
+        .catch(() => undefined)
     })
     socket.on('room:hover', (raw) => {
       const parsed = hoverSchema.safeParse(raw)
