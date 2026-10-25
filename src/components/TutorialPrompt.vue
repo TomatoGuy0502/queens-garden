@@ -14,7 +14,7 @@ const visible = computed(() => status.value === null && !Object.keys(stats.value
     <div>
       <p>{{ $t('tutorialPrompt.body') }}</p>
       <RouterLink class="primary" to="/tutorial">{{ $t('tutorialPrompt.start') }}</RouterLink>
-      <button class="text-button" @click="dismiss">
+      <button type="button" class="text-button" @click="dismiss">
         {{ $t('tutorialPrompt.dismiss') }}
       </button>
     </div>

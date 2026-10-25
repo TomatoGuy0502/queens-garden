@@ -31,6 +31,7 @@ const emit = defineEmits<{
     <p class="interaction-note">{{ $t('toolbar.note') }}</p>
     <div class="history-tools">
       <button
+        type="button"
         class="icon-button"
         :aria-label="$t('toolbar.undo')"
         :title="$t('toolbar.undo')"
@@ -39,6 +40,7 @@ const emit = defineEmits<{
       >
         <Undo2 :size="19" /></button
       ><button
+        type="button"
         class="icon-button"
         :aria-label="$t('toolbar.redo')"
         :title="$t('toolbar.redo')"
@@ -48,6 +50,7 @@ const emit = defineEmits<{
         <Redo2 :size="19" /></button
       ><span class="tool-divider"></span
       ><button
+        type="button"
         class="icon-button"
         :aria-label="$t('toolbar.restart')"
         :title="$t('toolbar.restart')"
@@ -59,9 +62,9 @@ const emit = defineEmits<{
     </div>
   </div>
   <div class="assist-tools">
-    <button :disabled="blocked || assisting || hintRevealed" @click="emit('hint')">
+    <button type="button" :disabled="blocked || assisting || hintRevealed" @click="emit('hint')">
       <Lightbulb :size="17" />{{ assisting ? $t('toolbar.thinking') : hintLabel }}</button
-    ><button :disabled="blocked || assisting" @click="emit('check')">
+    ><button type="button" :disabled="blocked || assisting" @click="emit('check')">
       <ScanLine :size="17" />{{ $t('toolbar.check') }}
     </button>
   </div>

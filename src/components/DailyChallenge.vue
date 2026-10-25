@@ -30,7 +30,7 @@ const { today, config, result, streak } = useDailyChallenge()
         <template v-if="streak">{{ $t('daily.streak', { days: streak }) }}</template>
       </p>
     </div>
-    <button v-if="inGame" class="primary" :disabled="busy" @click="emit('start')">
+    <button v-if="inGame" type="button" class="primary" :disabled="busy" @click="emit('start')">
       {{ result ? $t('daily.again') : $t('daily.start') }}
     </button>
     <RouterLink v-else class="primary" :to="{ path: '/solo', query: { daily: 'today' } }">

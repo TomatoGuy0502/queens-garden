@@ -76,10 +76,12 @@ function clear() {
     <div v-if="total" class="reset">
       <template v-if="confirming">
         <p>{{ $t('stats.confirm') }}</p>
-        <button class="text-button" @click="confirming = false">{{ $t('stats.keep') }}</button>
-        <button class="primary" @click="clear">{{ $t('stats.clear') }}</button>
+        <button type="button" class="text-button" @click="confirming = false">
+          {{ $t('stats.keep') }}
+        </button>
+        <button type="button" class="primary" @click="clear">{{ $t('stats.clear') }}</button>
       </template>
-      <button v-else class="text-button" @click="confirming = true">
+      <button v-else type="button" class="text-button" @click="confirming = true">
         {{ $t('stats.clearAll') }}
       </button>
     </div>

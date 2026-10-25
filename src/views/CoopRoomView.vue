@@ -175,6 +175,7 @@ async function reset() {
       <div class="room-heading-actions">
         <GameShare :room-id="roomId" /><button
           v-if="room.credentials"
+          type="button"
           class="text-button leave-button"
           @click="leave"
         >
@@ -192,7 +193,7 @@ async function reset() {
           required
           maxlength="24"
           autocomplete="nickname"
-        /><button class="primary" :disabled="joining || !name.trim()">
+        /><button type="submit" class="primary" :disabled="joining || !name.trim()">
           {{ joining ? $t('coop.join.submitting') : $t('coop.join.submit') }}
         </button>
       </form>
@@ -208,7 +209,9 @@ async function reset() {
         :size="game.state?.puzzle?.size ?? 0" />
       <p v-if="!room.connected" class="connection-notice" role="status">
         {{ $t('coop.room.disconnected') }}
-        <button class="text-button" @click="room.reconnect">{{ $t('coop.room.reconnect') }}</button>
+        <button type="button" class="text-button" @click="room.reconnect">
+          {{ $t('coop.room.reconnect') }}
+        </button>
       </p>
       <p v-if="room.error" class="error-notice" role="alert">{{ render(room.error) }}</p>
       <div class="coop-layout" :class="{ expanded: expandedBoard }">
@@ -250,6 +253,7 @@ async function reset() {
               <div>
                 <Clock3 :size="15" /><span>{{ game.time }}</span
                 ><button
+                  type="button"
                   class="icon-button"
                   :disabled="
                     !room.connected ||
@@ -300,6 +304,7 @@ async function reset() {
             ></QueensBoard>
             <div class="point-tools">
               <button
+                type="button"
                 class="secondary"
                 :aria-pressed="pointMode"
                 :class="{ active: pointMode }"
@@ -337,6 +342,7 @@ async function reset() {
             />
             <button
               v-if="room.isHost"
+              type="button"
               class="text-button change-round"
               :disabled="!room.connected || !!room.pending"
               @click="confirmRound('new')"
@@ -350,7 +356,12 @@ async function reset() {
                 }}</span
                 >{{ render(feedback) }}
               </p>
-              <button v-if="hintRevealed && !blocked" class="text-button" @click="applyHint">
+              <button
+                v-if="hintRevealed && !blocked"
+                type="button"
+                class="text-button"
+                @click="applyHint"
+              >
                 {{ $t('game.feedback.apply') }}
               </button>
               <p v-if="game.conflicts.length">{{ $t('coop.room.conflict') }}</p>

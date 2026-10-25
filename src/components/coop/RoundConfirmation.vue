@@ -27,10 +27,10 @@ onMounted(() => {
       {{ $t(kind === 'restart' ? 'coop.round.restartBody' : 'coop.round.newBody') }}
     </p>
     <div class="confirmation-actions">
-      <button ref="cancelButton" class="secondary" :disabled="busy" @click="cancel">
+      <button ref="cancelButton" type="button" class="secondary" :disabled="busy" @click="cancel">
         {{ $t('coop.round.cancel') }}
       </button>
-      <button class="primary" :disabled="busy" @click="emit('confirm')">
+      <button type="button" class="primary" :disabled="busy" @click="emit('confirm')">
         {{
           busy
             ? $t('coop.round.processing')

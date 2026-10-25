@@ -32,6 +32,7 @@ function update(key: keyof BoardGuidance, event: Event) {
 </script>
 <template>
   <button
+    type="button"
     class="text-button preferences-button"
     :aria-label="$t('preferences.open')"
     @click="dialog?.showModal()"
@@ -47,7 +48,12 @@ function update(key: keyof BoardGuidance, event: Event) {
   >
     <div class="preferences-header">
       <h2 id="preferences-title">{{ $t('preferences.title') }}</h2>
-      <button class="icon-button" :aria-label="$t('preferences.close')" @click="dialog?.close()">
+      <button
+        type="button"
+        class="icon-button"
+        :aria-label="$t('preferences.close')"
+        @click="dialog?.close()"
+      >
         <X :size="19" />
       </button>
     </div>

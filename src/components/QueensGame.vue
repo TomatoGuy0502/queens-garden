@@ -230,6 +230,7 @@ onMounted(() => {
             <div class="timer">
               <Clock3 :size="15" /><span>{{ time }}</span
               ><button
+                type="button"
                 class="icon-button pause-button"
                 :aria-label="paused ? $t('game.resume') : $t('game.pause')"
                 :disabled="!puzzle || busy || won"
@@ -311,9 +312,9 @@ onMounted(() => {
           <div v-if="restartConfirm" class="restart-confirm">
             <p>{{ $t('game.restart.prompt') }}</p>
             <div>
-              <button class="text-button" @click="restartConfirm = false">
+              <button type="button" class="text-button" @click="restartConfirm = false">
                 {{ $t('game.restart.keep') }}</button
-              ><button class="primary" @click="confirmRestart">
+              ><button type="button" class="primary" @click="confirmRestart">
                 {{ $t('game.restart.confirm') }}
               </button>
             </div>
@@ -348,6 +349,7 @@ onMounted(() => {
               </details>
               <button
                 v-if="hintRevealed && !blocked"
+                type="button"
                 class="text-button apply-hint"
                 @click="game.applyHint"
               >
@@ -366,7 +368,13 @@ onMounted(() => {
           </div>
         </section>
         <aside class="side-panel">
-          <button v-if="inDaily" class="text-button free-play" :disabled="busy" @click="nextGame">
+          <button
+            v-if="inDaily"
+            type="button"
+            class="text-button free-play"
+            :disabled="busy"
+            @click="nextGame"
+          >
             {{ $t('game.leaveDaily') }}
           </button>
           <template v-else>

@@ -32,10 +32,10 @@ const summary = computed(() => {
     <h2 id="resume-title">{{ $t('resume.title') }}</h2>
     <p>{{ summary }}</p>
     <div class="resume-actions">
-      <button class="primary" @click="emit('resume')">
+      <button type="button" class="primary" @click="emit('resume')">
         {{ $t('resume.continue') }}
       </button>
-      <button class="text-button" @click="emit('discard')">
+      <button type="button" class="text-button" @click="emit('discard')">
         {{ $t('resume.discard') }}
       </button>
     </div>

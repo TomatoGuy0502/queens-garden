@@ -75,6 +75,7 @@ function difficulty(event: Event) {
     <div class="lobby-actions">
       <button
         v-if="meId === hostId"
+        type="button"
         class="primary"
         :disabled="!canStart || pending"
         @click="emit('start')"

@@ -107,7 +107,7 @@ function loadSeed() {
         </button>
       </fieldset>
     </form>
-    <button v-if="busy" class="text-button cancel" @click="emit('cancel')">
+    <button v-if="busy" type="button" class="text-button cancel" @click="emit('cancel')">
       {{ $t('settings.cancel') }}
     </button>
     <p class="generation-note">{{ $t('settings.note') }}</p>

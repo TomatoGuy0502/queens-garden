@@ -46,7 +46,6 @@ const cellLabel = computed(() => {
 })
 const emit = defineEmits<{
   play: [index: number]
-  mark: [index: number]
   crown: [index: number]
   navigate: [index: number, event: KeyboardEvent]
   focus: [index: number]
@@ -55,6 +54,7 @@ const emit = defineEmits<{
 </script>
 <template>
   <button
+    type="button"
     class="cell"
     role="gridcell"
     :data-index="index"

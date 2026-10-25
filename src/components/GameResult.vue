@@ -46,10 +46,16 @@ onMounted(() => {
     <p v-if="record?.streak" class="record best">
       {{ $t('result.streak', { days: record.streak }) }}
     </p>
-    <button ref="nextButton" class="primary" :disabled="nextDisabled" @click="emit('next')">
+    <button
+      ref="nextButton"
+      type="button"
+      class="primary"
+      :disabled="nextDisabled"
+      @click="emit('next')"
+    >
       {{ nextLabel ?? $t('result.next') }}
     </button>
-    <button ref="reviewButton" class="secondary" @click="emit('review')">
+    <button ref="reviewButton" type="button" class="secondary" @click="emit('review')">
       {{ $t('result.review') }}
     </button>
   </section>

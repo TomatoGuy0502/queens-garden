@@ -64,7 +64,7 @@ async function share() {
 }
 </script>
 <template>
-  <button class="text-button share-button" @click="open">
+  <button type="button" class="text-button share-button" @click="open">
     <Share2 :size="14" />{{ shareTitle }}
   </button>
   <dialog
@@ -75,7 +75,12 @@ async function share() {
   >
     <div class="share-header">
       <h2 id="share-title">{{ shareTitle }}</h2>
-      <button class="icon-button" :aria-label="$t('share.close')" @click="dialog?.close()">
+      <button
+        type="button"
+        class="icon-button"
+        :aria-label="$t('share.close')"
+        @click="dialog?.close()"
+      >
         <X :size="19" />
       </button>
     </div>
@@ -106,11 +111,11 @@ async function share() {
       @focus="linkInput?.select()"
     />
     <div class="share-actions">
-      <button class="primary" @click="copy">
+      <button type="button" class="primary" @click="copy">
         <Check v-if="copied" :size="16" /><Copy v-else :size="16" />{{
           copied ? $t('share.copied') : $t('share.copy')
         }}</button
-      ><button v-if="canShare" class="native-share" @click="share">
+      ><button v-if="canShare" type="button" class="native-share" @click="share">
         <Share2 :size="16" />{{ $t('share.native') }}
       </button>
     </div>

@@ -72,7 +72,7 @@ async function join() {
             <option v-for="item in DIFFICULTIES" :key="item" :value="item">
               {{ $t(`difficulty.${item}`) }}
             </option></select
-          ><button class="primary" :disabled="busy || !name.trim()">
+          ><button type="submit" class="primary" :disabled="busy || !name.trim()">
             {{ busy ? $t('coop.create.submitting') : $t('coop.create.submit') }}
           </button>
         </form>
@@ -81,7 +81,7 @@ async function join() {
         <h2>{{ $t('coop.join.heading') }}</h2>
         <form class="room-form" @submit.prevent="join">
           <RoomCodeInput v-model="code" />
-          <button class="secondary" :disabled="!parseRoomCode(code)">
+          <button type="submit" class="secondary" :disabled="!parseRoomCode(code)">
             {{ $t('coop.join.go') }}
           </button>
         </form>

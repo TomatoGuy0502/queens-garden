@@ -170,7 +170,6 @@ async function navigate(index: number, event: KeyboardEvent) {
                 :highlighted="highlighted.includes(cell.index)"
                 :mistake="mistakes.includes(cell.index)"
                 @play="!won && emit('play', $event)"
-                @mark="!won && emit('mark', $event)"
                 @crown="!won && emit('crown', $event)"
                 @navigate="navigate"
                 @focus="focus"
@@ -198,7 +197,12 @@ async function navigate(index: number, event: KeyboardEvent) {
             <Pause :size="28" />
             <h2>{{ $t('board.pausedTitle') }}</h2>
             <p>{{ $t('board.pausedBody') }}</p>
-            <button class="primary" :disabled="canResume === false" @click="emit('resume')">
+            <button
+              type="button"
+              class="primary"
+              :disabled="canResume === false"
+              @click="emit('resume')"
+            >
               <Play :size="16" /> {{ $t('board.resume') }}
             </button>
           </div>
@@ -215,7 +219,9 @@ async function navigate(index: number, event: KeyboardEvent) {
       :aria-label="$t('board.reviewLabel')"
     >
       <span>{{ $t('board.reviewing') }}</span>
-      <button class="primary" @click="emit('endReview')">{{ $t('board.back') }}</button>
+      <button type="button" class="primary" @click="emit('endReview')">
+        {{ $t('board.back') }}
+      </button>
     </div>
   </Teleport>
   <p v-if="puzzle.size >= 8" class="scroll-note">{{ $t('board.scroll') }}</p>

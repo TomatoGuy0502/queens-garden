@@ -28,7 +28,7 @@ const render = useMessage()
       <span>{{ met ? $t('tutorial.done') : render(lesson.task) }}</span>
     </div>
     <div v-if="lesson.hints" class="hint-area">
-      <button class="text-button" @click="emit('hint')">
+      <button type="button" class="text-button" @click="emit('hint')">
         <Lightbulb :size="16" />{{ $t('tutorial.hint') }}
       </button>
       <p v-if="hint" class="hint" role="status">{{ render(hint.message) }}</p>
@@ -38,17 +38,22 @@ const render = useMessage()
       <RouterLink class="secondary" to="/">{{ $t('tutorial.home') }}</RouterLink>
     </div>
     <div v-else class="actions">
-      <button class="text-button" :disabled="isFirst" @click="emit('previous')">
+      <button type="button" class="text-button" :disabled="isFirst" @click="emit('previous')">
         {{ $t('tutorial.previous') }}
       </button>
-      <button v-if="lesson.task" class="text-button" @click="emit('restart')">
+      <button v-if="lesson.task" type="button" class="text-button" @click="emit('restart')">
         {{ $t('tutorial.restart') }}
       </button>
-      <button class="primary" :disabled="!met" @click="emit('next')">
+      <button type="button" class="primary" :disabled="!met" @click="emit('next')">
         {{ $t('tutorial.next') }}
       </button>
     </div>
-    <button v-if="!isLast && lesson.task && !met" class="skip text-button" @click="emit('next')">
+    <button
+      v-if="!isLast && lesson.task && !met"
+      type="button"
+      class="skip text-button"
+      @click="emit('next')"
+    >
       {{ $t('tutorial.skip') }}
     </button>
   </section>
