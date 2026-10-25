@@ -1,7 +1,10 @@
 import { message } from '../../../shared/message'
 import type { DeductionStep } from '../types'
 import { type LogicState, unitsRef } from './state'
-/** Pigeonhole/Hall subsets of two or three units across any pair of unit families. */
+/**
+ * Pigeonhole/Hall subsets across any pair of unit families. A set of k units eliminates the same
+ * cells as the complementary set of n - k units read the other way, so sizes stop at n / 2.
+ */
 export function hallSets(state: LogicState): DeductionStep | null {
   const n = state.n
   const targetOf = (target: number, c: number) =>
@@ -20,33 +23,40 @@ export function hallSets(state: LogicState): DeductionStep | null {
     for (; mask; mask &= mask - 1) count++
     return count
   }
-  for (const source of [0, 1, 2])
-    for (const target of [0, 1, 2]) {
-      if (source === target) continue
-      const available = Array.from({ length: n }, (_, i) => source * n + i).filter(
-        (i) => !state.units[i].some((c) => state.queens.has(c)),
-      )
-      for (const size of [2, 3]) {
-        const selected: number[] = []
-        // Lexicographic order, same as the combination order the reasons depend on.
-        const search = (from: number, mask: number): DeductionStep | null => {
-          if (selected.length === size) {
-            if (popcount(mask) !== size) return null
-            return explain(target, size, [...selected])
+  // Pairs and triples come first everywhere, so larger sets never reorder the earlier steps.
+  const larger = Array.from({ length: Math.max(0, Math.floor(n / 2) - 3) }, (_, i) => i + 4)
+  return pass([2, 3]) ?? pass(larger)
+
+  function pass(sizes: number[]): DeductionStep | null {
+    for (const source of [0, 1, 2])
+      for (const target of [0, 1, 2]) {
+        if (source === target) continue
+        const available = Array.from({ length: n }, (_, i) => source * n + i).filter(
+          (i) => !state.units[i].some((c) => state.queens.has(c)),
+        )
+        for (const size of sizes) {
+          const selected: number[] = []
+          // Lexicographic order, same as the combination order the reasons depend on.
+          const search = (from: number, mask: number): DeductionStep | null => {
+            if (popcount(mask) > size) return null
+            if (selected.length === size) {
+              if (popcount(mask) !== size) return null
+              return explain(target, size, [...selected])
+            }
+            for (let k = from; k < available.length; k++) {
+              selected.push(available[k])
+              const found = search(k + 1, mask | touched[available[k]][target])
+              selected.pop()
+              if (found) return found
+            }
+            return null
           }
-          for (let k = from; k < available.length; k++) {
-            selected.push(available[k])
-            const found = search(k + 1, mask | touched[available[k]][target])
-            selected.pop()
-            if (found) return found
-          }
-          return null
+          const found = search(0, 0)
+          if (found) return found
         }
-        const found = search(0, 0)
-        if (found) return found
       }
-    }
-  return null
+    return null
+  }
 
   function explain(target: number, size: number, selected: number[]): DeductionStep | null {
     const sourceCells = selected.flatMap((i) => candidateCells[i])

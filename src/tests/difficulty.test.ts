@@ -60,6 +60,24 @@ it('hints prioritize conflicting queens and over-marked units', () => {
   expect(renderSource(logicalHint(p.regions, cells).message)).toContain('矛盾')
 })
 
+it('an 8×8 board finds a Hall set of four that no pair or triple explains', async () => {
+  const { hallSets } = await import('../queens/deductions/hall')
+  const regions = Array.from({ length: 8 }, (_, r) => Array<number>(8).fill(r))
+  const state = createState(regions)
+  // Rows 1-4 only use columns 1-4, so those columns are closed to rows 5-8.
+  for (let row = 0; row < 4; row++)
+    for (let col = 4; col < 8; col++) state.candidates.delete(row * 8 + col)
+  const possible = solve(regions, 1000, state.candidates)
+  expect(possible.solutionCount).toBeGreaterThan(0)
+  const step = hallSets(state)
+  expect(step?.strategy).toBe('hall')
+  expect(step!.units).toHaveLength(4)
+  for (const placement of possible.solutions) {
+    const queenCells = placement.map((c, r) => r * 8 + c)
+    expect(step!.cells.every((c) => !queenCells.includes(c))).toBe(true)
+  }
+})
+
 it('Hall sets safely eliminate candidates even on a board with multiple solutions', async () => {
   const { hallSets } = await import('../queens/deductions/hall')
   const regions = Array.from({ length: 6 }, (_, r) => Array<number>(6).fill(r))
