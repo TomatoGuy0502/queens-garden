@@ -38,9 +38,10 @@ export async function createApp(options: {
   proxyHops?: number
   logger?: boolean
 }) {
+  const proxyHops = options.proxyHops ?? 1
   const app = Fastify({
     logger: options.logger ?? false,
-    trustProxy: options.proxyHops ?? 1,
+    trustProxy: (_address, hop) => hop < proxyHops,
     bodyLimit: 8192,
   })
   await app.register(rateLimit, { global: false, max: 120, timeWindow: '1 minute' })
