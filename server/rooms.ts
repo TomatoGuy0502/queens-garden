@@ -17,7 +17,7 @@ import { HINT_LEVELS } from '../src/queens/strategies'
 import { conflictCells } from '../src/queens/validator'
 import { RoomError, type RoomRepository, type StoredPlayer, type StoredRoom } from './model'
 import type { Compute, HintResult } from './compute'
-const ROOM_TTL = 24 * 60 * 60 * 1000
+const ROOM_TTL = 3 * 60 * 60 * 1000
 const MAX_ACTIONS = 300
 const MAX_RECEIPTS = 1000
 const hash = (value: string) => createHash('sha256').update(value).digest('hex')

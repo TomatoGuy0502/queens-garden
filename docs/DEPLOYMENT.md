@@ -53,7 +53,7 @@ LOCAL_TEST_MODE=1 NODE_ENV=production PORT=3002 PUBLIC_ORIGIN=http://127.0.0.1:3
 PLAYWRIGHT_BASE_URL=http://127.0.0.1:3002 npm run e2e
 ```
 
-E2E 會實際建立測試房間與事件、操作棋盤、完成團隊關卡並驗證重連。使用測試分支進行例行 CI；初次 Neon 設定曾依指定於 production 驗證，測試房間隨 24 小時閒置期限清除；之後本地測試改用隔離檔案／PGlite，不寫入 production。資料庫 URL 只會出現在 Node 環境，前端 build 不包含它。
+E2E 會實際建立測試房間與事件、操作棋盤、完成團隊關卡並驗證重連。使用測試分支進行例行 CI；初次 Neon 設定曾依指定於 production 驗證，測試房間隨 3 小時閒置期限清除；之後本地測試改用隔離檔案／PGlite，不寫入 production。資料庫 URL 只會出現在 Node 環境，前端 build 不包含它。
 
 參考：[Neon 選擇連線方式](https://neon.com/docs/connect/choose-connection)、[Neon connection pooling](https://neon.com/docs/connect/connection-pooling)、[Render WebSockets](https://render.com/docs/websocket)。
 
