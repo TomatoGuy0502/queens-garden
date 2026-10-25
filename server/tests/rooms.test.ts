@@ -518,7 +518,11 @@ it('a room runs one generation and one fresh hint at a time, so reset loops cann
   expect(generations).toBe(1)
 
   let hints = 0
-  const { manager: playing, host: player, state } = await game(memory(), {
+  const {
+    manager: playing,
+    host: player,
+    state,
+  } = await game(memory(), {
     ...compute(),
     hint: () => {
       hints++
