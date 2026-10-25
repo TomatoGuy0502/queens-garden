@@ -36,6 +36,8 @@ export async function createApp(options: {
   origin?: string
   /** Proxies in front of the app; only the address they appended to X-Forwarded-For is trusted. */
   proxyHops?: number
+  /** Rooms one address may create per minute. */
+  roomLimit?: number
   logger?: boolean
 }) {
   const proxyHops = options.proxyHops ?? 1
@@ -85,7 +87,7 @@ export async function createApp(options: {
   app.get('/api/health', () => ({ ok: true }))
   app.post(
     '/api/rooms',
-    { config: { rateLimit: { max: 5, timeWindow: '1 minute' } } },
+    { config: { rateLimit: { max: options.roomLimit ?? 5, timeWindow: '1 minute' } } },
     async (request) => {
       const { name, ...settings } = createRoomSchema.parse(request.body)
       return manager.create(name, settings)

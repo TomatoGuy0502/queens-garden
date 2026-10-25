@@ -25,6 +25,7 @@ const { app } = await createApp({
   staticFiles: production,
   origin: process.env.PUBLIC_ORIGIN ?? process.env.RENDER_EXTERNAL_URL,
   proxyHops: Number(process.env.TRUST_PROXY_HOPS ?? 1),
+  roomLimit: Number(process.env.ROOM_CREATE_LIMIT ?? 5),
   logger: true,
 })
 app.addHook('preClose', () => catalog.stop())
