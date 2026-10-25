@@ -32,6 +32,7 @@ watch(isLast, (last) => last && markDone())
         :busy="false"
         @play="tutorial.edit($event)"
         @mark="tutorial.edit($event, 'mark')"
+        @crown="tutorial.edit($event, 'queen')"
       />
       <TutorialLesson
         :lesson="lesson"

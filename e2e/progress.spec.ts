@@ -15,6 +15,11 @@ test.afterEach(({ page }) => expect(errors.get(page)).toEqual([]))
 const KEY = 'queens:solo-progress:v1'
 const link = (seed: number) => `/solo?size=6&difficulty=easy&seed=${seed}&v=${GENERATOR_VERSION}`
 const cell = (page: Page, i: number) => page.locator(`[data-index="${i}"]`)
+// One click marks a cell with an X and a second click turns it into a queen.
+async function queen(page: Page, i: number) {
+  await cell(page, i).click()
+  await cell(page, i).click()
+}
 const saved = (page: Page) =>
   page.evaluate((key) => {
     const raw = localStorage.getItem(key)
@@ -26,8 +31,7 @@ async function open(page: Page, seed = 42) {
 }
 /** One queen and one X: three edits in total. */
 async function play(page: Page) {
-  await cell(page, 0).click()
-  await cell(page, 1).click()
+  await queen(page, 0)
   await cell(page, 1).click()
   await expect.poll(async () => (await saved(page))?.moves).toBe(3)
 }
@@ -53,7 +57,7 @@ test('an unfinished game is offered back after leaving and keeps its board, hist
   await expect(page.locator('.timer > span')).not.toHaveText('00:00')
   expect((await page.locator('.timer > span').innerText()) >= before).toBe(true)
   await page.getByRole('button', { name: '復原', exact: true }).click()
-  await expect(cell(page, 1)).toHaveAttribute('data-state', 'queen')
+  await expect(cell(page, 1)).toHaveAttribute('data-state', 'empty')
 })
 test('opening the link of the same puzzle resumes it without asking', async ({ page }) => {
   await open(page)
@@ -99,7 +103,7 @@ test('finishing or restarting a game removes its save', async ({ page }) => {
     .getByRole('gridcell')
     .evaluateAll((elements) => elements.map((el) => Number(el.getAttribute('data-region'))))
   const board = Array.from({ length: 6 }, (_, r) => regions.slice(r * 6, (r + 1) * 6))
-  for (const [r, c] of solve(board).solutions[0].entries()) await cell(page, r * 6 + c).click()
+  for (const [r, c] of solve(board).solutions[0].entries()) await queen(page, r * 6 + c)
   await expect(page.getByRole('heading', { name: '關卡完成' })).toBeVisible()
   await expect.poll(() => saved(page)).toBeNull()
   await page.goto('/solo')
@@ -136,7 +140,7 @@ test('a daily challenge resumes on the same board and keeps its badge', async ({
   await expect.poll(async () => (await saved(page))?.moves).toBe(1)
   await page.goto('/?daily=today')
   await expect(page.getByRole('gridcell')).toHaveCount(size * size, { timeout: 60000 })
-  await expect(cell(page, 0)).toHaveAttribute('data-state', 'queen')
+  await expect(cell(page, 0)).toHaveAttribute('data-state', 'marked')
   await expect(page.locator('.daily-badge')).toBeVisible()
   expect(
     await page
@@ -153,7 +157,7 @@ test('playing still works when browser storage is unavailable', async ({ page })
     })
   })
   await open(page)
-  await cell(page, 0).click()
+  await queen(page, 0)
   await expect(cell(page, 0)).toHaveAttribute('data-state', 'queen')
   await page.goto('/solo')
   await expect(page.getByRole('gridcell').first()).toBeVisible({ timeout: 30000 })

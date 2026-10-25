@@ -1,5 +1,6 @@
 import { computed, shallowRef } from 'vue'
 import { defineStore } from 'pinia'
+import { nextCell, type CellAction } from '../queens/cells'
 import { LocalizedError, failureMessage, message, type Message } from '../../shared/message'
 import {
   credentialsSchema,
@@ -231,19 +232,11 @@ export const useRoomStore = defineStore('room', () => {
         pending.value = Math.max(0, pending.value - 1)
     }
   }
-  async function edit(index: number, mark = false) {
+  async function edit(index: number, action: CellAction = 'cycle') {
     const state = game.state
     if (!state || state.phase !== 'playing' || pendingCells.value.includes(index)) return
     const before = state.cells[index]
-    const nextState = mark
-      ? before === 'marked'
-        ? 'empty'
-        : 'marked'
-      : before === 'empty'
-        ? 'queen'
-        : before === 'queen'
-          ? 'marked'
-          : 'empty'
+    const nextState = nextCell(before, action)
     pendingCells.value = [...pendingCells.value, index]
     try {
       await send({

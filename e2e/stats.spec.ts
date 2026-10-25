@@ -11,6 +11,11 @@ test.beforeEach(({ page }) => {
 test.afterEach(({ page }) => expect(errors.get(page)).toEqual([]))
 
 const cell = (page: Page, i: number) => page.locator(`[data-index="${i}"]`)
+// One click marks a cell with an X and a second click turns it into a queen.
+async function queen(page: Page, i: number) {
+  await cell(page, i).click()
+  await cell(page, i).click()
+}
 async function open(page: Page, seed: number) {
   await page.goto(`/solo?size=6&difficulty=easy&seed=${seed}&v=${GENERATOR_VERSION}`)
   await expect(page.getByRole('gridcell')).toHaveCount(36, { timeout: 30000 })
@@ -22,7 +27,7 @@ async function solvePuzzle(page: Page) {
   const board = Array.from({ length: 6 }, (_, r) => regions.slice(r * 6, (r + 1) * 6))
   const result = solve(board)
   expect(result.solutionCount).toBe(1)
-  for (const [r, c] of result.solutions[0].entries()) await cell(page, r * 6 + c).click()
+  for (const [r, c] of result.solutions[0].entries()) await queen(page, r * 6 + c)
   await expect(page.getByRole('heading', { name: '關卡完成' })).toBeVisible()
 }
 

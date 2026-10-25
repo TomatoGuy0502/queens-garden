@@ -1,6 +1,6 @@
 import { computed, shallowRef } from 'vue'
 import type { Message } from '../../shared/message'
-import { nextCell } from '../queens/cells'
+import { nextCell, type CellAction } from '../queens/cells'
 import { buildLessons, conflictsOf, goalMet, nextHint } from '../queens/tutorial'
 import type { CellState } from '../queens/types'
 
@@ -20,7 +20,7 @@ export function useTutorial() {
     cells.value = [...lessons[target].preset]
     hint.value = null
   }
-  function edit(cell: number, action: 'cycle' | 'mark' = 'cycle') {
+  function edit(cell: number, action: CellAction = 'cycle') {
     // The closing lesson only shows the finished board.
     if (isLast.value) return
     cells.value = cells.value.map((state, i) => (i === cell ? nextCell(state, action) : state))

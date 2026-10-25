@@ -47,6 +47,7 @@ const cellLabel = computed(() => {
 const emit = defineEmits<{
   play: [index: number]
   mark: [index: number]
+  crown: [index: number]
   navigate: [index: number, event: KeyboardEvent]
   focus: [index: number]
   hover: [index: number | null]
@@ -77,7 +78,7 @@ const emit = defineEmits<{
     :aria-readonly="readOnly || undefined"
     :aria-selected="state === 'queen'"
     @click="!readOnly && emit('play', index)"
-    @contextmenu.prevent="!readOnly && emit('mark', index)"
+    @contextmenu.prevent="!readOnly && emit('crown', index)"
     @keydown="emit('navigate', index, $event)"
     @focus="emit('focus', index)"
     @blur="emit('hover', null)"

@@ -1,6 +1,14 @@
 import { test, expect, type Browser, type Page, type WebSocketRoute } from '@playwright/test'
 import { solve } from '../src/queens/solver'
 const cell = (page: Page, index: number) => page.locator(`[data-index="${index}"]`)
+// One click marks a cell with an X and a second click turns it into a queen. In a room each click
+// is confirmed by the server before the next one counts, so wait for the first before the second.
+async function queen(page: Page, i: number) {
+  await cell(page, i).click()
+  await expect(cell(page, i)).toHaveAttribute('data-state', 'marked')
+  await cell(page, i).click()
+  await expect(cell(page, i)).toHaveAttribute('data-state', 'queen')
+}
 // Leaving a joined room asks for confirmation; ordinary flows simply agree to it.
 const acceptDialogs = (page: Page) => page.on('dialog', (dialog) => void dialog.accept())
 test.beforeEach(({ page }) => acceptDialogs(page))
@@ -72,14 +80,14 @@ test('two players share cells, personal undo, markers, hints and team completion
     await expect(invite.getByRole('img', { name: '房間 QR Code' })).toBeVisible()
     await invite.getByRole('button', { name: '關閉分享' }).click()
     await cell(page, 0).click()
-    await expect(cell(guest, 0)).toHaveAttribute('data-state', 'queen')
+    await expect(cell(guest, 0)).toHaveAttribute('data-state', 'marked')
     await cell(guest, 0).click()
-    await expect(cell(page, 0)).toHaveAttribute('data-state', 'marked')
+    await expect(cell(page, 0)).toHaveAttribute('data-state', 'queen')
     await expect(page.getByRole('button', { name: '復原', exact: true })).toBeDisabled()
     await guest.getByRole('button', { name: '復原', exact: true }).click()
-    await expect(cell(page, 0)).toHaveAttribute('data-state', 'queen')
-    await guest.getByRole('button', { name: '重做', exact: true }).click()
     await expect(cell(page, 0)).toHaveAttribute('data-state', 'marked')
+    await guest.getByRole('button', { name: '重做', exact: true }).click()
+    await expect(cell(page, 0)).toHaveAttribute('data-state', 'queen')
     await page.getByRole('button', { name: '指示格子', exact: true }).click()
     await expect(page.getByRole('button', { name: '結束指示', exact: true })).toHaveAttribute(
       'aria-pressed',
@@ -119,7 +127,7 @@ test('two players share cells, personal undo, markers, hints and team completion
     // Hint marks remain; correct queen positions are still empty.
     for (const [row, col] of solution.entries()) {
       const actor = row % 2 ? guest : page
-      await cell(actor, row * 6 + col).click()
+      await queen(actor, row * 6 + col)
       await expect(cell(row % 2 ? page : guest, row * 6 + col)).toHaveAttribute(
         'data-state',
         'queen',
@@ -173,15 +181,14 @@ test('guest disconnect, reconnect and explicit leaving do not interrupt the host
 }) => {
   const { guest, context } = await pair(page, browser, isMobile)
   try {
-    await cell(page, 0).click()
+    await queen(page, 0)
     await expect(cell(guest, 0)).toHaveAttribute('data-state', 'queen')
     await context.setOffline(true)
     await expect(page.locator('.presence-bar')).toContainText('離線', { timeout: 25000 })
     await expect(page.getByRole('grid')).toBeVisible()
     await expect(page.getByRole('button', { name: '暫停合作', exact: true })).toBeEnabled()
     const time = await page.locator('.coop-meta > div:last-child > span').innerText()
-    await cell(page, 1).click()
-    await expect(cell(page, 1)).toHaveAttribute('data-state', 'queen')
+    await queen(page, 1)
     await expect(page.locator('.coop-meta > div:last-child > span')).not.toHaveText(time)
     await page.getByRole('button', { name: '暫停合作', exact: true }).click()
     await expect(page.getByRole('button', { name: '繼續合作', exact: true })).toBeEnabled()
@@ -195,8 +202,7 @@ test('guest disconnect, reconnect and explicit leaving do not interrupt the host
     await guest.getByRole('button', { name: '離開', exact: true }).click()
     await expect(page.locator('.presence-bar > span')).toHaveCount(1)
     await expect(page.getByRole('grid')).toBeVisible()
-    await cell(page, 2).click()
-    await expect(cell(page, 2)).toHaveAttribute('data-state', 'queen')
+    await queen(page, 2)
     await page.getByRole('button', { name: '給我一點提示', exact: true }).click()
     await expect(page.locator('.coop-feedback')).toContainText('衝突')
   } finally {
@@ -214,8 +220,7 @@ test('navigation between home, solo and cooperation preserves working solo contr
   await expect(page.getByRole('heading', { name: '建立房間' })).toBeVisible()
   await page.getByRole('link', { name: '單人遊戲', exact: true }).click()
   await expect(page.getByRole('grid')).toBeVisible({ timeout: 30000 })
-  await cell(page, 0).click()
-  await expect(cell(page, 0)).toHaveAttribute('data-state', 'queen')
+  await queen(page, 0)
   await expect(page.locator('.timer > span')).not.toHaveText('00:00')
 })
 
@@ -256,9 +261,14 @@ test('three players join freely, synchronize edits and pointers, reconnect and f
     await expect(page.getByRole('button', { name: '開始合作', exact: true })).toBeEnabled()
     await page.getByRole('button', { name: '開始合作', exact: true }).click()
     for (const p of pages) await expect(p.getByRole('grid')).toBeVisible({ timeout: 30000 })
-    await cell(guests[1], 0).click()
+    await queen(guests[1], 0)
     for (const p of pages) await expect(cell(p, 0)).toHaveAttribute('data-state', 'queen')
     await guests[1].getByRole('button', { name: '復原', exact: true }).click()
+    await expect(cell(page, 0)).toHaveAttribute('data-state', 'marked')
+    // Undo only reverses the latest edit; the earlier X is cleared by cycling the cell round.
+    await cell(guests[1], 0).click()
+    await expect(cell(page, 0)).toHaveAttribute('data-state', 'queen')
+    await cell(guests[1], 0).click()
     await expect(cell(page, 0)).toHaveAttribute('data-state', 'empty')
     await guests[1].getByRole('button', { name: '指示格子', exact: true }).click()
     await cell(guests[1], 7).click()
@@ -276,7 +286,7 @@ test('three players join freely, synchronize edits and pointers, reconnect and f
       return Array.from({ length: 6 }, (_, r) => cells.slice(r * 6, r * 6 + 6))
     })
     for (const [row, col] of solve(regions).solutions[0].entries()) {
-      await cell(pages[row % pages.length], row * 6 + col).click()
+      await queen(pages[row % pages.length], row * 6 + col)
       for (const p of pages)
         await expect(cell(p, row * 6 + col)).toHaveAttribute('data-state', 'queen')
     }
@@ -377,7 +387,7 @@ test('cooperative nickname input remains usable when localStorage is unavailable
     await page.getByRole('button', { name: '建立房間', exact: true }).click()
     await page.getByRole('button', { name: '開始合作', exact: true }).click()
     await expect(page.getByRole('grid')).toBeVisible({ timeout: 30000 })
-    await cell(page, 0).click()
+    await queen(page, 0)
     const guest = await context.newPage()
     acceptDialogs(guest)
     await guest.goto(page.url())
@@ -388,8 +398,7 @@ test('cooperative nickname input remains usable when localStorage is unavailable
     await expect(cell(guest, 0)).toHaveAttribute('data-state', 'queen')
     await page.getByRole('button', { name: '離開', exact: true }).click()
     await expect(guest.locator('.presence-bar > span')).toHaveCount(1)
-    await cell(guest, 1).click()
-    await expect(cell(guest, 1)).toHaveAttribute('data-state', 'queen')
+    await queen(guest, 1)
   } finally {
     await context.close()
   }
@@ -567,7 +576,7 @@ test('host restarts the same shared puzzle with confirmation while guests cannot
     await expect(cell(guest, 0)).toBeEnabled()
     await cell(guest, 0).click()
     heldAck?.()
-    await expect(cell(page, 0)).toHaveAttribute('data-state', 'queen')
+    await expect(cell(page, 0)).toHaveAttribute('data-state', 'marked')
     await page.getByRole('button', { name: '更換關卡', exact: true }).click()
     await page
       .getByRole('dialog', { name: '更換關卡？' })

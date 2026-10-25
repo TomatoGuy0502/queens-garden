@@ -13,6 +13,11 @@ test.beforeEach(({ page }) => {
 test.afterEach(({ page }) => expect(errors.get(page)).toEqual([]))
 
 const cell = (page: Page, i: number) => page.locator(`[data-index="${i}"]`)
+// One click marks a cell with an X and a second click turns it into a queen.
+async function queen(page: Page, i: number) {
+  await cell(page, i).click()
+  await cell(page, i).click()
+}
 async function solvePuzzle(page: Page) {
   const regions = await page
     .getByRole('gridcell')
@@ -21,7 +26,7 @@ async function solvePuzzle(page: Page) {
   const board = Array.from({ length: n }, (_, r) => regions.slice(r * n, (r + 1) * n))
   const result = solve(board)
   expect(result.solutionCount).toBe(1)
-  for (const [r, c] of result.solutions[0].entries()) await cell(page, r * n + c).click()
+  for (const [r, c] of result.solutions[0].entries()) await queen(page, r * n + c)
   await expect(page.getByRole('heading', { name: '關卡完成' })).toBeVisible()
 }
 const day = (page: Page, key: string) => page.clock.setFixedTime(new Date(`${key}T10:00:00+08:00`))

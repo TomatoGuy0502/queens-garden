@@ -1,7 +1,13 @@
 import type { CellState } from './types'
 
-/** Click cycles empty → queen → marked → empty; the mark action toggles only the X. */
-export function nextCell(current: CellState, action: 'cycle' | 'mark' = 'cycle'): CellState {
+/** How a player edits a cell: cycle it, or jump straight to an X or a queen (and back to empty). */
+export type CellAction = 'cycle' | 'mark' | 'queen'
+/**
+ * A click cycles empty → X → queen → empty: marking cells out is what players do most, so it comes
+ * first. A right click toggles a queen and the X key toggles an X, each straight from any state.
+ */
+export function nextCell(current: CellState, action: CellAction = 'cycle'): CellState {
   if (action === 'mark') return current === 'marked' ? 'empty' : 'marked'
-  return current === 'empty' ? 'queen' : current === 'queen' ? 'marked' : 'empty'
+  if (action === 'queen') return current === 'queen' ? 'empty' : 'queen'
+  return current === 'empty' ? 'marked' : current === 'marked' ? 'queen' : 'empty'
 }

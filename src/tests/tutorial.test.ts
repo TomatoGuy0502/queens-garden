@@ -28,8 +28,8 @@ it('teaches on a valid board with a single logical solution', () => {
 it('builds every lesson with a goal that is not yet met, except read-only lessons', () => {
   expect(lessons.map((lesson) => lesson.id)).toEqual([
     'rules',
-    'queen',
     'mark',
+    'queen',
     'adjacent',
     'adjacency',
     'intersection',

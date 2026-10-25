@@ -70,7 +70,7 @@ const en: Messages<typeof zhHant> = {
   },
   toolbar: {
     label: 'Game tools',
-    note: 'Tap a cell: crown → X → clear · Coordinates: row,column',
+    note: 'Tap a cell: X → crown → clear · Coordinates: row,column',
     undo: 'Undo',
     redo: 'Redo',
     restart: 'Restart',
@@ -142,7 +142,7 @@ const en: Messages<typeof zhHant> = {
     example: 'The eight cells around a crown cannot hold another crown.',
     shortcuts: 'Controls and keyboard shortcuts',
     shortcutsBody:
-      'Click once to place a crown, again for an X, a third time to clear. Right-click or the X key toggles a mark directly. Arrow keys move; Space or Enter cycles crown, X and empty. The letter in a cell is its region.',
+      'Click once for an X, again to place a crown, a third time to clear. Right-click places a crown directly and the X key marks an X. Arrow keys move; Space or Enter cycles X, crown and empty. The letter in a cell is its region.',
   },
   stats: {
     title: 'My stats',
@@ -224,7 +224,7 @@ const en: Messages<typeof zhHant> = {
   },
   board: {
     label:
-      'Queens board. Arrow keys move; Space or Enter cycles crown, X and empty; the X key marks directly',
+      'Queens board. Arrow keys move; Space or Enter cycles X, crown and empty; the X key marks directly',
     pausedTitle: 'Game paused',
     pausedBody: 'The board and timer are paused.',
     resume: 'Resume game',
@@ -472,19 +472,20 @@ const en: Messages<typeof zhHant> = {
       },
       queen: {
         title: 'Place a crown',
-        p1: 'Click any cell to place a crown.',
+        p1: 'One click makes an X, a second click places a crown, and a third clears it.',
+        p2: 'On a desktop you can also right-click to place a crown directly (right-click again to clear it).',
         task: 'Place a crown on the board',
       },
       mark: {
         title: 'Use X to organize your thoughts',
         p1: 'An X means "this cell is definitely not a crown" and helps you remember what you have ruled out.',
-        p2: 'Click a crown again to turn it into an X, and a third time to clear it. On a desktop you can also right-click or press the X key to mark directly.',
+        p2: 'Click an empty cell to mark it with an X. On a desktop you can also press the X key to mark directly.',
         task: 'Mark any cell with an X',
       },
       adjacent: {
         title: 'Crowns cannot touch',
         p1: 'These two crowns touch diagonally, so the cells show red stripes to flag the conflict.',
-        p2: 'When there is a conflict, click a crown to turn it into an X, or use undo.',
+        p2: 'When there is a conflict, click a crown to clear it, or use undo.',
         task: 'Resolve the conflict so the two crowns no longer touch',
       },
       adjacency: {

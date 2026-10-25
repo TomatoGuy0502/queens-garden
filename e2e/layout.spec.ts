@@ -21,6 +21,7 @@ test('expanded board moves settings below the board, preserves play and remember
   const original = (await page.locator('.board-stage').boundingBox())!
   const first = page.locator('[data-index="0"]')
   await first.click()
+  await first.click()
   const dialog = await settings(page)
   await expect(dialog.getByRole('switch', { name: '放大棋盤', exact: true })).not.toBeChecked()
   await dialog.getByRole('switch', { name: '放大棋盤', exact: true }).check()
@@ -31,7 +32,7 @@ test('expanded board moves settings below the board, preserves play and remember
   else expect(expanded.width).toBeCloseTo(original.width, 0)
   await expect(first).toHaveAttribute('data-state', 'queen')
   await page.getByRole('button', { name: '復原', exact: true }).click()
-  await expect(first).toHaveAttribute('data-state', 'empty')
+  await expect(first).toHaveAttribute('data-state', 'marked')
   await page.getByRole('button', { name: '重做', exact: true }).click()
   await expect(first).toHaveAttribute('data-state', 'queen')
   await page.reload()

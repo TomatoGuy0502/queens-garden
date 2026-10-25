@@ -65,6 +65,7 @@ test('dark board preserves play, guidance, QR sharing, completion and read-only 
   const first = page.locator(`[data-index="${solution[0]}"]`)
   const lightColor = await first.evaluate((cell) => getComputedStyle(cell).backgroundColor)
   await first.click()
+  await first.click()
   await dark(page).check()
   const dialog = await settings(page)
   await dialog.getByRole('switch', { name: '顯示皇冠排除範圍' }).check()
@@ -123,8 +124,11 @@ test('dark board preserves play, guidance, QR sharing, completion and read-only 
   })
   expect(jsQR(new Uint8ClampedArray(pixels), 224, 224)?.data).toBe(link)
   await share.getByRole('button', { name: '關閉分享' }).click()
-  for (let row = 1; row < 6; row++)
-    await page.locator(`[data-index="${row * 6 + solution[row]}"]`).click()
+  for (let row = 1; row < 6; row++) {
+    const target = page.locator(`[data-index="${row * 6 + solution[row]}"]`)
+    await target.click()
+    await target.click()
+  }
   await expect(page.getByRole('heading', { name: '關卡完成' })).toBeInViewport({ ratio: 1 })
   await page.getByRole('button', { name: '查看棋盤', exact: true }).click()
   await expect(page.getByRole('grid')).toHaveAttribute('aria-readonly', 'true')

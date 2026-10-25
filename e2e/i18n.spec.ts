@@ -101,6 +101,11 @@ test.describe('solo game screens', () => {
     await page.getByRole('gridcell').first().click()
     await expect(page.getByRole('gridcell').first()).toHaveAttribute(
       'aria-label',
+      /^Row 1, column 1, region [A-F], X mark$/,
+    )
+    await page.getByRole('gridcell').first().click()
+    await expect(page.getByRole('gridcell').first()).toHaveAttribute(
+      'aria-label',
       /^Row 1, column 1, region [A-F], crown$/,
     )
     await page.getByRole('button', { name: 'Share puzzle' }).click()

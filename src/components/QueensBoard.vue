@@ -25,6 +25,7 @@ const props = withDefaults(
 const emit = defineEmits<{
   play: [index: number]
   mark: [index: number]
+  crown: [index: number]
   resume: []
   endReview: []
   hover: [index: number | null]
@@ -170,6 +171,7 @@ async function navigate(index: number, event: KeyboardEvent) {
                 :mistake="mistakes.includes(cell.index)"
                 @play="!won && emit('play', $event)"
                 @mark="!won && emit('mark', $event)"
+                @crown="!won && emit('crown', $event)"
                 @navigate="navigate"
                 @focus="focus"
                 @hover="emit('hover', $event)"

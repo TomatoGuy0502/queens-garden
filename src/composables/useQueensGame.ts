@@ -3,7 +3,7 @@ import { useRouter } from 'vue-router'
 import { LocalizedError, failureMessage, message as say, type Message } from '../../shared/message'
 import type { CellState, DeductionStep, Difficulty, PuzzleDefinition } from '../queens/types'
 import type { WorkerRequest, WorkerResponse } from '../queens/protocol'
-import { nextCell } from '../queens/cells'
+import { nextCell, type CellAction } from '../queens/cells'
 import {
   MAX_SAVED_HISTORY,
   encodeCells,
@@ -203,7 +203,7 @@ export function useQueensGame() {
     busy.value = false
     error.value = say('game.errors.cancelled')
   }
-  function edit(index: number, action: 'cycle' | 'mark' = 'cycle') {
+  function edit(index: number, action: CellAction = 'cycle') {
     if (blocked.value || !puzzle.value || index < 0 || index >= cells.value.length) return
     history.value = [...history.value, [...cells.value]].slice(-1000)
     future.value = []

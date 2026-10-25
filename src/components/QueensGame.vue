@@ -273,6 +273,7 @@ onMounted(() => {
             @end-review="reviewing = false"
             @play="game.edit($event)"
             @mark="game.edit($event, 'mark')"
+            @crown="game.edit($event, 'queen')"
             @resume="game.togglePause"
           >
             <template #result>

@@ -29,19 +29,23 @@ test('the tutorial walks through rules, marks, conflicts and three techniques to
   await expect(page.getByRole('button', { name: '上一課' })).toBeDisabled()
   await next(page).click()
 
+  await title(page, '用 X 整理想法')
+  await expect(page.locator('[data-state="marked"]')).toHaveCount(0)
+  await expect(next(page)).toBeDisabled()
+  await cell(page, 3).click()
+  await expect(cell(page, 3)).toHaveAttribute('data-state', 'marked')
+  await done(page)
+  await next(page).click()
+
   await title(page, '放下皇冠')
+  await expect(page.locator('[data-state="queen"]')).toHaveCount(0)
+  await expect(next(page)).toBeDisabled()
+  await cell(page, 0).click()
+  await expect(cell(page, 0)).toHaveAttribute('data-state', 'marked')
   await expect(next(page)).toBeDisabled()
   await cell(page, 0).click()
   await expect(cell(page, 0)).toHaveAttribute('data-state', 'queen')
   await done(page)
-  await next(page).click()
-
-  await title(page, '用 X 整理想法')
-  await expect(page.locator('[data-state="queen"]')).toHaveCount(0)
-  await expect(next(page)).toBeDisabled()
-  await cell(page, 3).click()
-  await cell(page, 3).click()
-  await expect(cell(page, 3)).toHaveAttribute('data-state', 'marked')
   await next(page).click()
 
   await title(page, '皇冠不能相鄰')
@@ -56,14 +60,9 @@ test('the tutorial walks through rules, marks, conflicts and three techniques to
     if (current.goal.type !== 'mark-all') throw new Error('unexpected goal')
     await title(page, renderSource(current.title))
     await expect(next(page)).toBeDisabled()
-    for (const c of current.goal.cells.slice(0, -1)) {
-      await cell(page, c).click()
-      await cell(page, c).click()
-    }
+    for (const c of current.goal.cells.slice(0, -1)) await cell(page, c).click()
     await expect(next(page)).toBeDisabled()
-    const last = current.goal.cells.at(-1)!
-    await cell(page, last).click()
-    await cell(page, last).click()
+    await cell(page, current.goal.cells.at(-1)!).click()
     await done(page)
     await next(page).click()
   }
@@ -71,6 +70,8 @@ test('the tutorial walks through rules, marks, conflicts and three techniques to
   const single = lesson('single')
   if (single.goal.type !== 'queen-at') throw new Error('unexpected goal')
   await title(page, renderSource(single.title))
+  await cell(page, single.goal.cell).click()
+  await expect(next(page)).toBeDisabled()
   await cell(page, single.goal.cell).click()
   await done(page)
   await next(page).click()
@@ -81,7 +82,10 @@ test('the tutorial walks through rules, marks, conflicts and three techniques to
   const solution = solve(TUTORIAL_PUZZLE.regions).solutions[0]
   for (const [row, col] of solution.entries()) {
     const target = cell(page, row * 6 + col)
-    if ((await target.getAttribute('data-state')) === 'empty') await target.click()
+    if ((await target.getAttribute('data-state')) === 'empty') {
+      await target.click()
+      await target.click()
+    }
   }
   await expect(page.locator('[data-state="queen"]')).toHaveCount(6)
   await done(page)
@@ -101,16 +105,16 @@ test('the tutorial walks through rules, marks, conflicts and three techniques to
 test('lessons can be reset, revisited and skipped', async ({ page }) => {
   await page.goto('/tutorial')
   await next(page).click()
-  await title(page, '放下皇冠')
+  await title(page, '用 X 整理想法')
   await expect(next(page)).toBeDisabled()
   await cell(page, 0).click()
   await page.getByRole('button', { name: '重設這一課' }).click()
-  await expect(page.locator('[data-state="queen"]')).toHaveCount(0)
+  await expect(page.locator('[data-state="marked"]')).toHaveCount(0)
   await page.getByRole('button', { name: '跳過這一課' }).click()
-  await title(page, '用 X 整理想法')
-  await page.getByRole('button', { name: '上一課' }).click()
   await title(page, '放下皇冠')
-  await expect(page.locator('[data-state="queen"]')).toHaveCount(0)
+  await page.getByRole('button', { name: '上一課' }).click()
+  await title(page, '用 X 整理想法')
+  await expect(page.locator('[data-state="marked"]')).toHaveCount(0)
 })
 test('new players are offered the tutorial once and can dismiss it for good', async ({ page }) => {
   await page.goto('/')

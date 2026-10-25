@@ -11,6 +11,11 @@ test.beforeEach(({ page }) => {
 test.afterEach(({ page }) => expect(errors.get(page)).toEqual([]))
 
 const cell = (page: Page, i: number) => page.locator(`[data-index="${i}"]`)
+// One click marks a cell with an X and a second click turns it into a queen.
+async function queen(page: Page, i: number) {
+  await cell(page, i).click()
+  await cell(page, i).click()
+}
 const hintButton = (page: Page, name: string) => page.getByRole('button', { name, exact: true })
 async function start(page: Page) {
   await page.goto(`/solo?size=6&difficulty=easy&seed=42&v=${GENERATOR_VERSION}`)
@@ -69,7 +74,7 @@ test('every hint level counts as a hint in the final result', async ({ page }) =
     .getByRole('gridcell')
     .evaluateAll((elements) => elements.map((el) => Number(el.getAttribute('data-region'))))
   const board = Array.from({ length: 6 }, (_, r) => regions.slice(r * 6, (r + 1) * 6))
-  for (const [r, c] of solve(board).solutions[0].entries()) await cell(page, r * 6 + c).click()
+  for (const [r, c] of solve(board).solutions[0].entries()) await queen(page, r * 6 + c)
   await expect(page.getByRole('heading', { name: '關卡完成' })).toBeVisible()
   await expect(page.getByText(/3 次提示/)).toBeVisible()
 })

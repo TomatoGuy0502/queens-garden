@@ -285,7 +285,8 @@ async function reset() {
               @end-review="reviewing = false"
               @hover="room.hover"
               @play="play"
-              @mark="room.edit($event, true)"
+              @mark="room.edit($event, 'mark')"
+              @crown="room.edit($event, 'queen')"
               @resume="pause"
               ><template #result
                 ><GameResult

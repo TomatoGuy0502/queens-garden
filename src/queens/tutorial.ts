@@ -129,8 +129,8 @@ export function buildLessons(): TutorialLesson[] {
   const step = (index: number) => steps[index]
   return [
     lesson('rules', ['p1', 'p2', 'p3'], { type: 'continue' }, { task: false }),
-    lesson('queen', ['p1'], { type: 'queen-any' }),
     lesson('mark', ['p1', 'p2'], { type: 'mark-any' }),
+    lesson('queen', ['p1', 'p2'], { type: 'queen-any' }),
     lesson('adjacent', ['p1', 'p2'], { type: 'no-conflict' }, { preset: conflict }),
     lesson(
       'adjacency',

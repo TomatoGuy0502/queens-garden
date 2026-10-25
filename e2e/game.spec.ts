@@ -24,6 +24,11 @@ async function start(page: Page) {
   await expect(page.locator('.coordinate-label')).toHaveCount(0)
 }
 const cell = (page: Page, i: number) => page.locator(`[data-index="${i}"]`)
+// One click marks a cell with an X and a second click turns it into a queen.
+async function queen(page: Page, i: number) {
+  await cell(page, i).click()
+  await cell(page, i).click()
+}
 async function readRegions(page: Page) {
   const flat = await page
     .getByRole('gridcell')
@@ -32,7 +37,7 @@ async function readRegions(page: Page) {
   return Array.from({ length: n }, (_, r) => flat.slice(r * n, (r + 1) * n))
 }
 
-test('cycle empty queen marked empty, undo, redo, keyboard navigation and restart', async ({
+test('cycle empty marked queen empty, undo, redo, keyboard navigation and restart', async ({
   page,
   isMobile,
 }) => {
@@ -40,30 +45,36 @@ test('cycle empty queen marked empty, undo, redo, keyboard navigation and restar
   page.on('pageerror', (error) => errors.push(error.message))
   await start(page)
   await cell(page, 0).click()
-  await expect(cell(page, 0)).toHaveAttribute('data-state', 'queen')
-  await cell(page, 0).click()
   await expect(cell(page, 0)).toHaveAttribute('data-state', 'marked')
+  await cell(page, 0).click()
+  await expect(cell(page, 0)).toHaveAttribute('data-state', 'queen')
   await cell(page, 0).click()
   await expect(cell(page, 0)).toHaveAttribute('data-state', 'empty')
   await expect(page.getByRole('group', { name: '放置模式' })).toHaveCount(0)
   await cell(page, 1).click()
-  await expect(cell(page, 1)).toHaveAttribute('data-state', 'queen')
+  await expect(cell(page, 1)).toHaveAttribute('data-state', 'marked')
   await cell(page, 1).click()
-  await expect(cell(page, 1)).toHaveAttribute('data-state', 'marked')
-  await page.getByRole('button', { name: '復原', exact: true }).click()
   await expect(cell(page, 1)).toHaveAttribute('data-state', 'queen')
-  await page.getByRole('button', { name: '重做', exact: true }).click()
+  await page.getByRole('button', { name: '復原', exact: true }).click()
   await expect(cell(page, 1)).toHaveAttribute('data-state', 'marked')
+  await page.getByRole('button', { name: '重做', exact: true }).click()
+  await expect(cell(page, 1)).toHaveAttribute('data-state', 'queen')
   if (!isMobile) {
     await cell(page, 2).click({ button: 'right' })
-    await expect(cell(page, 2)).toHaveAttribute('data-state', 'marked')
+    await expect(cell(page, 2)).toHaveAttribute('data-state', 'queen')
+    await cell(page, 2).click({ button: 'right' })
+    await expect(cell(page, 2)).toHaveAttribute('data-state', 'empty')
+    await cell(page, 3).click()
+    await expect(cell(page, 3)).toHaveAttribute('data-state', 'marked')
+    await cell(page, 3).click({ button: 'right' })
+    await expect(cell(page, 3)).toHaveAttribute('data-state', 'queen')
     await cell(page, 0).focus()
     await page.keyboard.press('ArrowDown')
     await expect(cell(page, 6)).toBeFocused()
     await page.keyboard.press('Space')
-    await expect(cell(page, 6)).toHaveAttribute('data-state', 'queen')
-    await page.keyboard.press('Space')
     await expect(cell(page, 6)).toHaveAttribute('data-state', 'marked')
+    await page.keyboard.press('Space')
+    await expect(cell(page, 6)).toHaveAttribute('data-state', 'queen')
     await page.keyboard.press('Enter')
     await expect(cell(page, 6)).toHaveAttribute('data-state', 'empty')
     await page.keyboard.press('x')
@@ -88,17 +99,14 @@ test('cycle empty queen marked empty, undo, redo, keyboard navigation and restar
 })
 test('invalid placement never wins; valid solution completes with summary', async ({ page }) => {
   await start(page)
-  for (let i = 0; i < 6; i++) await cell(page, i).click()
+  for (let i = 0; i < 6; i++) await queen(page, i)
   await expect(page.getByText('關卡完成')).not.toBeVisible()
   await expect(page.locator('.cell.mistake')).toHaveCount(6)
-  for (let i = 0; i < 6; i++) {
-    await cell(page, i).click()
-    await cell(page, i).click()
-  }
+  for (let i = 0; i < 6; i++) await cell(page, i).click()
   const regions = await readRegions(page)
   const result = solve(regions)
   expect(result.solutionCount).toBe(1)
-  for (const [r, c] of result.solutions[0].entries()) await cell(page, r * 6 + c).click()
+  for (const [r, c] of result.solutions[0].entries()) await queen(page, r * 6 + c)
   await expect(page.getByRole('heading', { name: '關卡完成' })).toBeVisible()
   await expect(page.getByText(/次操作 · 0 次提示/)).toBeVisible()
   const resultOverlay = page.locator('.board-stage .result')
@@ -208,8 +216,8 @@ test('canceling generation recovers cleanly and an obsolete version can start a 
 
 test('contradictory placements get contradiction feedback before any hint', async ({ page }) => {
   await start(page)
-  await cell(page, 0).click()
-  await cell(page, 1).click()
+  await queen(page, 0)
+  await queen(page, 1)
   await page.getByRole('button', { name: '給我一點提示', exact: true }).click()
   await expect(page.locator('.feedback')).toContainText('矛盾')
   await expect(page.getByRole('button', { name: '套用這一步 →' })).not.toBeVisible()
@@ -228,16 +236,13 @@ test('large boards retain touch targets without widening the document', async ({
   expect(row.y + row.height / 2).toBeCloseTo(last.y + last.height / 2, 0)
   expect((await cell(page, 0).boundingBox())!.width).toBeGreaterThanOrEqual(40)
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
-  await cell(page, 143).click()
+  await queen(page, 143)
   await expect(cell(page, 143)).toHaveAttribute('data-state', 'queen')
   const solution = solve(await readRegions(page)).solutions[0]
-  if (solution[11] !== 11) {
-    await cell(page, 143).click()
-    await cell(page, 143).click()
-  }
+  if (solution[11] !== 11) await cell(page, 143).click()
   for (const [row, col] of solution.entries()) {
     if (row === 11 && col === 11) continue
-    await cell(page, row * 12 + col).click()
+    await queen(page, row * 12 + col)
   }
   await expect(page.locator('.board-stage .result')).toBeInViewport({ ratio: 1 })
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
@@ -353,8 +358,7 @@ test('visual guidance is configurable, preserves marks, tracks undo and persists
   page,
 }) => {
   await start(page)
-  await cell(page, 14).click()
-  await cell(page, 7).click()
+  await queen(page, 14)
   await cell(page, 7).click()
   const originalColor = await cell(page, 12).evaluate(
     (element) => getComputedStyle(element).backgroundColor,
@@ -394,8 +398,8 @@ test('visual guidance is configurable, preserves marks, tracks undo and persists
   await expect(page.locator('[data-guided="true"]')).toHaveCount(0)
   await page.reload()
   await expect(page.getByRole('grid')).toBeVisible({ timeout: 30000 })
-  // The unfinished game comes back with its marks, so the queen needs one more cycle.
-  await expect(cell(page, 14)).toHaveAttribute('data-state', 'marked')
+  // The unfinished game comes back with its marks, so the queen needs a couple more clicks.
+  await expect(cell(page, 14)).toHaveAttribute('data-state', 'empty')
   await expect(cell(page, 7)).toHaveAttribute('data-state', 'marked')
   await cell(page, 14).click()
   await cell(page, 14).click()
@@ -418,7 +422,7 @@ test('visual guidance still works when browser storage is unavailable', async ({
     })
   })
   await start(page)
-  await cell(page, 14).click()
+  await queen(page, 14)
   await page.getByRole('button', { name: '遊玩設定', exact: true }).click()
   const dialog = page.getByRole('dialog', { name: '遊玩設定' })
   await dialog.getByRole('switch', { name: '顯示皇冠排除範圍' }).check()
