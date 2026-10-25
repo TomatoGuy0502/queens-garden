@@ -80,11 +80,6 @@ export async function fileCatalogRepository(path?: string): Promise<CatalogRepos
         entry.uses++
         return catalogRecord(replay(structuredClone(entry.record.puzzle), metadata.replay))
       }),
-    use: (hash) =>
-      transaction(() => {
-        const entry = state.boards[hash]
-        if (entry) entry.uses++
-      }),
     invalidate: (hash) =>
       transaction(() => {
         const entry = state.boards[hash]

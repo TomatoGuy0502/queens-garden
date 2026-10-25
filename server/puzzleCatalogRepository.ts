@@ -99,9 +99,6 @@ export function databaseCatalogRepository<T extends PgQueryResultHKT>(
         return record
       })
     },
-    async use(hash) {
-      await db.update(board).set(used).where(eq(board.hash, hash))
-    },
     async invalidate(hash) {
       await db.update(board).set({ enabled: false }).where(eq(board.hash, hash))
     },
