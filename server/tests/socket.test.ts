@@ -161,6 +161,39 @@ it('static assets do not consume API limits and rate-limit errors remain HTTP 42
   }
 })
 
+it('rate limits cannot be dodged by sending a forged X-Forwarded-For', async () => {
+  const { app } = await createApp({
+    repository: {
+      get: () => Promise.resolve(null),
+      save: () => Promise.resolve(),
+      deleteExpired: () => Promise.resolve(),
+    },
+    compute: {
+      generate: () => Promise.reject(new Error('not used')),
+      hint: () => Promise.resolve({ step: null, message: { key: 'hint.stuck' } }),
+      close: () => Promise.resolve(),
+    },
+  })
+  try {
+    const codes: number[] = []
+    // The last entry is what the real proxy appended; the leading ones are the client's forgery.
+    for (let i = 0; i < 40; i++)
+      codes.push(
+        (
+          await app.inject({
+            method: 'POST',
+            url: '/api/rooms',
+            headers: { 'x-forwarded-for': `10.0.${i}.1, 203.0.113.9` },
+            payload: { name: 'test', size: 6, difficulty: 'easy' },
+          })
+        ).statusCode,
+      )
+    expect(codes.filter((code) => code === 429)).toHaveLength(10)
+  } finally {
+    await app.close()
+  }
+})
+
 it('compiled workers ignore watch dependency messages and do not inherit development loaders or CLI-only flags', async () => {
   const { execFile } = await import('node:child_process')
   const { promisify } = await import('node:util')

@@ -34,9 +34,15 @@ export async function createApp(options: {
   puzzles?: PuzzleSource
   staticFiles?: boolean
   origin?: string
+  /** Proxies in front of the app; only the address they appended to X-Forwarded-For is trusted. */
+  proxyHops?: number
   logger?: boolean
 }) {
-  const app = Fastify({ logger: options.logger ?? false, trustProxy: true, bodyLimit: 8192 })
+  const app = Fastify({
+    logger: options.logger ?? false,
+    trustProxy: options.proxyHops ?? 1,
+    bodyLimit: 8192,
+  })
   await app.register(rateLimit, { global: false, max: 120, timeWindow: '1 minute' })
   const manager = new RoomManager(options.repository, options.compute, undefined, options.puzzles)
   const presence = new HoverPresence()
