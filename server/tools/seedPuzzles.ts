@@ -9,7 +9,7 @@ import { batchOptionsSchema, generateBatch } from '../puzzleBatch'
 import { fileCatalogRepository } from '../filePuzzleCatalog'
 import { postgresRepository } from '../repository'
 import { catalogRecord } from '../puzzleCatalogModel'
-import { DIFFICULTIES } from '../../src/queens/levels'
+import { BOARD_SIZES, DIFFICULTIES } from '../../src/queens/levels'
 
 const { values } = parseArgs({
   options: {
@@ -47,7 +47,7 @@ npm run puzzles:seed -- [options]
     values.difficulty === 'all' ? DIFFICULTIES : [z.enum(DIFFICULTIES).parse(values.difficulty)]
   const sizes =
     values.size === 'all'
-      ? [6, 7, 8, 9, 10, 12]
+      ? [...BOARD_SIZES]
       : z.array(z.coerce.number().int().min(6).max(12)).min(1).parse(values.size.split(','))
   const checkpoint = resolve(
     values.checkpoint ??

@@ -10,7 +10,7 @@ import { parseRoomCode } from '../../shared/roomCode'
 import AppHeader from '../components/AppHeader.vue'
 import { useRoomStore } from '../stores/room'
 import type { RoomSettings } from '../../shared/coop'
-import { DIFFICULTIES } from '../queens/levels'
+import { BOARD_SIZES, DIFFICULTIES } from '../queens/levels'
 import type { Difficulty } from '../queens/types'
 const { t } = useI18n()
 const render = useMessage()
@@ -64,9 +64,7 @@ async function join() {
             autocomplete="nickname"
           /><label for="room-size">{{ $t('coop.create.size') }}</label
           ><select id="room-size" v-model="size">
-            <option v-for="n in [6, 7, 8, 9, 10, 12]" :key="n" :value="n">
-              {{ n }} × {{ n }}
-            </option></select
+            <option v-for="n in BOARD_SIZES" :key="n" :value="n">{{ n }} × {{ n }}</option></select
           ><label for="room-difficulty">{{ $t('coop.create.difficulty') }}</label
           ><select id="room-difficulty" v-model="difficulty">
             <option v-for="item in DIFFICULTIES" :key="item" :value="item">

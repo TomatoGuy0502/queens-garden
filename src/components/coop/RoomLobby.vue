@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { MAX_ROOM_PLAYERS } from '../../../shared/coop'
 import type { Player, RoomSettings } from '../../../shared/coop'
-import { DIFFICULTIES } from '../../queens/levels'
+import { BOARD_SIZES, DIFFICULTIES } from '../../queens/levels'
 import type { Difficulty } from '../../queens/types'
 const props = defineProps<{
   players: Player[]
@@ -57,9 +57,7 @@ function difficulty(event: Event) {
         :disabled="meId !== hostId || pending"
         @change="size"
       >
-        <option v-for="n in [6, 7, 8, 9, 10, 12]" :key="n" :value="n">
-          {{ n }} × {{ n }}
-        </option></select
+        <option v-for="n in BOARD_SIZES" :key="n" :value="n">{{ n }} × {{ n }}</option></select
       ><label for="coop-difficulty">{{ $t('coop.create.difficulty') }}</label
       ><select
         id="coop-difficulty"

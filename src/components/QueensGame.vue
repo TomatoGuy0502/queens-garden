@@ -30,7 +30,7 @@ import {
 import { useSoloGameStore } from '../stores/solo'
 import { storeToRefs } from 'pinia'
 import { GENERATOR_VERSION } from '../queens/version'
-import { DIFFICULTIES } from '../queens/levels'
+import { BOARD_SIZES, DIFFICULTIES } from '../queens/levels'
 import type { Difficulty } from '../queens/types'
 const render = useMessage()
 const game = useSoloGameStore()
@@ -66,7 +66,7 @@ const {
 } = storeToRefs(game)
 const params = new URLSearchParams(location.search)
 const requestedSize = Number(params.get('size') ?? 8)
-const initialSize = [6, 7, 8, 9, 10, 12].includes(requestedSize) ? requestedSize : 8
+const initialSize = BOARD_SIZES.find((size) => size === requestedSize) ?? 8
 const requestedDifficulty = params.get('difficulty')
 const initialDifficulty: Difficulty =
   DIFFICULTIES.find((difficulty) => difficulty === requestedDifficulty) ?? 'easy'

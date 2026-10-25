@@ -1,18 +1,11 @@
 import { z } from 'zod'
 import type { Message } from './message'
 import { ROOM_CODE_PATTERN } from './roomCode'
-import { DIFFICULTIES } from '../src/queens/levels'
+import { BOARD_SIZES, DIFFICULTIES } from '../src/queens/levels'
 import type { CellState, DeductionStep, PuzzleDefinition } from '../src/queens/types'
 export const MAX_ROOM_PLAYERS = 8
 
-export const sizeSchema = z.union([
-  z.literal(6),
-  z.literal(7),
-  z.literal(8),
-  z.literal(9),
-  z.literal(10),
-  z.literal(12),
-])
+export const sizeSchema = z.literal(BOARD_SIZES)
 export const difficultySchema = z.enum(DIFFICULTIES)
 export const settingsSchema = z.object({
   size: sizeSchema,
