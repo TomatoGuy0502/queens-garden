@@ -146,7 +146,7 @@ Level 3 但未達挑戰門檻的盤面同樣標示 `unrated` 並拒絕交付，�
 
 ## 驗證與限制
 
-測試涵蓋 102 個 Vitest 核心測試、45 個後端測試及 124 個 Playwright E2E（桌面與手機）；TypeScript、Oxlint＋ESLint、Oxfmt format check 與 production build 通過。E2E 包含 browser console errors 與 uncaught page errors 檢查。
+測試涵蓋 Vitest 核心測試、後端測試及 Playwright E2E（桌面與手機）；TypeScript、Oxlint＋ESLint、Oxfmt format check 與 production build 通過。E2E 包含 browser console errors 與 uncaught page errors 檢查。
 
 測試包含：獨立 permutation oracle 與 Solver 的全解對照、無解/多解/唯一解、遠距對角線、跨 Seed/大小批次生成、250 次邊界變異的連通性、各難度最小面積與變異下限、完整 recipe 序列化重現、所有難度標籤與最低層級驗證、挑戰／專家的高階步驟數與分數門檻、提示/排除的解保留、Hall sets 與基礎相鄰排除的多解安全性，以及預算耗盡的明確失敗。E2E 另驗證自動換 Seed、指定 Seed 重現、分享連結、實際解碼畫面上的 QR Code、剪貼簿拒絕時的備用操作與提示區間距。另測試視覺引導各範圍、標記保留、Undo/Redo 更新、重新載入後的偏好設定與儲存權限被拒絕時的行為。
 
