@@ -1,7 +1,7 @@
 import { useI18n } from 'vue-i18n'
 import type { Message, MessageParam } from '../../shared/message'
 
-export type Translate = (key: string, params?: Record<string, unknown>) => string
+export type Translate = (key: string, params?: Record<string, unknown>, plural?: number) => string
 
 function renderUnit(t: Translate, unit: number, n: number): string {
   if (unit < n) return t('unit.row', { index: unit + 1 })
@@ -20,7 +20,8 @@ export function renderMessage(t: Translate, message: Message): string {
   const params = Object.fromEntries(
     Object.entries(message.params ?? {}).map(([name, value]) => [name, renderParam(t, value)]),
   )
-  return t(message.key, params)
+  // A `count` parameter also picks the singular or plural form where a language has them.
+  return t(message.key, params, typeof params.count === 'number' ? params.count : undefined)
 }
 /**
  * Renders what a component was given: null shows nothing, and plain text (a notice stored in a

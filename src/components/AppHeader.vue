@@ -62,6 +62,7 @@ nav > a {
   text-decoration: none;
   white-space: nowrap;
 }
+nav > a:hover,
 nav > a.router-link-active {
   color: var(--accent);
 }

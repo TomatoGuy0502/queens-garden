@@ -25,7 +25,15 @@ onMounted(() => {
   <section ref="result" class="result" aria-labelledby="result-title">
     <CrownIcon filled class="result-crown" />
     <h2 id="result-title">{{ $t('result.title') }}</h2>
-    <p>{{ $t('result.summary', { time, moves, hints }) }}</p>
+    <p>
+      {{
+        $t('result.summary', {
+          time,
+          moves: $t('count.moves', moves),
+          hints: $t('count.hints', hints),
+        })
+      }}
+    </p>
     <p v-if="record" class="record" :class="{ best: record.newBest }">
       <template v-if="record.newBest">{{
         $t('result.newBest', { previous: formatDuration(record.previousBest!) })

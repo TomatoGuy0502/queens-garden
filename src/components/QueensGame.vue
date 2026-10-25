@@ -8,9 +8,7 @@ import GameToolbar from './GameToolbar.vue'
 import GameRules from './GameRules.vue'
 import GameResult from './GameResult.vue'
 import GameShare from './GameShare.vue'
-import GamePreferences from './GamePreferences.vue'
-import LanguageSwitcher from './LanguageSwitcher.vue'
-import ThemeToggle from './ThemeToggle.vue'
+import AppHeader from './AppHeader.vue'
 import DailyChallenge from './DailyChallenge.vue'
 import TutorialPrompt from './TutorialPrompt.vue'
 import ResumePrompt from './ResumePrompt.vue'
@@ -39,7 +37,7 @@ const game = useSoloGameStore()
 useProgressAutosave(game)
 const progress = useSoloProgress()
 onUnmounted(() => game.$dispose())
-const { guidance, expandedBoard, storageAvailable } = useGamePreferences()
+const { guidance, expandedBoard } = useGamePreferences()
 const {
   puzzle,
   cells,
@@ -136,6 +134,20 @@ const allMistakes = computed(() => [...new Set([...conflicts.value, ...mistakes.
 const inDaily = shallowRef(false)
 // An unfinished game found in storage, waiting for the player to continue or discard it.
 const pendingResume = shallowRef<SavedProgress | null>(null)
+// While the resume question is open the header describes that game, not the link's defaults.
+const shown = computed(() =>
+  pendingResume.value
+    ? {
+        size: pendingResume.value.size,
+        difficulty: pendingResume.value.difficulty,
+        daily: pendingResume.value.daily === dateKey(),
+      }
+    : {
+        size: puzzle.value?.size ?? initialSize,
+        difficulty: displayDifficulty.value,
+        daily: !!daily.value,
+      },
+)
 function startGame(
   size: number,
   difficulty: Difficulty,
@@ -198,37 +210,19 @@ onMounted(() => {
 })
 </script>
 <template>
-  <div class="app-shell">
-    <header class="site-header">
-      <RouterLink to="/" class="brand" :aria-label="$t('brand.home')"
-        ><span class="brand-icon"><CrownIcon /></span
-        ><span>queens<span class="brand-dot">.</span></span></RouterLink
-      >
-      <div class="header-actions">
-        <RouterLink to="/tutorial" class="text-button coop-link">{{
-          $t('nav.tutorial')
-        }}</RouterLink>
-        <RouterLink to="/stats" class="text-button coop-link">{{ $t('nav.stats') }}</RouterLink>
-        <RouterLink to="/rooms/new" class="text-button coop-link">{{ $t('nav.coop') }}</RouterLink>
-        <LanguageSwitcher />
-        <ThemeToggle />
-        <GamePreferences v-model="guidance" :storage-available="storageAvailable" />
-      </div>
-    </header>
+  <div class="page-shell">
+    <AppHeader />
     <main>
-      <div class="page-intro">
-        <h1>{{ $t('app.title') }}</h1>
-      </div>
+      <h1>{{ $t('nav.solo') }}</h1>
       <div class="game-layout" :class="{ expanded: expandedBoard }">
         <section class="play-area" :aria-label="$t('game.area')" :aria-busy="busy">
           <div class="game-meta">
             <div class="puzzle-meta">
-              <span v-if="daily" class="difficulty-badge daily-badge">{{
+              <span v-if="shown.daily" class="difficulty-badge daily-badge">{{
                 $t('game.dailyBadge')
               }}</span
-              ><span class="difficulty-badge">{{ $t(`difficulty.${displayDifficulty}`) }}</span
-              ><span class="board-size"
-                >{{ puzzle?.size ?? initialSize }} × {{ puzzle?.size ?? initialSize }}</span
+              ><span class="difficulty-badge">{{ $t(`difficulty.${shown.difficulty}`) }}</span
+              ><span class="board-size">{{ shown.size }} × {{ shown.size }}</span
               ><span v-if="puzzle" class="queen-count"
                 ><CrownIcon /> {{ queens.length }}<span>/ {{ puzzle.size }}</span></span
               >
@@ -337,7 +331,13 @@ onMounted(() => {
               <p>{{ render(feedback) }}</p>
               <details v-if="hintRevealed && hint?.evidence?.length" class="hint-evidence">
                 <summary>
-                  {{ $t('game.feedback.evidence', { count: hint.evidence.length }) }}
+                  {{
+                    $t(
+                      'game.feedback.evidence',
+                      { count: hint.evidence.length },
+                      hint.evidence.length,
+                    )
+                  }}
                 </summary>
                 <ol>
                   <li v-for="(step, index) in hint.evidence" :key="index">
@@ -388,54 +388,10 @@ onMounted(() => {
   </div>
 </template>
 <style scoped>
-.app-shell {
-  max-width: 1096px;
-  margin: 0 auto;
-  padding: 0 44px 44px;
-}
-.site-header {
-  height: 104px;
-  display: flex;
-  align-items: center;
-  border-bottom: 1px solid var(--line);
-  gap: 28px;
-}
-.brand {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  color: var(--ink);
-  font-family: Georgia, serif;
-  font-size: 34px;
-  font-weight: 600;
-  letter-spacing: -1.7px;
-  text-decoration: none;
-}
-.brand-icon {
-  width: 30px;
-  height: 34px;
-}
-.brand-dot {
-  color: var(--accent);
-}
-.header-actions {
-  display: flex;
-  align-items: center;
-  gap: 20px;
-  margin-left: auto;
-}
-.page-intro {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 24px 0;
-}
-.page-intro h1 {
-  font-family: 'Iowan Old Style', 'Noto Serif TC', serif;
+h1 {
+  font-size: 29px;
   font-weight: 500;
-  font-size: 35px;
-  letter-spacing: 2px;
-  margin: 16px 0;
+  margin: 42px 0 24px;
 }
 .game-layout {
   display: grid;
@@ -684,9 +640,6 @@ onMounted(() => {
   padding-top: 28px;
 }
 @media (min-width: 1200px) {
-  .app-shell {
-    max-width: 1140px;
-  }
   .game-layout {
     grid-template-columns: minmax(0, 550px) minmax(230px, 1fr);
     gap: 77px;
@@ -696,18 +649,12 @@ onMounted(() => {
   }
 }
 @media (max-width: 800px) {
-  .app-shell {
-    padding: 0 25px;
-  }
   .game-layout {
     gap: 30px;
     grid-template-columns: minmax(0, 1fr) 235px;
   }
   .side-panel {
     padding-left: 22px;
-  }
-  .page-intro h1 {
-    font-size: 30px;
   }
   .puzzle-meta {
     gap: 8px;
@@ -731,38 +678,6 @@ onMounted(() => {
   }
 }
 @media (max-width: 650px) {
-  .app-shell {
-    padding: 0 18px;
-  }
-  .header-actions {
-    flex: 1 1 auto;
-    flex-wrap: wrap;
-    justify-content: flex-end;
-    gap: 6px 12px;
-  }
-  .coop-link {
-    white-space: nowrap;
-  }
-  .site-header {
-    flex-wrap: wrap;
-    gap: 4px 12px;
-    height: auto;
-    min-height: 78px;
-    padding: 10px 0;
-  }
-  .brand {
-    font-size: 30px;
-  }
-  .brand-icon {
-    width: 26px;
-  }
-  .page-intro {
-    padding: 20px 0;
-  }
-  .page-intro h1 {
-    font-size: 28px;
-    letter-spacing: 1px;
-  }
   .game-layout {
     display: flex;
     flex-direction: column;

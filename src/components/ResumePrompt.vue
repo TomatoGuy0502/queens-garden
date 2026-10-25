@@ -21,7 +21,7 @@ const summary = computed(() => {
     size,
     difficulty: t(`difficulty.${difficulty}`),
     elapsed: formatDuration(Math.floor(elapsedMs / 1000)),
-    moves,
+    moves: t('count.moves', moves),
     when,
   })
 })
@@ -42,6 +42,22 @@ const summary = computed(() => {
   </div>
 </template>
 <style scoped>
+/* The board-sized frame comes from the game page; its inner styles do not reach this component. */
+.resume > svg {
+  width: 49px;
+  height: 49px;
+  color: var(--accent);
+}
+.resume h2 {
+  font-size: 18px;
+  font-weight: 500;
+  margin-top: 26px;
+}
+.resume p {
+  font-size: 11px;
+  color: var(--muted);
+  line-height: 1.9;
+}
 .resume-actions {
   display: flex;
   flex-wrap: wrap;

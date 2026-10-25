@@ -21,7 +21,10 @@ const { today, config, result, streak } = useDailyChallenge()
       </p>
       <p class="status" role="status">
         <template v-if="result">{{
-          $t('daily.done', { time: formatDuration(result.seconds), hints: result.hints })
+          $t('daily.done', {
+            time: formatDuration(result.seconds),
+            hints: $t('count.hints', result.hints),
+          })
         }}</template>
         <template v-else>{{ $t('daily.pending') }}</template>
         <template v-if="streak">{{ $t('daily.streak', { days: streak }) }}</template>

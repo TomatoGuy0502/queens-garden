@@ -184,3 +184,12 @@ test.describe('hints and lessons', () => {
     await expect(page.getByText('第 1 / 9 レッスン')).toBeVisible()
   })
 })
+
+test('English counts use singular and plural forms', async ({ page }) => {
+  await page.goto('/solo?size=6&difficulty=easy&seed=42')
+  await expect(page.getByRole('gridcell').first()).toBeVisible({ timeout: 30000 })
+  await language(page).selectOption('en')
+  await page.getByRole('gridcell').first().click()
+  await page.goto('/solo')
+  await expect(page.getByText(/· 1 move \(saved/)).toBeVisible()
+})

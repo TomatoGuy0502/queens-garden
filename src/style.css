@@ -98,6 +98,10 @@
 * {
   box-sizing: border-box;
 }
+html {
+  /* Reserve the scrollbar's width on every page, so short and long pages line up. */
+  scrollbar-gutter: stable;
+}
 body {
   margin: 0;
 }

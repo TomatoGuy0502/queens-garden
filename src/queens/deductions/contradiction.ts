@@ -37,7 +37,7 @@ export function contradictionReasoning(state: LogicState): DeductionStep | null 
         reason: message('reason.contradiction', {
           row: Math.floor(cell / state.n) + 1,
           col: (cell % state.n) + 1,
-          steps: evidence.length,
+          count: evidence.length,
           consequence,
         }),
       }

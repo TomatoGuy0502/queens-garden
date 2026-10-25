@@ -158,3 +158,13 @@ test('playing still works when browser storage is unavailable', async ({ page })
   await page.goto('/solo')
   await expect(page.getByRole('gridcell').first()).toBeVisible({ timeout: 30000 })
 })
+
+test('while the resume question is open, the header describes the saved game', async ({ page }) => {
+  await page.goto('/solo?size=6&difficulty=hard&seed=42')
+  await expect(page.getByRole('gridcell').first()).toBeVisible({ timeout: 30000 })
+  await page.getByRole('gridcell').first().click()
+  await page.goto('/solo')
+  await expect(page.getByRole('group', { name: '繼續上一局？' })).toBeVisible()
+  await expect(page.locator('.puzzle-meta')).toContainText('挑戰')
+  await expect(page.locator('.puzzle-meta')).toContainText('6 × 6')
+})

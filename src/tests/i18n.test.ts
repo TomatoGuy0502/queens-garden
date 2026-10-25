@@ -1,4 +1,6 @@
+import { createI18n } from 'vue-i18n'
 import { expect, it } from 'vitest'
+import { renderMessage } from '../i18n/message'
 import { ERROR_CODES } from '../../shared/message'
 import { DEFAULT_LOCALE, LOCALES, detectLocale } from '../i18n/locales'
 import en from '../i18n/messages/en'
@@ -43,4 +45,17 @@ it('describes every error code a reader can be told about, in every language', (
   for (const [code, catalog] of Object.entries(catalogs))
     for (const error of ERROR_CODES)
       expect((catalog.errors as Record<string, string>)[error], `${code}: ${error}`).toBeTruthy()
+})
+it('uses the singular and plural forms where a language has them', () => {
+  const { t } = createI18n({ legacy: false, locale: 'en', messages: { en } }).global
+  const render = (key: string, count: number) => renderMessage(t, { key, params: { count } })
+  expect(render('check.mistakes', 1)).toBe(
+    'Found 1 crown or X mark that does not match the unique solution.',
+  )
+  expect(render('check.mistakes', 3)).toBe(
+    'Found 3 crowns or X marks that do not match the unique solution.',
+  )
+  expect(t('count.moves', 1)).toBe('1 move')
+  expect(t('count.moves', 37)).toBe('37 moves')
+  expect(t('count.hints', 0)).toBe('0 hints')
 })

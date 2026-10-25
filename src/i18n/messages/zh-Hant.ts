@@ -88,9 +88,10 @@ export default {
     cancel: '取消生成',
     note: '每一道關卡即時生成，並經過唯一解驗證。部分大小與難度可能需要更長時間。',
   },
+  count: { moves: '{count} 次操作', hints: '{count} 次提示' },
   result: {
     title: '關卡完成',
-    summary: '{time} 完成 · {moves} 次操作 · {hints} 次提示',
+    summary: '{time} 完成 · {moves} · {hints}',
     newBest: '新紀錄！原本最佳 {previous}',
     best: '此大小與難度的最佳時間 {best}',
     first: '第一次完成這個大小與難度，成績已記錄',
@@ -101,7 +102,7 @@ export default {
   daily: {
     title: '每日挑戰 · {date}',
     today: '今天是 {size} × {size} · {difficulty}，所有人拿到同一題。',
-    done: '已完成 {time} · {hints} 次提示',
+    done: '已完成 {time} · {hints}',
     pending: '今天還沒完成',
     streak: ' · 連續 {days} 天',
     start: '開始今日挑戰',
@@ -110,8 +111,7 @@ export default {
   resume: {
     title: '繼續上一局？',
     daily: '每日挑戰 · ',
-    summary:
-      '{daily}{size} × {size} · {difficulty} · 已進行 {elapsed} · {moves} 次操作（{when} 儲存）',
+    summary: '{daily}{size} × {size} · {difficulty} · 已進行 {elapsed} · {moves}（{when} 儲存）',
     continue: '繼續這一局',
     discard: '放棄，開始新遊戲',
   },
@@ -338,7 +338,7 @@ export default {
     intersection: '{a} 的所有候選格都位於{b}，這頂皇冠會占用兩者，因此可排除{b} 的其他候選格。',
     hall: '{units} 的 {size} 頂皇冠被限制在 {targets}，必須各占一個，因此這些單位中的其他候選格可以排除。',
     contradiction:
-      '假設第 {row} 列、第 {col} 欄有皇冠，經 {steps} 步單一候選、相鄰排除與交集推理後，會造成{consequence}。這個假設矛盾，因此可排除此格。',
+      '假設第 {row} 列、第 {col} 欄有皇冠，經 {count} 步單一候選、相鄰排除與交集推理後，會造成{consequence}。這個假設矛盾，因此可排除此格。',
     noCandidates: '{unit}沒有候選格',
     queensConflict: '皇冠之間互相衝突',
   },

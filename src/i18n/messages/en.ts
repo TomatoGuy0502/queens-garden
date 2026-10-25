@@ -54,7 +54,8 @@ const en: Messages<typeof zhHant> = {
     feedback: {
       hint: 'Logic hint {level} / 3',
       message: 'Game message',
-      evidence: 'Show the {count} steps of the what-if reasoning',
+      evidence:
+        'Show the what-if reasoning ({count} step) | Show the what-if reasoning ({count} steps)',
       apply: 'Apply this step →',
       conflict: 'Some crowns conflict. Check the cells with red stripes.',
     },
@@ -98,9 +99,10 @@ const en: Messages<typeof zhHant> = {
     cancel: 'Cancel generation',
     note: 'Every puzzle is generated on the spot and verified to have a unique solution. Some sizes and difficulties may take longer.',
   },
+  count: { moves: '{count} move | {count} moves', hints: '{count} hint | {count} hints' },
   result: {
     title: 'Puzzle complete',
-    summary: 'Finished in {time} · {moves} moves · {hints} hints',
+    summary: 'Finished in {time} · {moves} · {hints}',
     newBest: 'New record! Previous best {previous}',
     best: 'Best time for this size and difficulty: {best}',
     first: 'First time finishing this size and difficulty — your result is saved',
@@ -111,7 +113,7 @@ const en: Messages<typeof zhHant> = {
   daily: {
     title: 'Daily challenge · {date}',
     today: "Today's puzzle is {size} × {size} · {difficulty}, the same for everyone.",
-    done: 'Done in {time} · {hints} hints',
+    done: 'Done in {time} · {hints}',
     pending: 'Not completed yet today',
     streak: ' · {days}-day streak',
     start: "Start today's challenge",
@@ -120,8 +122,7 @@ const en: Messages<typeof zhHant> = {
   resume: {
     title: 'Continue your last game?',
     daily: 'Daily challenge · ',
-    summary:
-      '{daily}{size} × {size} · {difficulty} · {elapsed} played · {moves} moves (saved {when})',
+    summary: '{daily}{size} × {size} · {difficulty} · {elapsed} played · {moves} (saved {when})',
     continue: 'Continue this game',
     discard: 'Discard and start a new game',
   },
@@ -378,7 +379,7 @@ const en: Messages<typeof zhHant> = {
       'Every candidate cell of {a} lies within {b}. That crown will occupy {b}, so the other candidate cells in {b} can be eliminated.',
     hall: 'The {size} crowns of {units} are confined to {targets}, taking one each, so the other candidate cells in those units can be eliminated.',
     contradiction:
-      'Suppose there is a crown at row {row}, column {col}. After {steps} steps of single-candidate, adjacency and intersection reasoning, this leads to {consequence}. The assumption is contradictory, so this cell can be eliminated.',
+      'Suppose there is a crown at row {row}, column {col}. After {count} step of single-candidate, adjacency and intersection reasoning, this leads to {consequence}. The assumption is contradictory, so this cell can be eliminated. | Suppose there is a crown at row {row}, column {col}. After {count} steps of single-candidate, adjacency and intersection reasoning, this leads to {consequence}. The assumption is contradictory, so this cell can be eliminated.',
     noCandidates: '{unit} having no candidate cells',
     queensConflict: 'crowns conflicting with each other',
   },
@@ -395,7 +396,8 @@ const en: Messages<typeof zhHant> = {
       'This position cannot be completed: at least one crown or X mark causes a contradiction. Check or take back some moves first.',
   },
   check: {
-    mistakes: 'Found {count} crowns or X marks that do not match the unique solution.',
+    mistakes:
+      'Found {count} crown or X mark that does not match the unique solution. | Found {count} crowns or X marks that do not match the unique solution.',
     correct: 'Your crowns and X marks are all correct so far. Keep going!',
   },
   notice: {
@@ -488,13 +490,13 @@ const en: Messages<typeof zhHant> = {
       adjacency: {
         title: 'Technique 1: adjacent elimination',
         p1: 'Rather than guessing, first look for cells that can never hold a crown.',
-        p3: 'The {count} outlined cells are the ones this reasoning rules out.',
-        task: 'Mark the {count} outlined cells with an X',
+        p3: 'The outlined cell is the one this reasoning rules out. | The {count} outlined cells are the ones this reasoning rules out.',
+        task: 'Mark the outlined cell with an X | Mark the {count} outlined cells with an X',
       },
       intersection: {
         title: 'Technique 2: region and line intersection',
         p1: 'Sometimes every possible position of a region lies in a single row (or column).',
-        task: 'Mark the {count} outlined cells with an X',
+        task: 'Mark the outlined cell with an X | Mark the {count} outlined cells with an X',
       },
       single: {
         title: 'Technique 3: only one cell left',

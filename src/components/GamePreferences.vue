@@ -98,6 +98,9 @@ function update(key: keyof BoardGuidance, event: Event) {
   gap: 7px;
   min-height: 36px;
 }
+.preferences-button:hover {
+  color: var(--accent);
+}
 .preferences-dialog {
   width: min(440px, calc(100% - 36px));
   padding: 24px;

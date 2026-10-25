@@ -101,9 +101,10 @@ const ja: Messages<typeof zhHant> = {
     cancel: '生成を中止',
     note: 'すべての問題はその場で生成され、唯一解であることが検証されます。サイズや難易度によっては時間がかかることがあります。',
   },
+  count: { moves: '{count} 手', hints: 'ヒント {count} 回' },
   result: {
     title: 'クリア！',
-    summary: '{time} でクリア · {moves} 手 · ヒント {hints} 回',
+    summary: '{time} でクリア · {moves} · {hints}',
     newBest: '新記録！これまでのベスト {previous}',
     best: 'このサイズと難易度のベストタイム {best}',
     first: 'このサイズと難易度の初クリアです。記録を保存しました',
@@ -114,7 +115,7 @@ const ja: Messages<typeof zhHant> = {
   daily: {
     title: 'デイリーチャレンジ · {date}',
     today: '今日は {size} × {size} · {difficulty}。全員が同じ問題に挑戦します。',
-    done: '{time} でクリア · ヒント {hints} 回',
+    done: '{time} でクリア · {hints}',
     pending: '今日はまだクリアしていません',
     streak: ' · {days} 日連続',
     start: '今日のチャレンジを始める',
@@ -123,7 +124,7 @@ const ja: Messages<typeof zhHant> = {
   resume: {
     title: '前回のゲームを続けますか？',
     daily: 'デイリーチャレンジ · ',
-    summary: '{daily}{size} × {size} · {difficulty} · 経過 {elapsed} · {moves} 手（{when} に保存）',
+    summary: '{daily}{size} × {size} · {difficulty} · 経過 {elapsed} · {moves}（{when} に保存）',
     continue: 'このゲームを続ける',
     discard: '破棄して新しいゲームを始める',
   },
@@ -364,7 +365,7 @@ const ja: Messages<typeof zhHant> = {
       '{a}の候補マスはすべて{b}にあり、このクラウンが{b}を占めるため、{b}の他の候補マスは除外できます。',
     hall: '{units}の {size} 個のクラウンは {targets} に限定され、それぞれ 1 つずつ占めるため、これらの単位内の他の候補マスは除外できます。',
     contradiction:
-      '{row} 行目、{col} 列目にクラウンがあると仮定し、{steps} ステップの単一候補・隣接除外・交差の推論を行うと、{consequence}。この仮定は矛盾するため、このマスは除外できます。',
+      '{row} 行目、{col} 列目にクラウンがあると仮定し、{count} ステップの単一候補・隣接除外・交差の推論を行うと、{consequence}。この仮定は矛盾するため、このマスは除外できます。',
     noCandidates: '{unit}に候補マスがなくなる',
     queensConflict: 'クラウン同士が衝突する',
   },

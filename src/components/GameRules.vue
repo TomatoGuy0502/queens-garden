@@ -76,10 +76,12 @@ import { Crown, Rows3, Columns3, Shapes, MoveDiagonal } from '@lucide/vue'
   padding: 16px 0;
 }
 .mini-example > span {
+  min-width: 0;
   font-size: 11px;
   color: var(--muted);
 }
 .example-cells {
+  flex-shrink: 0;
   display: grid;
   grid-template-columns: repeat(3, 25px);
   border: 1px solid var(--accent-border);
