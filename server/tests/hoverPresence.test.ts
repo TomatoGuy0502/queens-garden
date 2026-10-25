@@ -75,3 +75,23 @@ it('expires idle positions and clears them on disconnect, pause, new rounds and 
   presence.cleanup()
   expect(presence.move(credentials, 'socket', { gameId: 'next', index: 0 })).toBeNull()
 })
+
+it('pointing is checked against cached presence: members only, running round, valid cell', () => {
+  const presence = new HoverPresence(() => 100)
+  const state = room()
+  presence.update(state)
+  expect(presence.point(credentials, { gameId: 'round', index: 7 })).toEqual({
+    playerId: 'alice',
+    name: 'Alice',
+    gameId: 'round',
+    index: 7,
+    expiresAt: 2600,
+  })
+  expect(presence.point(credentials, { gameId: 'round', index: 36 })).toBeNull()
+  expect(presence.point(credentials, { gameId: 'old-round', index: 0 })).toBeNull()
+  expect(
+    presence.point({ ...credentials, playerId: 'outsider' }, { gameId: 'round', index: 0 }),
+  ).toBeNull()
+  presence.update({ ...state, game: { ...state.game, phase: 'paused' } })
+  expect(presence.point(credentials, { gameId: 'round', index: 7 })).toBeNull()
+})

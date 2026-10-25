@@ -167,10 +167,8 @@ export async function createApp(options: {
       lastPoint = Date.now()
       const parsed = pointSchema.safeParse(raw)
       if (!parsed.success) return
-      void manager
-        .point(credentials, parsed.data.gameId, parsed.data.index)
-        .then((point) => io.to(credentials.roomId).emit('room:point', point))
-        .catch(() => undefined)
+      const point = presence.point(credentials, parsed.data)
+      if (point) io.to(credentials.roomId).emit('room:point', point)
     })
     socket.on('room:hover', (raw) => {
       const parsed = hoverSchema.safeParse(raw)

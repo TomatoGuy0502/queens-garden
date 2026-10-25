@@ -571,14 +571,6 @@ export class RoomManager {
       return this.commit(room, command.type, credentials.playerId, command.actionId)
     })
   }
-  async point(credentials: Credentials, gameId: string, index: number) {
-    const room = await this.load(credentials.roomId),
-      member = this.authorize(room, credentials)
-    this.round(room, gameId)
-    if (!room.puzzle || index >= room.cells.length || room.phase !== 'playing')
-      throw new RoomError('CANNOT_POINT')
-    return { playerId: member.id, name: member.name, index, gameId, expiresAt: Date.now() + 2500 }
-  }
   async flush() {
     await Promise.all(this.queues.values())
   }

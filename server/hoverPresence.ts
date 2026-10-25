@@ -1,4 +1,4 @@
-import type { Credentials, GameSnapshot, Hover, Player, RoomSnapshot } from '../shared/coop'
+import type { Credentials, GameSnapshot, Hover, Player, Point, RoomSnapshot } from '../shared/coop'
 type Context = Pick<RoomSnapshot, 'id' | 'expiresAt'> & {
   players: Player[]
   game: Pick<GameSnapshot, 'id' | 'phase' | 'cells'>
@@ -38,11 +38,8 @@ export class HoverPresence {
       }
     if (!positions?.size) this.positions.delete(state.id)
   }
-  move(
-    credentials: Credentials,
-    socketId: string,
-    input: { gameId: string; index: number | null },
-  ): Hover | null {
+  /** The player's name when they may show a cell of the running round, else null. */
+  private admit(credentials: Credentials, input: { gameId: string; index: number | null }) {
     const room = this.rooms.get(credentials.roomId),
       name = room?.players.get(credentials.playerId)
     if (
@@ -55,6 +52,21 @@ export class HoverPresence {
         (!Number.isInteger(input.index) || input.index < 0 || input.index >= room.cells))
     )
       return null
+    return name
+  }
+  point(credentials: Credentials, input: { gameId: string; index: number }): Point | null {
+    const name = this.admit(credentials, input)
+    return name
+      ? { playerId: credentials.playerId, name, ...input, expiresAt: this.now() + 2500 }
+      : null
+  }
+  move(
+    credentials: Credentials,
+    socketId: string,
+    input: { gameId: string; index: number | null },
+  ): Hover | null {
+    const name = this.admit(credentials, input)
+    if (!name) return null
     const hover: Hover = {
       playerId: credentials.playerId,
       name,

@@ -383,7 +383,6 @@ export default {
     UNDO_CONFLICT: '這些格子已有後續修改，無法覆蓋。',
     STALE_HINT: '提示已過期，請重新取得。',
     HINT_NOT_REVEALED: '請先看完整個提示，再套用這一步。',
-    CANNOT_POINT: '目前無法指示格子。',
     STATE_CONFLICT: '房間已更新，請同步最新狀態後重試。',
     INVALID_ACTION: '這個操作目前無法進行。',
     RATE_LIMIT: '操作太頻繁，請稍後再試。',

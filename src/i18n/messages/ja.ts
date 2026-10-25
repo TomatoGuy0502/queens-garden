@@ -413,7 +413,6 @@ const ja: Messages<typeof zhHant> = {
     UNDO_CONFLICT: 'これらのマスはその後に変更されたため、上書きできません。',
     STALE_HINT: 'ヒントが古くなりました。もう一度取得してください。',
     HINT_NOT_REVEALED: 'ヒントを最後まで見てから、この一手を適用してください。',
-    CANNOT_POINT: '今はマスを指し示せません。',
     STATE_CONFLICT: 'ルームが更新されました。最新の状態に同期してからもう一度お試しください。',
     INVALID_ACTION: 'その操作は今はできません。',
     RATE_LIMIT: '操作が多すぎます。しばらくしてからもう一度お試しください。',

@@ -428,7 +428,6 @@ const en: Messages<typeof zhHant> = {
     UNDO_CONFLICT: 'Those cells were changed afterwards, so they cannot be overwritten.',
     STALE_HINT: 'That hint is out of date. Please ask for a new one.',
     HINT_NOT_REVEALED: 'Read the whole hint before applying this step.',
-    CANNOT_POINT: 'Pointing at cells is not possible right now.',
     STATE_CONFLICT: 'The room was updated. Sync to the latest state and try again.',
     INVALID_ACTION: 'That action is not possible right now.',
     RATE_LIMIT: 'Too many actions. Please try again shortly.',
