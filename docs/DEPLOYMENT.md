@@ -32,7 +32,7 @@ Repository 已提供 `render.yaml` Blueprint，**尚未建立或部署 Render �
 1. 在 Render 建立 Blueprint，選取此 repository 與 `render.yaml`。
 2. 設定 `DATABASE_URL` 為 Neon production 的 pooled URL，`DATABASE_URL_UNPOOLED` 為同一分支的 direct URL。這兩個值不會從本機自動同步到 Render。
 3. 使用 Node 24，單一 instance。Blueprint 設定 Starter、Singapore、`WORKER_CONCURRENCY=1`；方案會產生 Render 費用。
-4. Build 為 `npm ci && npm run build`，start 為 `npm run db:migrate && npm start`。Health check 為 `/api/health`。
+4. Build 為 `npm ci --include=dev && npm run build`（`NODE_ENV=production` 會讓 `npm ci` 略過 devDependencies，而 vite、vue-tsc、esbuild 與 drizzle-kit 都在其中），start 為 `npm run db:migrate && npm start`。Health check 為 `/api/health`。
 5. 預設允許 Render 的 `RENDER_EXTERNAL_URL` 來源。自訂網域時設定 `PUBLIC_ORIGIN=https://你的網域`，不可包含路徑。
 6. 確認首頁與 `/rooms/<id>` 深層連結可開啟，最多 8 位玩家可加入同房並同步格子，重新整理可恢復同分頁身份。
 
