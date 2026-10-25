@@ -18,6 +18,8 @@ import { conflictCells } from '../src/queens/validator'
 import { RoomError, type RoomRepository, type StoredPlayer, type StoredRoom } from './model'
 import type { Compute, HintResult } from './compute'
 const ROOM_TTL = 24 * 60 * 60 * 1000
+const MAX_ACTIONS = 300
+const MAX_RECEIPTS = 1000
 const hash = (value: string) => createHash('sha256').update(value).digest('hex')
 function player(name: string): { stored: StoredPlayer; token: string } {
   const token = randomBytes(32).toString('hex')
@@ -282,10 +284,17 @@ export class RoomManager {
     return true
   }
   private remember(room: StoredRoom, credentials: Credentials, command: RoomCommand) {
-    if (Object.keys(room.receipts).length >= 4000) throw new RoomError('ACTION_LIMIT')
+    const ids = Object.keys(room.receipts)
+    // Only a retry of a recent command needs its receipt; jsonb loses key order, so age is stored.
+    if (ids.length >= MAX_RECEIPTS)
+      for (const id of ids
+        .sort((a, b) => (room.receipts[a].at ?? 0) - (room.receipts[b].at ?? 0))
+        .slice(0, MAX_RECEIPTS / 4))
+        delete room.receipts[id]
     room.receipts[command.actionId] = {
       playerId: credentials.playerId,
       fingerprint: hash(JSON.stringify(command)),
+      at: Date.now(),
     }
   }
   private host(room: StoredRoom, memberId: string) {
@@ -319,7 +328,6 @@ export class RoomManager {
   }
   private apply(room: StoredRoom, memberId: string, id: string, changes: BoardAction['changes']) {
     if (!changes.length) throw new RoomError('NO_CHANGE')
-    if (room.actions.length >= 1000) throw new RoomError('HISTORY_LIMIT')
     for (const change of changes) {
       room.cells[change.index] = change.after
       room.versions[change.index]++
@@ -332,6 +340,8 @@ export class RoomManager {
       undoVersions: [],
       undone: false,
     })
+    // Every snapshot carries the history, so only the newest moves stay undoable.
+    if (room.actions.length > MAX_ACTIONS) room.actions.splice(0, room.actions.length - MAX_ACTIONS)
     room.boardRevision++
     room.moves++
     room.hint = null

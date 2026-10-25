@@ -469,3 +469,21 @@ it('restarting a completed board retains the old result and records a new attemp
   expect(results[0].puzzleId).toBe(results[1].puzzleId)
   expect(results.map((result) => result.moves)).toEqual([6, 6])
 })
+
+it('a long round keeps playing while old moves and receipts are dropped', async () => {
+  const { manager, host, state } = await game()
+  let latest = state
+  for (let i = 0; i < 1100; i++) {
+    const command = cell(latest, 0, i % 2 ? 'empty' : 'marked')
+    latest = await manager.command(host, command)
+  }
+  expect(latest.game.actions).toHaveLength(300)
+  expect(latest.game.moves).toBe(1100)
+  const undone = await manager.command(host, {
+    type: 'undo',
+    actionId: randomUUID(),
+    gameId: latest.game.id,
+    targetId: latest.game.actions.at(-1)!.id,
+  })
+  expect(undone.game.cells[0]).toBe('marked')
+})

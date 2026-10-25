@@ -368,8 +368,6 @@ export default {
     ROOM_CODE_EXHAUSTED: '暫時無法取得房間代碼，請稍後再試。',
     ROOM_FULL: '房間已滿，最多 {max} 人合作。',
     ACTION_ID_REUSED: '操作識別碼已被使用。',
-    ACTION_LIMIT: '本局操作已達上限，請開始下一局。',
-    HISTORY_LIMIT: '本局操作歷史已達上限，請開始下一局。',
     HOST_ONLY: '只有房主可以進行這項操作。',
     STALE_GAME: '這是上一局的操作，已忽略。',
     NOT_PLAYING: '請先開始或繼續遊戲。',

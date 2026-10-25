@@ -31,7 +31,7 @@ export interface StoredRoom {
   hint: SharedHint | null
   message: Message | null
   mistakes: number[]
-  receipts: Record<string, { playerId: string; fingerprint: string }>
+  receipts: Record<string, { playerId: string; fingerprint: string; at?: number }>
 }
 export interface RoomEvent {
   type: string

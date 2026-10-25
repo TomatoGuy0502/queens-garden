@@ -413,8 +413,6 @@ const en: Messages<typeof zhHant> = {
     ROOM_CODE_EXHAUSTED: 'Could not get a room code right now. Please try again later.',
     ROOM_FULL: 'The room is full: up to {max} players can play together.',
     ACTION_ID_REUSED: 'That action ID has already been used.',
-    ACTION_LIMIT: 'This round has reached its action limit. Please start the next round.',
-    HISTORY_LIMIT: 'This round’s action history is full. Please start the next round.',
     HOST_ONLY: 'Only the host can do this.',
     STALE_GAME: 'That action belongs to the previous round and was ignored.',
     NOT_PLAYING: 'Start or resume the game first.',
