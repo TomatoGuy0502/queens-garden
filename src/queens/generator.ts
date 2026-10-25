@@ -6,11 +6,16 @@ import { solve, uniqueSolution } from './solver'
 import { MIN_REGION_AREA, validRegions } from './validator'
 import type { GenerateOptions, QueensPuzzle } from './types'
 import { DIFFICULTIES } from './levels'
-import { GENERATOR_VERSION } from './version'
+import { DEFAULT_MAX_ATTEMPTS, DEFAULT_MUTATION_BUDGET, GENERATOR_VERSION } from './version'
 export { GENERATOR_VERSION } from './version'
 /** Fixed work budget, not wall-clock cutoffs: identical inputs reproduce identical output. */
 export function generatePuzzle(options: GenerateOptions): QueensPuzzle {
-  const { size, seed, maxAttempts = 160, mutationBudget = 100 } = options
+  const {
+    size,
+    seed,
+    maxAttempts = DEFAULT_MAX_ATTEMPTS,
+    mutationBudget = DEFAULT_MUTATION_BUDGET,
+  } = options
   if (
     (options.difficulty !== undefined && !DIFFICULTIES.includes(options.difficulty)) ||
     !Number.isInteger(size) ||

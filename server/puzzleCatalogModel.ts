@@ -1,5 +1,9 @@
 import { createHash } from 'node:crypto'
-import { GENERATOR_VERSION } from '../src/queens/version'
+import {
+  DEFAULT_MAX_ATTEMPTS,
+  DEFAULT_MUTATION_BUDGET,
+  GENERATOR_VERSION,
+} from '../src/queens/version'
 import type { Difficulty, QueensPuzzle } from '../src/queens/types'
 export const CATALOG_VALIDATION_VERSION = '1'
 export interface CatalogBucket {
@@ -31,8 +35,8 @@ export function recipeKey(request: CatalogRequest & { seed: number }) {
     request.size,
     request.difficulty,
     request.seed,
-    160,
-    100,
+    DEFAULT_MAX_ATTEMPTS,
+    DEFAULT_MUTATION_BUDGET,
   ])
 }
 export function catalogRecord(puzzle: QueensPuzzle): CatalogRecord {

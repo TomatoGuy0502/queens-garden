@@ -1,5 +1,9 @@
 import type { GenerateOptions, QueensPuzzle } from '../src/queens/types'
-import { GENERATOR_VERSION } from '../src/queens/version'
+import {
+  DEFAULT_MAX_ATTEMPTS,
+  DEFAULT_MUTATION_BUDGET,
+  GENERATOR_VERSION,
+} from '../src/queens/version'
 import { MIN_REGION_AREA, validPlacement, validRegions } from '../src/queens/validator'
 import { uniqueSolution } from '../src/queens/solver'
 import { evaluateDifficulty } from '../src/queens/difficulty'
@@ -14,11 +18,11 @@ function validate(puzzle: QueensPuzzle, request: GenerateOptions): QueensPuzzle 
     puzzle.size !== request.size ||
     puzzle.seed !== request.seed ||
     (request.difficulty && puzzle.difficulty !== request.difficulty) ||
-    puzzle.generation?.maxAttempts !== (request.maxAttempts ?? 160) ||
-    puzzle.generation.mutationBudget !== (request.mutationBudget ?? 100) ||
+    puzzle.generation?.maxAttempts !== (request.maxAttempts ?? DEFAULT_MAX_ATTEMPTS) ||
+    puzzle.generation.mutationBudget !== (request.mutationBudget ?? DEFAULT_MUTATION_BUDGET) ||
     puzzle.generation.requestedDifficulty !== request.difficulty ||
     puzzle.id !==
-      `${GENERATOR_VERSION}-${request.size}-${request.seed}-${request.difficulty ?? 'any'}-${request.mutationBudget ?? 100}`
+      `${GENERATOR_VERSION}-${request.size}-${request.seed}-${request.difficulty ?? 'any'}-${request.mutationBudget ?? DEFAULT_MUTATION_BUDGET}`
   )
     throw new CatalogValidationError('題庫版本或 Seed 重現參數不符。')
   if (
