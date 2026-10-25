@@ -136,7 +136,7 @@ it('static assets do not consume API limits and rate-limit errors remain HTTP 42
   try {
     for (let i = 0; i < 130; i++)
       expect((await app.inject('/assets/probe.js')).statusCode).toBe(200)
-    for (let i = 0; i < 30; i++)
+    for (let i = 0; i < 5; i++)
       expect(
         (
           await app.inject({
@@ -177,7 +177,7 @@ it('rate limits cannot be dodged by sending a forged X-Forwarded-For', async () 
   try {
     const codes: number[] = []
     // The last entry is what the real proxy appended; the leading ones are the client's forgery.
-    for (let i = 0; i < 40; i++)
+    for (let i = 0; i < 15; i++)
       codes.push(
         (
           await app.inject({

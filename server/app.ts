@@ -85,7 +85,7 @@ export async function createApp(options: {
   app.get('/api/health', () => ({ ok: true }))
   app.post(
     '/api/rooms',
-    { config: { rateLimit: { max: 30, timeWindow: '1 minute' } } },
+    { config: { rateLimit: { max: 5, timeWindow: '1 minute' } } },
     async (request) => {
       const { name, ...settings } = createRoomSchema.parse(request.body)
       return manager.create(name, settings)

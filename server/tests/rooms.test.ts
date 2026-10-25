@@ -487,3 +487,48 @@ it('a long round keeps playing while old moves and receipts are dropped', async 
   })
   expect(undone.game.cells[0]).toBe('marked')
 })
+it('a room runs one generation and one fresh hint at a time, so reset loops cannot flood compute', async () => {
+  let generations = 0
+  const manager = new RoomManager(memory(), {
+    ...compute(),
+    generate: () => {
+      generations++
+      return new Promise<QueensPuzzle>(() => undefined)
+    },
+  })
+  const host = await manager.create('Alice', { size: 6, difficulty: 'easy' })
+  await manager.connect(host.credentials, 'a')
+  const started = await manager.command(host.credentials, {
+    type: 'start',
+    actionId: randomUUID(),
+    gameId: host.state.game.id,
+  })
+  const reset = await manager.command(host.credentials, {
+    type: 'reset',
+    actionId: randomUUID(),
+    gameId: started.game.id,
+  })
+  await expect(
+    manager.command(host.credentials, {
+      type: 'start',
+      actionId: randomUUID(),
+      gameId: reset.game.id,
+    }),
+  ).rejects.toMatchObject({ code: 'CANNOT_START' })
+  expect(generations).toBe(1)
+
+  let hints = 0
+  const { manager: playing, host: player, state } = await game(memory(), {
+    ...compute(),
+    hint: () => {
+      hints++
+      return new Promise(() => undefined)
+    },
+  })
+  void playing.command(player, { type: 'hint', actionId: randomUUID(), gameId: state.game.id })
+  await new Promise((r) => setTimeout(r, 1))
+  await expect(
+    playing.command(player, { type: 'hint', actionId: randomUUID(), gameId: state.game.id }),
+  ).rejects.toMatchObject({ code: 'COMPUTE_BUSY' })
+  expect(hints).toBe(1)
+})

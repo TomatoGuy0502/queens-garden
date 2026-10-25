@@ -54,7 +54,9 @@ function freshGame(room: StoredRoom) {
 }
 export class RoomManager {
   private queues = new Map<string, Promise<void>>()
-  private generating = new Set<string>()
+  // One compute job of each kind per room, so a reset or edit loop cannot flood the shared pool.
+  private generating = new Map<string, string>()
+  private hinting = new Set<string>()
   private connections = new Map<string, Map<string, Set<string>>>()
   onState: (state: RoomSnapshot) => void = () => undefined
   constructor(
@@ -242,7 +244,7 @@ export class RoomManager {
       sockets.add(socketId)
       member.lastSeenAt = Date.now()
       if (!this.online(room.id, room.hostId)) room.hostId = member.id
-      if (room.phase === 'generating' && !this.generating.has(room.gameId)) {
+      if (room.phase === 'generating' && this.generating.get(room.id) !== room.gameId) {
         room.phase = 'waiting'
         room.message = message('notice.serviceRestarted')
       }
@@ -366,7 +368,8 @@ export class RoomManager {
           break
         case 'start':
           this.host(room, member.id)
-          if (room.phase !== 'waiting') throw new RoomError('CANNOT_START')
+          if (room.phase !== 'waiting' || this.generating.has(room.id))
+            throw new RoomError('CANNOT_START')
           room.phase = 'generating'
           room.gameId = randomUUID()
           room.message = null
@@ -474,7 +477,7 @@ export class RoomManager {
     return state
   }
   private async generate(id: string, gameId: string) {
-    this.generating.add(gameId)
+    this.generating.set(id, gameId)
     try {
       const initial = await this.load(id)
       const puzzle = this.puzzles
@@ -503,7 +506,7 @@ export class RoomManager {
         await this.commit(room, 'generation_failed', room.hostId)
       }).catch(() => undefined)
     } finally {
-      this.generating.delete(gameId)
+      this.generating.delete(id)
     }
   }
   private async assist(
@@ -527,9 +530,15 @@ export class RoomManager {
       command.type === 'hint' &&
       !!current?.step &&
       current.boardRevision === context.room.boardRevision
-    if (command.type === 'hint' && !deepen)
-      result = await this.compute.hint(context.room.puzzle!.regions, context.room.cells)
-    else if (command.type === 'check')
+    if (command.type === 'hint' && !deepen) {
+      if (this.hinting.has(credentials.roomId)) throw new RoomError('COMPUTE_BUSY')
+      this.hinting.add(credentials.roomId)
+      try {
+        result = await this.compute.hint(context.room.puzzle!.regions, context.room.cells)
+      } finally {
+        this.hinting.delete(credentials.roomId)
+      }
+    } else if (command.type === 'check')
       context.room.cells.forEach((state, index) => {
         const queen =
           context.room.puzzle!.solution[Math.floor(index / context.room.settings.size)] ===
