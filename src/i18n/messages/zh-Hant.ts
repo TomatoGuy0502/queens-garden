@@ -8,6 +8,11 @@ export default {
   brand: { home: 'Queens 首頁' },
   nav: { solo: '單人遊戲', coop: '多人合作', stats: '我的成績', tutorial: '新手教學' },
   language: { label: '語言' },
+  update: {
+    available: '網站有新版本，重新整理即可更新。',
+    reload: '重新整理',
+    dismiss: '關閉更新通知',
+  },
   home: {
     intro: '選擇遊玩模式。',
     solo: {

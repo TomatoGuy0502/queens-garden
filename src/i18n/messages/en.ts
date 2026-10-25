@@ -11,6 +11,11 @@ const en: Messages<typeof zhHant> = {
   brand: { home: 'Queens home' },
   nav: { solo: 'Solo', coop: 'Co-op', stats: 'My stats', tutorial: 'Tutorial' },
   language: { label: 'Language' },
+  update: {
+    available: 'A new version is available. Reload to update.',
+    reload: 'Reload',
+    dismiss: 'Dismiss update notice',
+  },
   home: {
     intro: 'Choose how you want to play.',
     solo: {

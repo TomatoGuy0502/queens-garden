@@ -11,6 +11,11 @@ const ja: Messages<typeof zhHant> = {
   brand: { home: 'Queens ホーム' },
   nav: { solo: 'ひとりで', coop: 'みんなで', stats: '成績', tutorial: 'チュートリアル' },
   language: { label: '言語' },
+  update: {
+    available: '新しいバージョンがあります。再読み込みすると更新されます。',
+    reload: '再読み込み',
+    dismiss: '更新のお知らせを閉じる',
+  },
   home: {
     intro: '遊び方を選んでください。',
     solo: {
