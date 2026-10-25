@@ -14,7 +14,7 @@
     "format": "oxfmt .",
     "format:check": "oxfmt --check .",
     "lint:oxlint": "oxlint --deny-warnings src server shared e2e *.ts",
-    "lint:eslint": "eslint . --max-warnings 0",
+    "lint:eslint": "eslint . --max-warnings 0 --cache --cache-strategy content",
     "dev:web": "vite --host 0.0.0.0",
     "dev:server": "npm run build:worker && node --env-file-if-exists=.env --import tsx --watch server/index.ts",
     "build:worker": "esbuild server/worker.ts --bundle --platform=node --format=esm --target=node24 --outfile=dist-server/worker.js",

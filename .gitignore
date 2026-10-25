@@ -8,3 +8,4 @@ dist-server/
 .data/
 .env
 .neon
+.eslintcache
