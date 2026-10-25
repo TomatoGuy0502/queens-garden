@@ -2,7 +2,7 @@ import { expect, it } from 'vitest'
 import { PuzzleCatalog, DEFAULT_STOCK } from '../puzzleCatalog'
 import { fileCatalogRepository } from '../filePuzzleCatalog'
 import { catalogRecord } from '../puzzleCatalogModel'
-import { workerPool } from '../compute'
+import { ComputeError, workerPool, type CatalogCompute } from '../compute'
 import { generatePuzzle } from '../../src/queens/generator'
 const bucket = { size: 6, difficulty: 'easy' as const }
 it('serves fresh stock, archives demand generation and replays exact seeds without substitution', async () => {
@@ -169,4 +169,43 @@ it('player demand interrupts an already-running refill even before a cache looku
     await catalog.stop()
     await engine.close()
   }
+})
+
+function exhaustingCompute(failures: number) {
+  const seeds: number[] = []
+  const compute = {
+    cancelBackground: () => undefined,
+    isIdle: () => true,
+    generateValidated: (options: { size: number; seed: number }) => {
+      seeds.push(options.seed)
+      if (seeds.length <= failures)
+        return Promise.reject(new ComputeError('budget', 'GENERATION_BUDGET'))
+      return Promise.resolve(generatePuzzle({ ...bucket, seed: options.seed }))
+    },
+  } as unknown as CatalogCompute
+  return { compute, seeds }
+}
+it('replaces a random seed that exhausts the budget, but never one the player chose', async () => {
+  let next = 0
+  const seed = () => ++next
+  const retried = exhaustingCompute(2)
+  const catalog = new PuzzleCatalog(await fileCatalogRepository(), retried.compute, {
+    enabled: false,
+    seed,
+  })
+  expect((await catalog.get(bucket)).seed).toBe(3)
+  expect(retried.seeds).toEqual([1, 2, 3])
+  const hopeless = exhaustingCompute(9)
+  const limited = new PuzzleCatalog(await fileCatalogRepository(), hopeless.compute, {
+    enabled: false,
+    seed,
+  })
+  await expect(limited.get(bucket)).rejects.toMatchObject({ code: 'GENERATION_BUDGET' })
+  expect(hopeless.seeds).toHaveLength(3)
+  const chosen = exhaustingCompute(1)
+  const fixed = new PuzzleCatalog(await fileCatalogRepository(), chosen.compute, { enabled: false })
+  await expect(fixed.get({ ...bucket, seed: 7 })).rejects.toMatchObject({
+    code: 'GENERATION_BUDGET',
+  })
+  expect(chosen.seeds).toEqual([7])
 })

@@ -9,6 +9,8 @@ import {
   type CatalogRepository,
   type CatalogRequest,
 } from './puzzleCatalogModel'
+/** Seeds tried for a request without a fixed seed; large boards often exhaust the budget. */
+const RANDOM_SEED_ATTEMPTS = 3
 export interface PuzzleSource {
   get(request: CatalogRequest): Promise<QueensPuzzle>
 }
@@ -114,8 +116,7 @@ export class PuzzleCatalog implements PuzzleSource {
           await this.storage(() => this.repository.invalidate(cached.hash))
         }
       }
-      const options = { ...request, seed: request.seed ?? this.options.seed() }
-      const puzzle = await this.compute.generateValidated(options)
+      const puzzle = await this.generate(request)
       const record = catalogRecord(puzzle)
       await this.storage(() => this.repository.save(record, { served: true }))
       this.stats.generated++
@@ -124,6 +125,20 @@ export class PuzzleCatalog implements PuzzleSource {
       this.active--
       this.lastDemand = Date.now()
       this.schedule()
+    }
+  }
+  /** A seed the player did not choose is ours to replace when its budget runs out; theirs is not. */
+  private async generate(request: CatalogRequest): Promise<QueensPuzzle> {
+    for (let attempt = 1; ; attempt++) {
+      try {
+        return await this.compute.generateValidated({
+          ...request,
+          seed: request.seed ?? this.options.seed(),
+        })
+      } catch (error) {
+        const exhausted = error instanceof ComputeError && error.code === 'GENERATION_BUDGET'
+        if (!exhausted || request.seed !== undefined || attempt >= RANDOM_SEED_ATTEMPTS) throw error
+      }
     }
   }
   start() {
