@@ -1,4 +1,5 @@
-import { computed, onMounted, onUnmounted, shallowRef } from 'vue'
+import { computed, onUnmounted, shallowRef } from 'vue'
+import { useEventListener, useIntervalFn } from '@vueuse/core'
 import { useRouter } from 'vue-router'
 import { LocalizedError, failureMessage, message as say, type Message } from '../../shared/message'
 import type { CellState, DeductionStep, Difficulty, PuzzleDefinition } from '../queens/types'
@@ -39,9 +40,8 @@ export function useQueensGame() {
   let worker: Worker | null = null,
     requestId = 0,
     revision = 0,
-    generationId = 0,
-    timer: ReturnType<typeof setInterval> | undefined
-  let lastTick = 0,
+    generationId = 0
+  let lastTick = performance.now(),
     elapsedMs = 0
   const requests = new Map<
     number,
@@ -273,23 +273,16 @@ export function useQueensGame() {
   function onVisibility() {
     if (document.hidden && puzzle.value && !won.value) paused.value = true
   }
-  onMounted(() => {
-    lastTick = performance.now()
-    timer = setInterval(() => {
-      const now = performance.now()
-      if (puzzle.value && !blocked.value) {
-        elapsedMs += now - lastTick
-        seconds.value = Math.floor(elapsedMs / 1000)
-      }
-      lastTick = now
-    }, 200)
-    document.addEventListener('visibilitychange', onVisibility)
-  })
-  onUnmounted(() => {
-    stopWorker()
-    clearInterval(timer)
-    document.removeEventListener('visibilitychange', onVisibility)
-  })
+  useIntervalFn(() => {
+    const now = performance.now()
+    if (puzzle.value && !blocked.value) {
+      elapsedMs += now - lastTick
+      seconds.value = Math.floor(elapsedMs / 1000)
+    }
+    lastTick = now
+  }, 200)
+  useEventListener(document, 'visibilitychange', onVisibility)
+  onUnmounted(stopWorker)
   return {
     puzzle,
     cells,

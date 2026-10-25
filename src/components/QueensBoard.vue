@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { computed, shallowRef, nextTick, useTemplateRef, watch, onMounted, onUnmounted } from 'vue'
+import { computed, shallowRef, nextTick, useTemplateRef, watch } from 'vue'
+import { useEventListener } from '@vueuse/core'
 import { Pause, Play } from '@lucide/vue'
 import QueensCell from './QueensCell.vue'
 import { guidedCells, type BoardGuidance } from '../queens/guidance'
@@ -80,8 +81,7 @@ function reviewKey(event: KeyboardEvent) {
     emit('endReview')
   }
 }
-onMounted(() => window.addEventListener('keydown', reviewKey))
-onUnmounted(() => window.removeEventListener('keydown', reviewKey))
+useEventListener(window, 'keydown', reviewKey)
 function focus(index: number) {
   focusIndex.value = index
   emit('hover', index)

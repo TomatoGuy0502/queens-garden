@@ -1,4 +1,5 @@
-import { onBeforeUnmount, onMounted, watch } from 'vue'
+import { onBeforeUnmount, watch } from 'vue'
+import { useEventListener, useIntervalFn } from '@vueuse/core'
 import { hasProgress, sameGame, encodeCells, type SavedProgress } from '../queens/progress'
 import type { CellState, PuzzleDefinition } from '../queens/types'
 import { useSoloProgress } from './useSoloProgress'
@@ -47,19 +48,12 @@ export function useProgressAutosave(game: AutosaveSource) {
     ],
     schedule,
   )
-  let interval: ReturnType<typeof setInterval> | undefined
-  const onHide = () => document.hidden && flush()
-  onMounted(() => {
-    // The clock keeps running between moves, so refresh the saved time while playing.
-    interval = setInterval(() => !game.paused && !game.won && flush(), TICK_MS)
-    document.addEventListener('visibilitychange', onHide)
-    window.addEventListener('pagehide', flush)
-  })
+  // The clock keeps running between moves, so refresh the saved time while playing.
+  useIntervalFn(() => !game.paused && !game.won && flush(), TICK_MS)
+  useEventListener(document, 'visibilitychange', () => document.hidden && flush())
+  useEventListener(window, 'pagehide', flush)
   onBeforeUnmount(() => {
     clearTimeout(timer)
-    clearInterval(interval)
-    document.removeEventListener('visibilitychange', onHide)
-    window.removeEventListener('pagehide', flush)
     flush()
   })
 }

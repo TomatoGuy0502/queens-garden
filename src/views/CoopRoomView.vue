@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { usePlayerName } from '../composables/usePlayerName'
-import { computed, onMounted, onUnmounted, shallowRef, watch } from 'vue'
+import { computed, onUnmounted, shallowRef, watch } from 'vue'
+import { useEventListener, useIntervalFn } from '@vueuse/core'
 import { useI18n } from 'vue-i18n'
 import { failureMessage } from '../../shared/message'
 import { useMessage } from '../i18n/message'
@@ -50,7 +51,7 @@ const hintLevel = computed(() => (hintInfo.value ? game.state!.hint!.level : 0))
 const hintRevealed = computed(() => hintLevel.value >= HINT_LEVELS)
 const feedback = computed(() => hintInfo.value?.text ?? game.state?.message ?? null)
 const mistakes = computed(() => [...new Set([...game.conflicts, ...(game.state?.mistakes ?? [])])])
-const timer = setInterval(() => room.clock(), 200)
+useIntervalFn(() => room.clock(), 200)
 watch(
   () => props.roomId,
   (id) => {
@@ -92,16 +93,9 @@ function clearHover() {
 function onVisibility() {
   if (document.hidden) clearHover()
 }
-onMounted(() => {
-  window.addEventListener('blur', clearHover)
-  document.addEventListener('visibilitychange', onVisibility)
-})
-onUnmounted(() => {
-  window.removeEventListener('blur', clearHover)
-  document.removeEventListener('visibilitychange', onVisibility)
-  clearInterval(timer)
-  room.close()
-})
+useEventListener(window, 'blur', clearHover)
+useEventListener(document, 'visibilitychange', onVisibility)
+onUnmounted(() => room.close())
 async function join() {
   joining.value = true
   joinError.value = ''

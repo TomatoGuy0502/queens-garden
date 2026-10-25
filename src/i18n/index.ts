@@ -25,6 +25,5 @@ export const i18n = createI18n({
 export function applyDocumentLanguage(locale: Locale) {
   const { t } = i18n.global
   document.documentElement.lang = locale
-  document.title = t('app.pageTitle')
   document.querySelector('meta[name="description"]')?.setAttribute('content', t('app.description'))
 }

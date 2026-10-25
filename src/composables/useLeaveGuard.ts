@@ -1,4 +1,4 @@
-import { onBeforeUnmount, onMounted } from 'vue'
+import { useEventListener } from '@vueuse/core'
 import { onBeforeRouteLeave } from 'vue-router'
 
 /**
@@ -14,8 +14,7 @@ export function useLeaveGuard(active: () => boolean, message: () => string) {
     event.preventDefault()
     event.returnValue = ''
   }
-  onMounted(() => window.addEventListener('beforeunload', beforeUnload))
-  onBeforeUnmount(() => window.removeEventListener('beforeunload', beforeUnload))
+  useEventListener(window, 'beforeunload', beforeUnload)
   onBeforeRouteLeave(() => !guarded() || window.confirm(message()))
   return {
     /** Confirm now, so an explicit leave button does not ask a second time on navigation. */

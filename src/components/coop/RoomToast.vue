@@ -1,21 +1,18 @@
 <script setup lang="ts">
-import { onUnmounted, watch } from 'vue'
+import { watch } from 'vue'
+import { useTimeoutFn } from '@vueuse/core'
 import { X } from '@lucide/vue'
 import type { Message } from '../../../shared/message'
 import { useMessage } from '../../i18n/message'
 const props = defineProps<{ notice: { id: number; message: Message } | null }>()
 const render = useMessage()
 const emit = defineEmits<{ dismiss: [] }>()
-let timer: ReturnType<typeof setTimeout> | undefined
-function stop() {
-  clearTimeout(timer)
-}
+const { start, stop } = useTimeoutFn(() => emit('dismiss'), 5000, { immediate: false })
 function schedule() {
   stop()
-  if (props.notice) timer = setTimeout(() => emit('dismiss'), 5000)
+  if (props.notice) start()
 }
 watch(() => props.notice?.id, schedule, { immediate: true })
-onUnmounted(stop)
 </script>
 <template>
   <Teleport to="body">
