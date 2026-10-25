@@ -1,6 +1,7 @@
 import { computed, shallowRef } from 'vue'
 import { defineStore } from 'pinia'
 import type { GameSnapshot } from '../../shared/coop'
+import { formatDuration } from '../queens/stats'
 import { conflictCells } from '../queens/validator'
 export const useCoopGameStore = defineStore('coopGame', () => {
   const state = shallowRef<GameSnapshot | null>(null),
@@ -22,10 +23,7 @@ export const useCoopGameStore = defineStore('coopGame', () => {
       (state.value?.elapsedMs ?? 0) +
       (state.value?.phase === 'playing' ? Math.max(0, tick.value - receivedAt) : 0),
   )
-  const time = computed(() => {
-    const seconds = Math.floor(elapsedMs.value / 1000)
-    return `${String(Math.floor(seconds / 60)).padStart(2, '0')}:${String(seconds % 60).padStart(2, '0')}`
-  })
+  const time = computed(() => formatDuration(Math.floor(elapsedMs.value / 1000)))
   const queens = computed(() =>
     state.value?.puzzle
       ? state.value.cells.flatMap((cell, i) =>

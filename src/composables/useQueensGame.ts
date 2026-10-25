@@ -11,6 +11,7 @@ import {
   type SavedProgress,
 } from '../queens/progress'
 import { HINT_LEVELS, hintView } from '../queens/strategies'
+import { formatDuration } from '../queens/stats'
 import { conflictCells } from '../queens/validator'
 
 export function useQueensGame() {
@@ -59,10 +60,7 @@ export function useQueensGame() {
   const won = computed(
     () => !!puzzle.value && queens.value.length === puzzle.value.size && !conflicts.value.length,
   )
-  const time = computed(
-    () =>
-      `${String(Math.floor(seconds.value / 60)).padStart(2, '0')}:${String(seconds.value % 60).padStart(2, '0')}`,
-  )
+  const time = computed(() => formatDuration(seconds.value))
   const blocked = computed(() => busy.value || paused.value || won.value)
   const hintInfo = computed(() =>
     hint.value && puzzle.value && hintLevel.value
