@@ -1,71 +1,45 @@
 <script setup lang="ts">
-import { Monitor, Moon, Sun } from '@lucide/vue'
-import { useTheme, type ThemePreference } from '../composables/useTheme'
-const { preference, storageAvailable, setPreference } = useTheme()
-const themes = [
-  { value: 'system', label: 'theme.system', icon: Monitor },
-  { value: 'light', label: 'theme.light', icon: Sun },
-  { value: 'dark', label: 'theme.dark', icon: Moon },
-] as const
+import { Moon, Sun } from '@lucide/vue'
+import { useTheme } from '../composables/useTheme'
+const { resolved, storageAvailable, setPreference } = useTheme()
 function change(event: Event) {
-  setPreference((event.target as HTMLInputElement).value as ThemePreference)
+  setPreference((event.target as HTMLInputElement).checked ? 'dark' : 'light')
 }
 </script>
 <template>
-  <div
+  <label
     class="theme-toggle"
-    role="radiogroup"
-    :aria-label="$t('theme.label')"
-    :title="storageAvailable ? $t('theme.label') : $t('theme.unavailable')"
+    :title="storageAvailable ? $t('theme.dark') : $t('theme.unavailable')"
   >
-    <label
-      v-for="theme in themes"
-      :key="theme.value"
-      :class="{ selected: preference === theme.value }"
-      :title="$t(theme.label)"
-    >
-      <input
-        type="radio"
-        name="theme"
-        :value="theme.value"
-        :aria-label="$t(theme.label)"
-        :checked="preference === theme.value"
-        @change="change"
-      />
-      <component :is="theme.icon" :size="15" aria-hidden="true" />
-    </label>
+    <input
+      type="checkbox"
+      role="switch"
+      :aria-label="$t('theme.dark')"
+      :checked="resolved === 'dark'"
+      @change="change"
+    />
+    <Moon v-if="resolved === 'dark'" :size="18" aria-hidden="true" />
+    <Sun v-else :size="18" aria-hidden="true" />
     <span v-if="!storageAvailable" class="sr-only" role="status">{{
       $t('theme.unavailableStatus')
     }}</span>
-  </div>
+  </label>
 </template>
 <style scoped>
 .theme-toggle {
-  display: inline-flex;
-  align-items: center;
-  gap: 2px;
-  padding: 2px;
-  border: 1px solid var(--control-border);
-  border-radius: 6px;
-}
-label {
   position: relative;
   display: grid;
   place-items: center;
-  width: 28px;
-  height: 28px;
-  border-radius: 4px;
+  width: 30px;
+  height: 30px;
+  border-radius: 6px;
   color: var(--muted);
   cursor: pointer;
 }
-label.selected {
-  background: var(--accent-soft);
+.theme-toggle:hover {
   color: var(--accent);
 }
-label:hover {
-  color: var(--accent);
-}
-/* The native radio stays in the DOM for keyboard and assistive tech, drawn only as its icon. */
+/* The native switch stays in the DOM for keyboard and assistive tech, drawn only as its icon. */
 input {
   position: absolute;
   inset: 0;
@@ -73,7 +47,7 @@ input {
   opacity: 0;
   cursor: pointer;
 }
-label:has(input:focus-visible) {
+.theme-toggle:has(input:focus-visible) {
   outline: 2px solid var(--accent);
   outline-offset: 1px;
 }

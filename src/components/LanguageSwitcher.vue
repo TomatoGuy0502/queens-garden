@@ -9,10 +9,9 @@ function change(event: Event) {
 }
 </script>
 <template>
-  <label class="language-switcher">
-    <Languages :size="16" aria-hidden="true" />
-    <span class="sr-only">{{ $t('language.label') }}</span>
-    <select :value="locale" :title="$t('language.label')" @change="change">
+  <label class="language-switcher" :title="$t('language.label')">
+    <Languages :size="18" aria-hidden="true" />
+    <select :value="locale" :aria-label="$t('language.label')" @change="change">
       <option v-for="item in LOCALES" :key="item.code" :value="item.code" :lang="item.code">
         {{ item.name }}
       </option>
@@ -21,32 +20,29 @@ function change(event: Event) {
 </template>
 <style scoped>
 .language-switcher {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 6px;
   color: var(--muted);
-}
-select {
-  max-width: 112px;
-  padding: 4px 2px;
-  font: inherit;
-  font-size: 12px;
-  color: inherit;
-  background: transparent;
-  border: 0;
   cursor: pointer;
 }
-select:focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: 2px;
-  border-radius: 3px;
+.language-switcher:hover {
+  color: var(--accent);
 }
-.sr-only {
+/* The native menu opens from the icon; the select itself is invisible but stays focusable. */
+select {
   position: absolute;
-  width: 1px;
-  height: 1px;
-  overflow: hidden;
-  clip: rect(0 0 0 0);
-  white-space: nowrap;
+  inset: 0;
+  width: 100%;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+.language-switcher:has(select:focus-visible) {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
 }
 </style>

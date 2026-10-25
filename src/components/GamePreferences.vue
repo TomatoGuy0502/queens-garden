@@ -7,6 +7,19 @@ const { expandedBoard } = useGamePreferences()
 const preferences = defineModel<BoardGuidance>({ required: true })
 defineProps<{ storageAvailable: boolean }>()
 const dialog = useTemplateRef<HTMLDialogElement>('dialog')
+// A click on the dialog itself, outside its box, can only have landed on the backdrop.
+function closeOnBackdrop(event: MouseEvent) {
+  const element = dialog.value
+  if (!element || event.target !== element) return
+  const box = element.getBoundingClientRect()
+  if (
+    event.clientX < box.left ||
+    event.clientX > box.right ||
+    event.clientY < box.top ||
+    event.clientY > box.bottom
+  )
+    element.close()
+}
 const ranges = [
   { key: 'rows', label: 'guidance.row' },
   { key: 'columns', label: 'guidance.column' },
@@ -30,6 +43,7 @@ function update(key: keyof BoardGuidance, event: Event) {
     class="preferences-dialog"
     aria-labelledby="preferences-title"
     aria-describedby="preferences-description"
+    @click="closeOnBackdrop"
   >
     <div class="preferences-header">
       <h2 id="preferences-title">{{ $t('preferences.title') }}</h2>
@@ -75,9 +89,6 @@ function update(key: keyof BoardGuidance, event: Event) {
     <p class="storage-note" role="status">
       {{ $t(storageAvailable ? 'preferences.saved' : 'preferences.unsaved') }}
     </p>
-    <button class="primary done-button" @click="dialog?.close()">
-      {{ $t('preferences.done') }}
-    </button>
   </dialog>
 </template>
 <style scoped>
@@ -184,11 +195,6 @@ fieldset:disabled {
 .storage-note {
   font-size: 11px;
   margin: 18px 0;
-}
-.done-button {
-  display: flex;
-  margin-left: auto;
-  min-width: 90px;
 }
 @media (max-width: 650px) {
   .preferences-button {

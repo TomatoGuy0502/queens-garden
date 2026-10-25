@@ -202,13 +202,9 @@ const en: Messages<typeof zhHant> = {
     note: 'Visual guidance only: it never adds Xs or blocks clicks. It updates when you remove a crown, undo or redo.',
     saved: 'Settings apply immediately and are saved in this browser.',
     unsaved: 'This browser cannot save settings; they still apply to this session.',
-    done: 'Done',
   },
   theme: {
-    label: 'Appearance',
-    system: 'Match system',
-    light: 'Light',
-    dark: 'Dark',
+    dark: 'Dark mode',
     unavailable:
       'This browser cannot save the appearance setting; it still applies to this session',
     unavailableStatus:

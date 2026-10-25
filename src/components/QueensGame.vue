@@ -449,15 +449,24 @@ onMounted(() => {
 }
 .game-meta {
   display: flex;
+  flex-wrap: wrap;
   justify-content: space-between;
   align-items: center;
+  gap: 8px 12px;
   margin: 0 0 17px;
-  height: 29px;
+  min-height: 29px;
 }
 .puzzle-meta {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 12px;
+  gap: 8px 12px;
+}
+.difficulty-badge,
+.board-size,
+.queen-count,
+.timer {
+  white-space: nowrap;
 }
 .difficulty-badge {
   font-size: 10px;
@@ -702,6 +711,23 @@ onMounted(() => {
   }
   .puzzle-meta {
     gap: 8px;
+  }
+}
+@media (max-width: 400px) {
+  .puzzle-meta {
+    gap: 6px 8px;
+  }
+  .difficulty-badge {
+    padding: 5px 8px;
+  }
+  .timer {
+    gap: 4px;
+  }
+  .timer > span {
+    min-width: 0;
+  }
+  .pause-button {
+    margin-left: 0;
   }
 }
 @media (max-width: 650px) {

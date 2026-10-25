@@ -49,7 +49,7 @@ test('two players share cells, personal undo, markers, hints and team completion
   page.on('pageerror', (e) => errors.push(e.message))
   guest.on('pageerror', (e) => errors.push(e.message))
   try {
-    await guest.getByRole('radio', { name: '深色', exact: true }).check()
+    await guest.getByRole('switch', { name: '深色模式', exact: true }).check()
     await expect(guest.locator('html')).toHaveAttribute('data-theme', 'dark')
     await expect(page.locator('html')).toHaveAttribute('data-theme', 'light')
     const hostBefore = (await page.locator('.board-stage').boundingBox())!
@@ -57,7 +57,7 @@ test('two players share cells, personal undo, markers, hints and team completion
     await page.getByRole('button', { name: '遊玩設定', exact: true }).click()
     const hostSettings = page.getByRole('dialog', { name: '遊玩設定', exact: true })
     await hostSettings.getByRole('switch', { name: '放大棋盤', exact: true }).check()
-    await hostSettings.getByRole('button', { name: '完成', exact: true }).click()
+    await hostSettings.getByRole('button', { name: '關閉設定', exact: true }).click()
     const hostBoard = (await page.locator('.board-stage').boundingBox())!
     const operations = (await page.locator('.coop-aside').boundingBox())!
     expect(operations.y).toBeGreaterThan(hostBoard.y + hostBoard.height)

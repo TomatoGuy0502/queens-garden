@@ -1,9 +1,14 @@
-import { readonly, shallowRef, watch } from 'vue'
+import { computed, readonly, shallowRef, watch } from 'vue'
 
 export type ThemePreference = 'system' | 'light' | 'dark'
 const STORAGE_KEY = 'queens:theme:v1'
 const preference = shallowRef<ThemePreference>('system')
 const storageAvailable = shallowRef(true)
+const systemDark = shallowRef(false)
+/** What is actually shown: the player's choice, or the system's while none was made. */
+const resolved = computed(() =>
+  preference.value === 'system' ? (systemDark.value ? 'dark' : 'light') : preference.value,
+)
 function normalize(value: string | null): ThemePreference {
   return value === 'light' || value === 'dark' ? value : 'system'
 }
@@ -17,8 +22,8 @@ export function initializeTheme() {
   }
   const system = window.matchMedia('(prefers-color-scheme: dark)')
   function apply() {
-    const theme =
-      preference.value === 'system' ? (system.matches ? 'dark' : 'light') : preference.value
+    systemDark.value = system.matches
+    const theme = resolved.value
     document.documentElement.dataset.theme = theme
     document
       .querySelector('meta[name="theme-color"]')
@@ -49,6 +54,7 @@ export function useTheme() {
   }
   return {
     preference: readonly(preference),
+    resolved,
     storageAvailable: readonly(storageAvailable),
     setPreference,
   }
