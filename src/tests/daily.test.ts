@@ -36,8 +36,11 @@ it('gives every player the same seeds and rotates the weekly board', () => {
   for (const seed of seeds) expect(seed).toBeLessThanOrEqual(0xffffffff)
   const week = Array.from({ length: 7 }, (_, i) => dailyConfig(shiftDay('2026-10-25', i)))
   expect(new Set(week.map((c) => `${c.size}-${c.difficulty}`)).size).toBeGreaterThan(4)
-  expect(dailyConfig('2026-10-25')).toEqual({ size: 10, difficulty: 'hard' })
+  expect(dailyConfig('2026-10-25')).toEqual({ size: 10, difficulty: 'expert' })
+  expect(dailyConfig('2026-10-26')).toEqual({ size: 8, difficulty: 'medium' })
   expect(dailyConfig('2026-10-31')).toEqual({ size: 8, difficulty: 'expert' })
+  // No day is smaller than 8×8 or easier than medium.
+  expect(week.every((c) => c.size >= 8 && c.difficulty !== 'easy')).toBe(true)
 })
 it('recognises only that day’s puzzle as the daily challenge', () => {
   const config = dailyConfig('2026-10-27')
@@ -57,7 +60,7 @@ it('counts consecutive days and keeps a streak alive until the end of the next d
   expect(dailyStreak(done('2026-10-24', '2026-10-25', '2026-10-26'), '2026-10-25')).toBe(2)
 })
 it('every day of the week can be generated within a few fallback seeds', () => {
-  for (let day = 0; day < 7; day++) {
+  for (let day = 0; day < 28; day++) {
     const key = shiftDay('2026-10-25', day)
     const { size, difficulty } = dailyConfig(key)
     let found = false

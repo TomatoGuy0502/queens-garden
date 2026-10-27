@@ -4,14 +4,14 @@ export interface DailyConfig {
   size: number
   difficulty: Difficulty
 }
-/** Sunday to Saturday: a gentle start of the week that builds toward harder weekend boards. */
+/** Sunday to Saturday: from 8×8 medium on Monday, building toward harder weekend boards. */
 const WEEKLY: readonly DailyConfig[] = [
-  { size: 10, difficulty: 'hard' },
-  { size: 6, difficulty: 'easy' },
-  { size: 7, difficulty: 'easy' },
+  { size: 10, difficulty: 'expert' },
   { size: 8, difficulty: 'medium' },
-  { size: 8, difficulty: 'medium' },
+  { size: 9, difficulty: 'medium' },
+  { size: 8, difficulty: 'hard' },
   { size: 9, difficulty: 'hard' },
+  { size: 10, difficulty: 'hard' },
   { size: 8, difficulty: 'expert' },
 ]
 /** A seed can fail the fixed generation budget; every player walks the same fallback sequence. */
