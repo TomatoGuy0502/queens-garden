@@ -16,11 +16,13 @@ const { guidance, storageAvailable } = useGamePreferences()
       <RouterLink to="/solo">{{ $t('nav.solo') }}</RouterLink
       ><RouterLink to="/rooms/new">{{ $t('nav.coop') }}</RouterLink
       ><RouterLink to="/stats">{{ $t('nav.stats') }}</RouterLink
-      ><RouterLink to="/tutorial">{{ $t('nav.tutorial') }}</RouterLink
-      ><LanguageSwitcher /><ThemeToggle /><GamePreferences
-        v-model="guidance"
-        :storage-available="storageAvailable"
-      /><AccountMenu />
+      ><RouterLink to="/tutorial">{{ $t('nav.tutorial') }}</RouterLink>
+      <div class="tools">
+        <LanguageSwitcher /><ThemeToggle /><GamePreferences
+          v-model="guidance"
+          :storage-available="storageAvailable"
+        /><AccountMenu />
+      </div>
     </nav>
   </header>
 </template>
@@ -63,11 +65,18 @@ nav > a {
   text-decoration: none;
   white-space: nowrap;
 }
+/* Icon buttons already carry their own padding, so they sit closer than the text links. */
+.tools {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
 nav > a:hover,
 nav > a.router-link-active {
   color: var(--accent);
 }
-@media (max-width: 650px) {
+/* Even icon-only, the single-row header needs about 720px in the widest locale (Japanese). */
+@media (max-width: 760px) {
   .app-header {
     height: auto;
     min-height: 78px;

@@ -35,9 +35,10 @@ function update(key: keyof BoardGuidance, event: Event) {
     type="button"
     class="text-button preferences-button"
     :aria-label="$t('preferences.open')"
+    :title="$t('preferences.open')"
     @click="dialog?.showModal()"
   >
-    <Settings2 :size="18" /><span>{{ $t('preferences.open') }}</span>
+    <Settings2 :size="18" />
   </button>
   <dialog
     ref="dialog"
@@ -101,7 +102,8 @@ function update(key: keyof BoardGuidance, event: Event) {
 .preferences-button {
   display: inline-flex;
   align-items: center;
-  gap: 7px;
+  justify-content: center;
+  width: 32px;
   min-height: 36px;
 }
 .preferences-button:hover {
@@ -204,14 +206,5 @@ fieldset:disabled {
 .storage-note {
   font-size: 11px;
   margin: 18px 0;
-}
-@media (max-width: 650px) {
-  .preferences-button {
-    width: 32px;
-    justify-content: center;
-  }
-  .preferences-button span {
-    display: none;
-  }
 }
 </style>

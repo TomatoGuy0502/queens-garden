@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { shallowRef, useTemplateRef, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { LogIn, UserRound, X } from '@lucide/vue'
+import { UserRound, X } from '@lucide/vue'
 import { useAccount } from '../composables/useAccount'
 import { usePlayerName } from '../composables/usePlayerName'
 import { useMessage } from '../i18n/message'
@@ -63,14 +63,21 @@ function closeOnBackdrop(event: MouseEvent) {
 </script>
 <template>
   <template v-if="enabled">
-    <button v-if="!account" type="button" class="text-button account-button" @click="run(signIn)">
-      <LogIn :size="17" /><span>{{ $t('account.signIn') }}</span>
+    <button
+      v-if="!account"
+      type="button"
+      class="text-button account-button"
+      :aria-label="$t('account.signIn')"
+      @click="run(signIn)"
+    >
+      <UserRound :size="18" /><span>{{ $t('account.signIn') }}</span>
     </button>
     <button
       v-else
       type="button"
       class="text-button account-button"
       :aria-label="$t('account.open')"
+      :title="account.nickname ?? undefined"
       @click="open"
     >
       <img v-if="account.image" :src="account.image" alt="" referrerpolicy="no-referrer" />
@@ -125,9 +132,11 @@ function closeOnBackdrop(event: MouseEvent) {
   align-items: center;
   gap: 7px;
   min-height: 36px;
-  max-width: 160px;
+  max-width: 140px;
 }
 .account-button span {
+  /* A flex item only shrinks below its text, and so truncates a long nickname, with this. */
+  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -188,7 +197,12 @@ small {
 .danger {
   color: var(--error);
 }
-@media (max-width: 650px) {
+/* A long, truncated nickname fits from about 780px in the widest locale; below that, icon only. */
+@media (max-width: 800px) {
+  .account-button {
+    width: 32px;
+    justify-content: center;
+  }
   .account-button span {
     display: none;
   }
