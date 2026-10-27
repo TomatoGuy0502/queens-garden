@@ -2,7 +2,7 @@ import { shallowRef } from 'vue'
 import { request } from '../services/api'
 import { forgetStats, syncStats } from './useGameStats'
 import { savePlayerName } from './usePlayerName'
-import type { Leaderboard, RunFinish, RunStart } from '../../shared/account'
+import type { Leaderboard, LeaderboardEntry, RunFinish, RunStart } from '../../shared/account'
 import type { RunEvent } from '../queens/replay'
 
 /** Neon Auth returns from Google with this one-time parameter; get-session trades it for a cookie. */
@@ -82,6 +82,9 @@ export async function startRankedRun(): Promise<RunStart | null> {
 }
 export const finishRankedRun = (day: string, seed: number, log: RunEvent[]) =>
   request<RunFinish>('/api/daily/finish', { method: 'POST', body: { day, seed, log } })
+/** The signed-in player's ranked result for a day, or null before they finish one. */
+export const fetchRankedResult = async (day: string) =>
+  (await request<{ result: LeaderboardEntry | null }>(`/api/daily/result?day=${day}`)).result
 export const fetchLeaderboard = (day: string) =>
   request<Leaderboard>(`/api/leaderboard?day=${encodeURIComponent(day)}`)
 export function useAccount() {

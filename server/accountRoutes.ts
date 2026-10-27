@@ -114,6 +114,13 @@ export function accountRoutes(
       return { rank: mine?.rank ?? null, ...result }
     },
   )
+  app.get<{ Querystring: { day?: string } }>('/api/daily/result', async (request) => {
+    const { id } = await signedIn(request)
+    const day = request.query.day ?? dateKey()
+    if (!isDateKey(day)) throw new RoomError('INVALID_INPUT')
+    const mine = (await accounts.leaderboard(day, id, 0)).find((entry) => entry.me)
+    return { result: mine ?? null }
+  })
   app.get<{ Querystring: { day?: string } }>('/api/leaderboard', async (request) => {
     const today = dateKey()
     const day = request.query.day ?? today

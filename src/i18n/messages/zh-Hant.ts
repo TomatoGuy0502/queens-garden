@@ -186,6 +186,7 @@ export default {
     finished: '今天的排名成績已經記錄過了，這局不計入排行榜。',
     submitting: '正在驗證並登錄成績…',
     rank: '今日排行榜第 {rank} 名',
+    done: '排名賽成績 {time} · 第 {rank} 名',
     recorded: '成績已登錄；設定暱稱後就會出現在排行榜上。',
     retry: '重新送出',
     leaderboard: '查看排行榜',

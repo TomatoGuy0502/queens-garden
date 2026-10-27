@@ -1,12 +1,27 @@
 <script setup lang="ts">
+import { shallowRef, watch } from 'vue'
 import { CalendarCheck } from '@lucide/vue'
 import { useDailyChallenge } from '../composables/useDailyChallenge'
 import { formatDuration } from '../queens/stats'
-import { useAccount } from '../composables/useAccount'
+import { fetchRankedResult, useAccount } from '../composables/useAccount'
+import type { LeaderboardEntry } from '../../shared/account'
 defineProps<{ busy?: boolean; inGame?: boolean }>()
 const emit = defineEmits<{ start: [] }>()
 const { today, config, result, streak } = useDailyChallenge()
 const { enabled, account } = useAccount()
+// A signed-in player's card shows the leaderboard result, not a faster replay of a known board.
+const ranked = shallowRef<LeaderboardEntry | null>(null)
+watch(
+  [account, today],
+  async ([signedIn, day]) => {
+    ranked.value = null
+    if (!signedIn) return
+    const found = await fetchRankedResult(day).catch(() => null)
+    // A sign-out or a new day while this was loading makes the answer stale.
+    if (account.value === signedIn && today.value === day) ranked.value = found
+  },
+  { immediate: true },
+)
 </script>
 <template>
   <section class="daily" aria-labelledby="daily-title">
@@ -22,7 +37,10 @@ const { enabled, account } = useAccount()
         }}
       </p>
       <p class="status" role="status">
-        <template v-if="result">{{
+        <template v-if="ranked">{{
+          $t('ranked.done', { time: formatDuration(ranked.score), rank: ranked.rank })
+        }}</template>
+        <template v-else-if="result">{{
           $t('daily.done', {
             time: formatDuration(result.seconds),
             hints: $t('count.hints', result.hints),

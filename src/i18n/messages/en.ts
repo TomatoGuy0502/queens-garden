@@ -207,6 +207,7 @@ const en: Messages<typeof zhHant> = {
     finished: "Your ranked result for today is already recorded, so this game isn't ranked.",
     submitting: 'Verifying your result…',
     rank: "#{rank} on today's leaderboard",
+    done: 'Ranked {time} · #{rank}',
     recorded: 'Result recorded. Pick a nickname to appear on the leaderboard.',
     retry: 'Send again',
     leaderboard: 'View leaderboard',

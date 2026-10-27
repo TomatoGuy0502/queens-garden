@@ -204,6 +204,7 @@ const ja: Messages<typeof zhHant> = {
     finished: '今日のランク記録はすでに登録済みのため、この対局はランキング対象外です。',
     submitting: '記録を検証しています…',
     rank: '今日のランキング {rank} 位',
+    done: 'ランク戦 {time} · {rank} 位',
     recorded: '記録を登録しました。ニックネームを設定するとランキングに表示されます。',
     retry: 'もう一度送信',
     leaderboard: 'ランキングを見る',
