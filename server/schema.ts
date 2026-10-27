@@ -79,3 +79,21 @@ export const playerProfiles = pgTable(
   },
   (table) => [uniqueIndex('player_profiles_nickname_idx').on(sql`lower(${table.nickname})`)],
 )
+/** One ranked daily attempt per player and day, timed by the server from `started_at`. */
+export const dailyRuns = pgTable(
+  'daily_runs',
+  {
+    userId: text('user_id').notNull(),
+    day: text('day').notNull(),
+    startedAt: timestamp('started_at', { withTimezone: true }).notNull(),
+    finishedAt: timestamp('finished_at', { withTimezone: true }),
+    seconds: integer('seconds'),
+    moves: integer('moves'),
+    hints: integer('hints'),
+    score: integer('score'),
+  },
+  (table) => [
+    primaryKey({ columns: [table.userId, table.day] }),
+    index('daily_runs_rank_idx').on(table.day, table.score, table.moves, table.finishedAt),
+  ],
+)

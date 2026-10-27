@@ -68,6 +68,8 @@ export const ERROR_CODES = [
   'INVALID_STATE',
   'SIGN_IN_REQUIRED',
   'NICKNAME_TAKEN',
+  'RUN_REJECTED',
+  'RUN_FINISHED',
 ] as const
 export type ErrorCode = (typeof ERROR_CODES)[number]
 export const errorMessage = (code: ErrorCode, params?: Record<string, MessageParam>): Message =>

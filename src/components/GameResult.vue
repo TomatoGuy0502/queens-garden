@@ -46,6 +46,7 @@ onMounted(() => {
     <p v-if="record?.streak" class="record best">
       {{ $t('result.streak', { days: record.streak }) }}
     </p>
+    <slot />
     <button
       ref="nextButton"
       type="button"

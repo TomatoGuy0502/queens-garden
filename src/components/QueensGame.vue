@@ -32,6 +32,9 @@ import { storeToRefs } from 'pinia'
 import { GENERATOR_VERSION } from '../queens/version'
 import { BOARD_SIZES, DIFFICULTIES } from '../queens/levels'
 import type { Difficulty } from '../queens/types'
+import { finishRankedRun, startRankedRun } from '../composables/useAccount'
+import type { RunFinish, RunStart } from '../../shared/account'
+import { LocalizedError, errorMessage, message, type Message } from '../../shared/message'
 const render = useMessage()
 const game = useSoloGameStore()
 useProgressAutosave(game)
@@ -48,6 +51,7 @@ const {
   seconds,
   attempt,
   daily,
+  ranked,
   queens,
   conflicts,
   won,
@@ -128,6 +132,38 @@ watch(
     lastRecord.value = null
   },
 )
+// Today's leaderboard entry: submitted once the ranked board is solved.
+const rankedResult = shallowRef<RunFinish | 'pending' | null>(null)
+const rankedNotice = shallowRef<Message | null>(null)
+const failure = (reason: unknown) =>
+  reason instanceof LocalizedError ? reason.localized : errorMessage('SERVER_ERROR')
+async function submitRanked() {
+  const current = puzzle.value
+  if (!current || !daily.value) return
+  rankedResult.value = 'pending'
+  rankedNotice.value = null
+  try {
+    rankedResult.value = await finishRankedRun(daily.value, current.seed, game.runLog())
+  } catch (reason) {
+    rankedResult.value = null
+    rankedNotice.value = failure(reason)
+  }
+}
+watch(won, (isWon) => {
+  if (isWon && ranked.value) void submitRanked()
+})
+/** Today's ranked run for a signed-in player; null plays the daily unranked. */
+async function rankedRun(day: string): Promise<RunStart | null> {
+  try {
+    const run = await startRankedRun()
+    if (run?.day !== day) return null
+    if (run.finished) rankedNotice.value = message('ranked.finished')
+    return run.finished ? null : run
+  } catch (reason) {
+    rankedNotice.value = failure(reason)
+    return null
+  }
+}
 const highlighted = computed(() => (paused.value ? [] : hintCells.value))
 const allMistakes = computed(() => [...new Set([...conflicts.value, ...mistakes.value])])
 // The daily challenge is a fixed board, so its page offers no settings until the player leaves it.
@@ -148,24 +184,37 @@ const shown = computed(() =>
         daily: !!daily.value,
       },
 )
-function startGame(
+async function startGame(
   size: number,
   difficulty: Difficulty,
   seed: number,
   dailyDate: string | null = null,
   saved?: SavedProgress,
+  run?: RunStart | null,
 ) {
   pendingResume.value = null
+  rankedResult.value = null
+  if (!dailyDate) rankedNotice.value = null
   inDaily.value = dailyDate !== null
   displayDifficulty.value = difficulty
   versionMismatch.value = false
   restartConfirm.value = false
-  return game.newGame(size, difficulty, seed, dailyDate, saved && restoreProgress(saved))
+  const status = await game.newGame(
+    size,
+    difficulty,
+    seed,
+    dailyDate,
+    saved && restoreProgress(saved),
+  )
+  if (status === 'ready' && run) game.startRanked(run.elapsedMs, saved?.log)
+  return status
 }
-function resume(saved: SavedProgress) {
+async function resume(saved: SavedProgress) {
   // Only today's challenge keeps its daily label; an older unfinished day is a normal puzzle.
   const dailyDate = saved.daily === dateKey() ? saved.daily : null
-  return startGame(saved.size, saved.difficulty, saved.seed, dailyDate, saved)
+  // Only a board played ranked from the start has the log the server needs.
+  const run = dailyDate && saved.log ? await rankedRun(dailyDate) : null
+  return startGame(saved.size, saved.difficulty, saved.seed, dailyDate, saved, run)
 }
 function discardSaved() {
   progress.clear()
@@ -174,9 +223,11 @@ function discardSaved() {
 async function startDaily() {
   const key = dateKey()
   const { size, difficulty } = dailyConfig(key)
+  rankedNotice.value = null
+  const run = await rankedRun(key)
   // A seed can exhaust the generation budget; everyone walks the same fixed fallback seeds.
   for (let attempt = 0; attempt < DAILY_MAX_ATTEMPTS; attempt++) {
-    const status = await startGame(size, difficulty, dailySeed(key, attempt), key)
+    const status = await startGame(size, difficulty, dailySeed(key, attempt), key, undefined, run)
     if (status !== 'failed') return
   }
 }
@@ -219,7 +270,7 @@ onMounted(() => {
           <div class="game-meta">
             <div class="puzzle-meta">
               <span v-if="shown.daily" class="difficulty-badge daily-badge">{{
-                $t('game.dailyBadge')
+                $t(ranked ? 'ranked.badge' : 'game.dailyBadge')
               }}</span
               ><span class="difficulty-badge">{{ $t(`difficulty.${shown.difficulty}`) }}</span
               ><span class="board-size">{{ shown.size }} × {{ shown.size }}</span
@@ -230,6 +281,7 @@ onMounted(() => {
             <div class="timer">
               <Clock3 :size="15" /><span>{{ time }}</span
               ><button
+                v-if="!ranked"
                 type="button"
                 class="icon-button pause-button"
                 :aria-label="paused ? $t('game.resume') : $t('game.pause')"
@@ -286,7 +338,27 @@ onMounted(() => {
                 :next-label="inDaily ? $t('game.freePlay') : undefined"
                 @next="nextGame"
                 @review="reviewing = true"
-              />
+              >
+                <p v-if="rankedResult === 'pending'" class="ranked-status" role="status">
+                  {{ $t('ranked.submitting') }}
+                </p>
+                <p v-else-if="rankedResult" class="ranked-status" role="status">
+                  {{
+                    rankedResult.rank
+                      ? $t('ranked.rank', { rank: rankedResult.rank })
+                      : $t('ranked.recorded')
+                  }}
+                </p>
+                <template v-else-if="ranked && rankedNotice">
+                  <p class="ranked-status" role="alert">{{ render(rankedNotice) }}</p>
+                  <button type="button" class="text-button" @click="submitRanked">
+                    {{ $t('ranked.retry') }}
+                  </button>
+                </template>
+                <RouterLink v-if="daily" :to="{ path: '/leaderboard', query: { day: daily } }">{{
+                  $t('ranked.leaderboard')
+                }}</RouterLink>
+              </GameResult>
             </template>
           </QueensBoard>
           <div v-else class="empty-board">
@@ -295,12 +367,16 @@ onMounted(() => {
             <p>{{ $t('game.idle.body') }}</p>
           </div>
           <div v-if="error" class="error-notice" role="alert">{{ render(error) }}</div>
+          <p v-if="ranked && !won" class="ranked-note">{{ $t('ranked.clock') }}</p>
+          <p v-else-if="rankedNotice && !won" class="ranked-note" role="status">
+            {{ render(rankedNotice) }}
+          </p>
           <GameToolbar
             :blocked="blocked || !puzzle"
             :assisting="assisting"
             :hint-level="hintLevel"
             :hint-revealed="hintRevealed"
-            :can-restart="!!puzzle && !busy"
+            :can-restart="!!puzzle && !busy && !ranked"
             :can-undo="!!history.length && !busy && !paused && !reviewing"
             :can-redo="!!future.length && !busy && !paused && !reviewing"
             @undo="game.undo"
@@ -397,6 +473,15 @@ onMounted(() => {
   </div>
 </template>
 <style scoped>
+.ranked-note {
+  margin: 12px 0 0;
+  font-size: 12px;
+  color: var(--muted);
+}
+.ranked-status {
+  margin: 0;
+  color: var(--accent);
+}
 h1 {
   font-size: 29px;
   font-weight: 500;

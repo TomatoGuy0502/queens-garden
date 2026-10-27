@@ -14,6 +14,7 @@ import {
 import { HINT_LEVELS, hintView } from '../queens/strategies'
 import { formatDuration } from '../queens/stats'
 import { conflictCells } from '../queens/validator'
+import type { RunEvent } from '../queens/replay'
 
 export function useQueensGame() {
   const router = useRouter()
@@ -31,6 +32,14 @@ export function useQueensGame() {
     attempt = shallowRef(0)
   /** Date key when the puzzle on the board is that day's challenge. */
   const daily = shallowRef<string | null>(null)
+  // A ranked daily runs on the server's clock (no pausing) and logs every action for it to replay.
+  const ranked = shallowRef(false)
+  let runStart = 0,
+    runLog: RunEvent[] = []
+  const track = (event: RunEvent) => {
+    if (ranked.value) runLog.push(event)
+  }
+  const now = () => Date.now() - runStart
   const message = shallowRef<Message | null>(null),
     error = shallowRef<Message | null>(null)
   const hint = shallowRef<DeductionStep | null>(null),
@@ -121,8 +130,17 @@ export function useQueensGame() {
     elapsedMs = 0
     lastTick = performance.now()
     paused.value = false
+    ranked.value = false
+    runLog = []
     attempt.value++
     clearFeedback()
+  }
+  /** Turns the board into a ranked run that started `elapsedMs` ago on the server. */
+  function startRanked(elapsedMs: number, log: RunEvent[] = []) {
+    ranked.value = true
+    runStart = Date.now() - elapsedMs
+    runLog = [...log]
+    paused.value = false
   }
   function applyProgress(saved: RestoredProgress) {
     cells.value = saved.cells
@@ -150,6 +168,7 @@ export function useQueensGame() {
       elapsedMs: Math.floor(elapsedMs),
       moves: moves.value,
       hints: hints.value,
+      ...(ranked.value && { log: [...runLog] }),
       savedAt: Date.now(),
     }
   }
@@ -208,6 +227,7 @@ export function useQueensGame() {
     const next = nextCell(cells.value[index], action)
     cells.value = cells.value.map((cell, i) => (i === index ? next : cell))
     moves.value++
+    track([now(), 'edit', index, action])
     clearFeedback()
     if (won.value) message.value = say('game.won')
   }
@@ -216,6 +236,7 @@ export function useQueensGame() {
     future.value = [...future.value, [...cells.value]]
     cells.value = history.value.at(-1)!
     history.value = history.value.slice(0, -1)
+    track([now(), 'undo'])
     clearFeedback()
     lastTick = performance.now()
   }
@@ -224,6 +245,7 @@ export function useQueensGame() {
     history.value = [...history.value, [...cells.value]]
     cells.value = future.value.at(-1)!
     future.value = future.value.slice(0, -1)
+    track([now(), 'redo'])
     clearFeedback()
   }
   async function assist(type: 'hint' | 'check') {
@@ -233,6 +255,7 @@ export function useQueensGame() {
       if (hintLevel.value < HINT_LEVELS) {
         hintLevel.value++
         hints.value++
+        track([now(), 'hint'])
       }
       return
     }
@@ -246,6 +269,7 @@ export function useQueensGame() {
       mistakes.value = response.mistakes ?? []
       if (type === 'hint') {
         hints.value++
+        track([now(), 'hint'])
         hintLevel.value = response.step ? 1 : 0
       }
     } catch (reason) {
@@ -263,20 +287,21 @@ export function useQueensGame() {
       step.cells.includes(i) ? (step.action === 'place' ? 'queen' : 'marked') : cell,
     )
     moves.value++
+    track([now(), 'apply', step.action, step.cells])
     clearFeedback()
   }
   function togglePause() {
-    if (busy.value || won.value) return
+    if (busy.value || won.value || ranked.value) return
     paused.value = !paused.value
     lastTick = performance.now()
   }
   function onVisibility() {
-    if (document.hidden && puzzle.value && !won.value) paused.value = true
+    if (document.hidden && puzzle.value && !won.value && !ranked.value) paused.value = true
   }
   useIntervalFn(() => {
     const now = performance.now()
     if (puzzle.value && !blocked.value) {
-      elapsedMs += now - lastTick
+      elapsedMs = ranked.value ? Date.now() - runStart : elapsedMs + now - lastTick
       seconds.value = Math.floor(elapsedMs / 1000)
     }
     lastTick = now
@@ -300,6 +325,7 @@ export function useQueensGame() {
     hints,
     attempt,
     daily,
+    ranked,
     message,
     error,
     hint,
@@ -312,7 +338,12 @@ export function useQueensGame() {
     newGame,
     exportProgress,
     cancelGeneration,
-    restart: resetSession,
+    // A ranked run keeps its clock and log, so it cannot start over.
+    restart: () => {
+      if (!ranked.value) resetSession()
+    },
+    startRanked,
+    runLog: () => [...runLog],
     edit,
     undo,
     redo,

@@ -2,6 +2,7 @@ import { isDateKey } from './daily'
 import { BOARD_SIZES, DIFFICULTIES } from './levels'
 import type { CellState, Difficulty } from './types'
 import { GENERATOR_VERSION } from './version'
+import { runLogSchema, type RunEvent } from './replay'
 
 /** Undo history kept with a saved game; older steps are dropped to bound the stored size. */
 export const MAX_SAVED_HISTORY = 100
@@ -21,6 +22,8 @@ export interface SavedProgress {
   elapsedMs: number
   moves: number
   hints: number
+  /** Action log of a ranked daily, replayed by the server when it is finished. */
+  log?: RunEvent[]
   savedAt: number
 }
 export interface RestoredProgress {
@@ -30,6 +33,7 @@ export interface RestoredProgress {
   elapsedMs: number
   moves: number
   hints: number
+  log?: RunEvent[]
 }
 
 export const encodeCells = (cells: readonly CellState[]) =>
@@ -76,7 +80,8 @@ export function parseProgress(raw: unknown): SavedProgress | null {
   const elapsedMs = count(value.elapsedMs, 1000 * 60 * 60 * 24 * 365),
     moves = count(value.moves),
     hints = count(value.hints),
-    savedAt = count(value.savedAt)
+    savedAt = count(value.savedAt),
+    log = value.log === undefined ? undefined : runLogSchema.safeParse(value.log).data
   if (
     decodeCells(cells, length) === null ||
     !boards(history) ||
@@ -84,7 +89,8 @@ export function parseProgress(raw: unknown): SavedProgress | null {
     elapsedMs === null ||
     moves === null ||
     hints === null ||
-    savedAt === null
+    savedAt === null ||
+    (value.log !== undefined && !log)
   )
     return null
   return {
@@ -99,6 +105,7 @@ export function parseProgress(raw: unknown): SavedProgress | null {
     elapsedMs,
     moves,
     hints,
+    ...(log && { log }),
     savedAt,
   }
 }
@@ -112,5 +119,6 @@ export function restoreProgress(progress: SavedProgress): RestoredProgress {
     elapsedMs: progress.elapsedMs,
     moves: progress.moves,
     hints: progress.hints,
+    log: progress.log,
   }
 }

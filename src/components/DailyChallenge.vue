@@ -2,9 +2,11 @@
 import { CalendarCheck } from '@lucide/vue'
 import { useDailyChallenge } from '../composables/useDailyChallenge'
 import { formatDuration } from '../queens/stats'
+import { useAccount } from '../composables/useAccount'
 defineProps<{ busy?: boolean; inGame?: boolean }>()
 const emit = defineEmits<{ start: [] }>()
 const { today, config, result, streak } = useDailyChallenge()
+const { enabled, account } = useAccount()
 </script>
 <template>
   <section class="daily" aria-labelledby="daily-title">
@@ -28,6 +30,12 @@ const { today, config, result, streak } = useDailyChallenge()
         }}</template>
         <template v-else>{{ $t('daily.pending') }}</template>
         <template v-if="streak">{{ $t('daily.streak', { days: streak }) }}</template>
+      </p>
+      <p v-if="enabled">
+        {{ $t(account ? 'ranked.rules' : 'ranked.signIn') }}
+        <RouterLink :to="{ path: '/leaderboard', query: { day: today } }">{{
+          $t('ranked.leaderboard')
+        }}</RouterLink>
       </p>
     </div>
     <button v-if="inGame" type="button" class="primary" :disabled="busy" @click="emit('start')">

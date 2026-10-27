@@ -1,6 +1,6 @@
 import type { PuzzleSource } from './puzzleCatalog'
 import { HoverPresence } from './hoverPresence'
-import Fastify, { type FastifyRequest } from 'fastify'
+import Fastify from 'fastify'
 import rateLimit from '@fastify/rate-limit'
 import fastifyStatic from '@fastify/static'
 import { Server } from 'socket.io'
@@ -23,9 +23,8 @@ import { errorMessage, type ErrorCode } from '../shared/message'
 import { RoomError, type RoomRepository } from './model'
 import { RoomManager } from './rooms'
 import type { Compute } from './compute'
-import { neonAuth } from './auth'
+import { accountRoutes } from './accountRoutes'
 import type { AccountRepository } from './accounts'
-import { profileSchema } from '../shared/account'
 /** A refused handshake; socket.io passes `data` on to the client's connect_error handler. */
 function refusal(reason: ErrorCode | RoomError) {
   const error = typeof reason === 'string' ? new RoomError(reason) : reason
@@ -97,33 +96,13 @@ export async function createApp(options: {
     return reply.code(500).send({ error: errorMessage('SERVER_ERROR'), code: 'SERVER_ERROR' })
   })
   app.get('/api/health', () => ({ ok: true }))
-  const accounts = options.authUrl ? options.accounts : undefined
-  if (accounts) {
-    const auth = neonAuth(app, options.authUrl!, options.origin)
-    const signedIn = async (request: FastifyRequest) => {
-      const user = await auth.user(request)
-      if (!user) throw new RoomError('SIGN_IN_REQUIRED')
-      return user
-    }
-    app.get('/api/profile', async (request) => ({
-      nickname: await accounts.nickname((await signedIn(request)).id),
-    }))
-    app.put(
-      '/api/profile',
-      { config: { rateLimit: { max: 20, timeWindow: '1 minute' } } },
-      async (request) => {
-        const { id } = await signedIn(request)
-        const { nickname } = profileSchema.parse(request.body)
-        await accounts.setNickname(id, nickname)
-        return { nickname }
-      },
-    )
-    // Managed Neon Auth does not offer user deletion, so the Google sign-in record stays with Neon.
-    app.delete('/api/profile', async (request) => {
-      await accounts.delete((await signedIn(request)).id)
-      return { ok: true }
+  if (options.authUrl && options.accounts)
+    accountRoutes(app, {
+      authUrl: options.authUrl,
+      origin: options.origin,
+      accounts: options.accounts,
+      compute: options.compute,
     })
-  }
   app.post(
     '/api/rooms',
     { config: { rateLimit: { max: options.roomLimit ?? 5, timeWindow: '1 minute' } } },
