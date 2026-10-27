@@ -33,11 +33,13 @@ export function loadAccount(verifier?: string | null) {
   return loaded
 }
 async function readAccount(verifier?: string | null) {
+  const features = await request<{ accounts: boolean }>('/api/features').catch(() => null)
+  enabled.value = !!features?.accounts
   const query = verifier ? `?${SESSION_VERIFIER}=${encodeURIComponent(verifier)}` : ''
-  const response = await fetch(`/api/auth/get-session${query}`).catch(() => null)
-  enabled.value = !!response?.ok
-  const session = response?.ok
-    ? ((await response.json()) as { user?: { name: string; image: string | null } } | null)
+  const session = enabled.value
+    ? await request<{ user?: { name: string; image: string | null } } | null>(
+        `/api/auth/get-session${query}`,
+      ).catch(() => null)
     : null
   if (!session?.user) {
     account.value = null

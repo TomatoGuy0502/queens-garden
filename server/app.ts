@@ -96,6 +96,8 @@ export async function createApp(options: {
     return reply.code(500).send({ error: errorMessage('SERVER_ERROR'), code: 'SERVER_ERROR' })
   })
   app.get('/api/health', () => ({ ok: true }))
+  const accounts = !!(options.authUrl && options.accounts)
+  app.get('/api/features', () => ({ accounts }))
   if (options.authUrl && options.accounts)
     accountRoutes(app, {
       authUrl: options.authUrl,
