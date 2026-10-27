@@ -26,9 +26,9 @@ export function isDateKey(value: unknown): value is string {
   if (typeof value !== 'string' || !DATE_KEY.test(value)) return false
   return utc(value).toISOString().startsWith(value)
 }
-/** The player's local calendar day, so "today" turns over at their own midnight. */
+/** The calendar day in Taiwan (UTC+8, no daylight saving): one shared day for every player. */
 export function dateKey(date: Date = new Date()): string {
-  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
+  return new Date(date.getTime() + 8 * 3600000).toISOString().slice(0, 10)
 }
 export function shiftDay(key: string, days: number): string {
   const date = utc(key)

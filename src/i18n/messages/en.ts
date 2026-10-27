@@ -117,7 +117,8 @@ const en: Messages<typeof zhHant> = {
   },
   daily: {
     title: 'Daily challenge · {date}',
-    today: "Today's puzzle is {size} × {size} · {difficulty}, the same for everyone.",
+    today:
+      "Today's puzzle is {size} × {size} · {difficulty}, the same for everyone. A new one starts at midnight Taiwan time (UTC+8).",
     done: 'Done in {time} · {hints}',
     pending: 'Not completed yet today',
     streak: ' · {days}-day streak',

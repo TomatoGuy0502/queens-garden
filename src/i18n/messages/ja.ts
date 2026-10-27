@@ -119,7 +119,8 @@ const ja: Messages<typeof zhHant> = {
   },
   daily: {
     title: 'デイリーチャレンジ · {date}',
-    today: '今日は {size} × {size} · {difficulty}。全員が同じ問題に挑戦します。',
+    today:
+      '今日は {size} × {size} · {difficulty}。全員が同じ問題に挑戦します。台湾時間（UTC+8）の0時に切り替わります。',
     done: '{time} でクリア · {hints}',
     pending: '今日はまだクリアしていません',
     streak: ' · {days} 日連続',

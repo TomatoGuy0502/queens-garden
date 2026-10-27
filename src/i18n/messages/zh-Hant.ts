@@ -106,7 +106,7 @@ export default {
   },
   daily: {
     title: '每日挑戰 · {date}',
-    today: '今天是 {size} × {size} · {difficulty}，所有人拿到同一題。',
+    today: '今天是 {size} × {size} · {difficulty}，所有人拿到同一題，台灣時間午夜換題。',
     done: '已完成 {time} · {hints}',
     pending: '今天還沒完成',
     streak: ' · 連續 {days} 天',

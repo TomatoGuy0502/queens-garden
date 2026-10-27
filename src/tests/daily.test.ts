@@ -11,9 +11,11 @@ import {
 } from '../queens/daily'
 import { generatePuzzle } from '../queens/generator'
 
-it('uses the local calendar day and validates stored date keys', () => {
-  expect(dateKey(new Date(2026, 9, 5, 23, 59))).toBe('2026-10-05')
-  expect(dateKey(new Date(2026, 0, 1, 0, 0))).toBe('2026-01-01')
+it('uses the Taiwan calendar day and validates stored date keys', () => {
+  expect(dateKey(new Date('2026-10-05T23:59:00+08:00'))).toBe('2026-10-05')
+  expect(dateKey(new Date('2026-10-05T16:00:00Z'))).toBe('2026-10-06')
+  expect(dateKey(new Date('2026-01-01T00:00:00+08:00'))).toBe('2026-01-01')
+  expect(dateKey(new Date('2025-12-31T15:59:59Z'))).toBe('2025-12-31')
   expect(isDateKey('2026-02-28')).toBe(true)
   expect(isDateKey('2026-02-30')).toBe(false)
   expect(isDateKey('2026-2-3')).toBe(false)
