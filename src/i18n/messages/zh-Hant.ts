@@ -177,6 +177,18 @@ export default {
     puzzleTitle: 'Queens 關卡',
   },
   guidance: { row: '同一列', column: '同一欄', region: '同一色區', adjacent: '周圍八格' },
+  account: {
+    signIn: '登入',
+    open: '帳號',
+    title: '帳號',
+    close: '關閉帳號設定',
+    nickname: '暱稱',
+    nicknameNote: '排行榜和多人房間會顯示這個名字；Google 名稱與 email 不會公開。',
+    save: '儲存',
+    signOut: '登出',
+    delete: '刪除帳號',
+    deleteConfirm: '確定要刪除帳號嗎？暱稱與所有遊戲紀錄都會永久刪除。',
+  },
   preferences: {
     open: '遊玩設定',
     title: '遊玩設定',
@@ -406,6 +418,8 @@ export default {
     GENERATION_BUDGET: '已達生成預算，找不到通過驗證的關卡。請更換 Seed 或調整設定。',
     NO_PUZZLE: '請先產生關卡。',
     INVALID_STATE: '遊戲狀態不合法。',
+    SIGN_IN_REQUIRED: '請先登入。',
+    NICKNAME_TAKEN: '這個暱稱已經有人使用，請換一個。',
   },
   tutorial: {
     title: '新手教學',

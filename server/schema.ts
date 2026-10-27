@@ -8,7 +8,9 @@ import {
   bigint,
   boolean,
   index,
+  uniqueIndex,
 } from 'drizzle-orm/pg-core'
+import { sql } from 'drizzle-orm'
 import type { QueensPuzzle } from '../src/queens/types'
 import type { PuzzleReplay } from './puzzleCatalogModel'
 import type { RoomEvent, StoredRoom } from './model'
@@ -66,3 +68,14 @@ export const puzzleRecipes = pgTable('puzzle_recipes', {
     .references(() => puzzleCatalog.hash),
   replay: jsonb('replay').$type<PuzzleReplay>().notNull(),
 })
+
+/** Public identity of a Neon Auth user; `user_id` is `neon_auth.user.id`, which Neon owns. */
+export const playerProfiles = pgTable(
+  'player_profiles',
+  {
+    userId: text('user_id').primaryKey(),
+    nickname: text('nickname').notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [uniqueIndex('player_profiles_nickname_idx').on(sql`lower(${table.nickname})`)],
+)

@@ -6,6 +6,7 @@ import 'virtual:uno.css'
 import { initializeTheme } from './composables/useTheme'
 import { initializeLocale } from './composables/useLocale'
 import { i18n } from './i18n'
+import { loadAccount, SESSION_VERIFIER } from './composables/useAccount'
 const disposeTheme = initializeTheme()
 const disposeLocale = initializeLocale()
 if (import.meta.hot)
@@ -13,4 +14,5 @@ if (import.meta.hot)
     disposeTheme()
     disposeLocale()
   })
+void loadAccount(new URLSearchParams(location.search).get(SESSION_VERIFIER))
 createApp(App).use(createPinia()).use(router).use(i18n).mount('#app')

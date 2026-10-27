@@ -195,6 +195,20 @@ const en: Messages<typeof zhHant> = {
     region: 'Same color region',
     adjacent: 'The eight surrounding cells',
   },
+  account: {
+    signIn: 'Sign in',
+    open: 'Account',
+    title: 'Account',
+    close: 'Close account settings',
+    nickname: 'Nickname',
+    nicknameNote:
+      'Shown on leaderboards and in co-op rooms. Your Google name and email stay private.',
+    save: 'Save',
+    signOut: 'Sign out',
+    delete: 'Delete account',
+    deleteConfirm:
+      'Delete your account? Your nickname and all game records will be removed permanently.',
+  },
   preferences: {
     open: 'Play settings',
     title: 'Play settings',
@@ -452,6 +466,8 @@ const en: Messages<typeof zhHant> = {
       'The generation budget ran out without a verified puzzle. Try another seed or different settings.',
     NO_PUZZLE: 'Generate a puzzle first.',
     INVALID_STATE: 'The game state is not valid.',
+    SIGN_IN_REQUIRED: 'Please sign in first.',
+    NICKNAME_TAKEN: 'That nickname is taken. Please choose another.',
   },
   tutorial: {
     title: 'Tutorial',

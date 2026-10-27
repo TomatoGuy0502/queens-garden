@@ -2,6 +2,7 @@ import { mkdir, readFile, rename, writeFile } from 'node:fs/promises'
 import { dirname } from 'node:path'
 import { randomUUID } from 'node:crypto'
 import { databaseCatalogRepository } from './puzzleCatalogRepository'
+import { databaseAccountRepository } from './accounts'
 import { Pool } from 'pg'
 import { databaseUrl } from './databaseUrl'
 import { drizzle } from 'drizzle-orm/node-postgres'
@@ -62,6 +63,7 @@ export function postgresRepository(url: string) {
   return {
     repository: databaseRepository(db),
     catalog: databaseCatalogRepository(db),
+    accounts: databaseAccountRepository(db),
     close: () => pool.end(),
   }
 }

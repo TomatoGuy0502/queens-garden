@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import AccountMenu from './AccountMenu.vue'
 import CrownIcon from './CrownIcon.vue'
 import GamePreferences from './GamePreferences.vue'
 import LanguageSwitcher from './LanguageSwitcher.vue'
@@ -19,7 +20,7 @@ const { guidance, storageAvailable } = useGamePreferences()
       ><LanguageSwitcher /><ThemeToggle /><GamePreferences
         v-model="guidance"
         :storage-available="storageAvailable"
-      />
+      /><AccountMenu />
     </nav>
   </header>
 </template>

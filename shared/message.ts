@@ -66,6 +66,8 @@ export const ERROR_CODES = [
   'GENERATION_BUDGET',
   'NO_PUZZLE',
   'INVALID_STATE',
+  'SIGN_IN_REQUIRED',
+  'NICKNAME_TAKEN',
 ] as const
 export type ErrorCode = (typeof ERROR_CODES)[number]
 export const errorMessage = (code: ErrorCode, params?: Record<string, MessageParam>): Message =>

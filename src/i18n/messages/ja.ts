@@ -192,6 +192,20 @@ const ja: Messages<typeof zhHant> = {
     puzzleTitle: 'Queens の問題',
   },
   guidance: { row: '同じ行', column: '同じ列', region: '同じ色の領域', adjacent: '周囲 8 マス' },
+  account: {
+    signIn: 'ログイン',
+    open: 'アカウント',
+    title: 'アカウント',
+    close: 'アカウント設定を閉じる',
+    nickname: 'ニックネーム',
+    nicknameNote:
+      'ランキングと協力ルームに表示されます。Google の名前とメールアドレスは公開されません。',
+    save: '保存',
+    signOut: 'ログアウト',
+    delete: 'アカウントを削除',
+    deleteConfirm:
+      'アカウントを削除しますか？ニックネームとすべてのゲーム記録が完全に削除されます。',
+  },
   preferences: {
     open: 'プレイ設定',
     title: 'プレイ設定',
@@ -437,6 +451,8 @@ const ja: Messages<typeof zhHant> = {
       '生成の上限に達し、検証済みの問題が見つかりませんでした。シードを変えるか設定を調整してください。',
     NO_PUZZLE: '先に問題を生成してください。',
     INVALID_STATE: 'ゲームの状態が正しくありません。',
+    SIGN_IN_REQUIRED: '先にログインしてください。',
+    NICKNAME_TAKEN: 'このニックネームは使われています。別の名前にしてください。',
   },
   tutorial: {
     title: 'チュートリアル',

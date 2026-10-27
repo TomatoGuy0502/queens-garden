@@ -1,4 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router'
+import { SESSION_VERIFIER } from './composables/useAccount'
 
 declare module 'vue-router' {
   interface RouteMeta {
@@ -47,4 +48,10 @@ export const router = createRouter({
       meta: { title: 'notFound.title' },
     },
   ],
+})
+// main.ts already handed the sign-in verifier to loadAccount; keep it out of every route's query.
+router.beforeEach((to) => {
+  if (!(SESSION_VERIFIER in to.query)) return true
+  const { [SESSION_VERIFIER]: _verifier, ...query } = to.query
+  return { ...to, query, replace: true }
 })

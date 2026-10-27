@@ -72,3 +72,19 @@ E2E 會實際建立測試房間與事件、操作棋盤、完成團隊關卡並�
 Blueprint 預設 `PUZZLE_PREFILL=1`、`PUZZLE_STOCK_TARGET=3`，8×8 各難度共最多 9 題未使用庫存。設定為 `0` 可暫停背景補貨，不影響存題、Seed 查詢或即時生成。滿庫後不繼續輪詢題庫；原有房間過期清理排程維持原樣。
 
 本地／E2E 的題庫預設為 `${ROOM_FILE}.puzzles.json`，不會使用 production credentials。Playwright 關閉自動補貨，另以真實 Node Worker、檔案儲存及 PGlite 測試補貨與玩家優先處理，避免一般 E2E 依賴隨機背景時序。
+
+## Google 登入（Neon Auth）
+
+登入使用 Neon 託管的 Neon Auth（Better Auth），由 Fastify 在 `/api/auth/*` 代理 `get-session`、`sign-in/social`、`sign-out` 三個端點。代理把 Neon 回傳的 cookie 改寫成本站 first-party cookie（拿掉 `Domain`／`Partitioned`，`SameSite=Lax`），所以不依賴第三方 cookie，Safari 也能維持登入。其餘 Neon Auth 端點（email 註冊等）不經過本站。
+
+- 需要同時有資料庫與 `NEON_AUTH_BASE_URL` 才啟用；本地沒設 `LOCAL_DATABASE_URL` 時不顯示登入按鈕。
+- 每個 Neon branch 的 Auth 各自獨立，URL 用 `neon neon-auth status --branch <name>` 查。開發用 branch `dev-auth`（2026-11-26 到期）已啟用 Auth，連線字串與 `NEON_AUTH_BASE_URL` 寫在 `.env.local`。
+- 玩家自己的資料表只存 `user_id`（`neon_auth.user.id`），不對 `neon_auth` 建外鍵；`drizzle.config.ts` 以 `schemaFilter: ['public']` 避免 migration 碰到 Neon 管理的 schema。
+- 託管版不開放 `delete-user`，刪除帳號只刪本站資料（暱稱、成績、排行榜），Google 登入紀錄留在 Neon Auth。
+
+上線前：
+
+1. production branch 啟用 Auth：`neon deploy`（`neon.ts` 已設 `auth: true`）或 `neon neon-auth enable --branch production`，再把 Base URL 設到 Render 的 `NEON_AUTH_BASE_URL`。
+2. 加入正式網域：`neon neon-auth domain add https://<app>.onrender.com --branch production`。
+3. 目前使用 Neon 共用的 Google key，同意畫面會顯示 Neon 的名稱。要換成自己的：在 Google Cloud 建 OAuth client，redirect URI 填 `neon neon-auth oauth-provider list` 顯示的 callback（共用 key 時為 `https://neonauth.<region>.aws.neon.tech/auth/oauth/callback/google`，自有 key 依 Neon 文件為 `{NEON_AUTH_BASE_URL}/callback/google`），再用 `neon neon-auth oauth-provider` 設定並發布同意畫面。
+4. 建議關閉用不到的 email/password 登入：`neon neon-auth config email-password`。

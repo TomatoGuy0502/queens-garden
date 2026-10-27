@@ -24,3 +24,6 @@ services:
         sync: false
       - key: DATABASE_URL_UNPOOLED
         sync: false
+      # Neon Auth base URL of the production branch (neon neon-auth status --branch production).
+      - key: NEON_AUTH_BASE_URL
+        sync: false
