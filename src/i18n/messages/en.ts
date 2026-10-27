@@ -230,6 +230,7 @@ const en: Messages<typeof zhHant> = {
     you: '(you)',
   },
   account: {
+    loading: 'Loading…',
     signIn: 'Sign in',
     open: 'Account',
     title: 'Account',

@@ -6,7 +6,7 @@ import { useAccount } from '../composables/useAccount'
 import { usePlayerName } from '../composables/usePlayerName'
 import { useMessage } from '../i18n/message'
 import { LocalizedError, errorMessage, type Message } from '../../shared/message'
-const { enabled, account, signIn, signOut, setNickname, deleteAccount } = useAccount()
+const { enabled, account, ready, signIn, signOut, setNickname, deleteAccount } = useAccount()
 const { t } = useI18n()
 const render = useMessage()
 const dialog = useTemplateRef<HTMLDialogElement>('dialog')
@@ -62,7 +62,9 @@ function closeOnBackdrop(event: MouseEvent) {
 }
 </script>
 <template>
-  <template v-if="enabled">
+  <!-- Holds the button's place while the session loads, so the header does not jump. -->
+  <span v-if="!ready" class="account-placeholder" aria-hidden="true"></span>
+  <template v-else-if="enabled">
     <button
       v-if="!account"
       type="button"
@@ -140,6 +142,10 @@ function closeOnBackdrop(event: MouseEvent) {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+.account-placeholder {
+  width: 32px;
+  height: 36px;
 }
 .account-button:hover {
   color: var(--accent);

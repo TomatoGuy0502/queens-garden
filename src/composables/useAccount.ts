@@ -17,11 +17,14 @@ export interface Account {
 /** Whether the server offers sign-in at all (it needs a database and Neon Auth). */
 const enabled = shallowRef(false)
 const account = shallowRef<Account | null>(null)
+/** False until the session, profile and synced statistics are known, so nothing shows a guess. */
+const ready = shallowRef(false)
 let loaded: Promise<void> = Promise.resolve()
 
 /** Reads who is signed in; `verifier` completes a Google sign-in that just returned. */
 export function loadAccount(verifier?: string | null) {
-  loaded = readAccount(verifier)
+  ready.value = false
+  loaded = readAccount(verifier).finally(() => (ready.value = true))
   return loaded
 }
 async function readAccount(verifier?: string | null) {
@@ -88,5 +91,5 @@ export const fetchRankedResult = async (day: string) =>
 export const fetchLeaderboard = (day: string) =>
   request<Leaderboard>(`/api/leaderboard?day=${encodeURIComponent(day)}`)
 export function useAccount() {
-  return { enabled, account, signIn, signOut, setNickname, deleteAccount }
+  return { enabled, account, ready, signIn, signOut, setNickname, deleteAccount }
 }

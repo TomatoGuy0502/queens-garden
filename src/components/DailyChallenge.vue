@@ -8,17 +8,22 @@ import type { LeaderboardEntry } from '../../shared/account'
 defineProps<{ busy?: boolean; inGame?: boolean }>()
 const emit = defineEmits<{ start: [] }>()
 const { today, config, result, streak } = useDailyChallenge()
-const { enabled, account } = useAccount()
+const { enabled, account, ready } = useAccount()
 // A signed-in player's card shows the leaderboard result, not a faster replay of a known board.
 const ranked = shallowRef<LeaderboardEntry | null>(null)
+const loading = shallowRef(true)
 watch(
-  [account, today],
-  async ([signedIn, day]) => {
+  [ready, account, today],
+  async ([isReady, signedIn, day]) => {
     ranked.value = null
-    if (!signedIn) return
-    const found = await fetchRankedResult(day).catch(() => null)
+    loading.value = true
+    if (!isReady) return
+    const found = signedIn ? await fetchRankedResult(day).catch(() => null) : null
     // A sign-out or a new day while this was loading makes the answer stale.
-    if (account.value === signedIn && today.value === day) ranked.value = found
+    if (ready.value && account.value === signedIn && today.value === day) {
+      ranked.value = found
+      loading.value = false
+    }
   },
   { immediate: true },
 )
@@ -37,7 +42,8 @@ watch(
         }}
       </p>
       <p class="status" role="status">
-        <template v-if="ranked">{{
+        <template v-if="loading">{{ $t('account.loading') }}</template>
+        <template v-else-if="ranked">{{
           $t('ranked.done', { time: formatDuration(ranked.score), rank: ranked.rank })
         }}</template>
         <template v-else-if="result">{{
@@ -47,9 +53,9 @@ watch(
           })
         }}</template>
         <template v-else>{{ $t('daily.pending') }}</template>
-        <template v-if="streak">{{ $t('daily.streak', { days: streak }) }}</template>
+        <template v-if="streak && !loading">{{ $t('daily.streak', { days: streak }) }}</template>
       </p>
-      <p v-if="enabled">
+      <p v-if="enabled && ready">
         {{ $t(account ? 'ranked.rules' : 'ranked.signIn') }}
         <RouterLink :to="{ path: '/leaderboard', query: { day: today } }">{{
           $t('ranked.leaderboard')

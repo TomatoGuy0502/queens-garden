@@ -209,6 +209,7 @@ export default {
     you: '（你）',
   },
   account: {
+    loading: '載入中…',
     signIn: '登入',
     open: '帳號',
     title: '帳號',

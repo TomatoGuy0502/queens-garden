@@ -6,7 +6,7 @@ import { useAccount } from '../composables/useAccount'
 import { BOARD_SIZES, DIFFICULTIES } from '../queens/levels'
 import { averageSeconds, bucketKey, formatDuration } from '../queens/stats'
 const { stats, storageAvailable, reset } = useGameStats()
-const { account } = useAccount()
+const { account, ready } = useAccount()
 const confirming = shallowRef(false)
 const rows = computed(() =>
   BOARD_SIZES.map((size) => ({
@@ -41,7 +41,8 @@ function clear() {
       {{ $t(account ? 'stats.introSynced' : 'stats.intro', { total }) }}
     </p>
     <p v-if="!storageAvailable" class="notice" role="status">{{ $t('stats.storage') }}</p>
-    <div v-if="total" class="table-wrap">
+    <p v-if="!ready" class="notice" role="status">{{ $t('account.loading') }}</p>
+    <div v-else-if="total" class="table-wrap">
       <table>
         <caption class="sr-only">
           {{
@@ -77,7 +78,7 @@ function clear() {
       <p>{{ $t('stats.empty') }}</p>
       <RouterLink class="primary" to="/solo">{{ $t('stats.start') }}</RouterLink>
     </div>
-    <div v-if="total" class="reset">
+    <div v-if="ready && total" class="reset">
       <template v-if="confirming">
         <p>{{ $t('stats.confirm') }}</p>
         <button type="button" class="text-button" @click="confirming = false">

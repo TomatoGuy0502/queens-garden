@@ -132,6 +132,8 @@ watch(
     lastRecord.value = null
   },
 )
+// True while asking the server whether today's daily is ranked, before the board is generated.
+const preparing = shallowRef(false)
 // Today's leaderboard entry: submitted once the ranked board is solved.
 const rankedResult = shallowRef<RunFinish | 'pending' | null>(null)
 const rankedNotice = shallowRef<Message | null>(null)
@@ -154,6 +156,7 @@ watch(won, (isWon) => {
 })
 /** Today's ranked run for a signed-in player; null plays the daily unranked. */
 async function rankedRun(day: string): Promise<RunStart | null> {
+  preparing.value = true
   try {
     const run = await startRankedRun()
     if (run?.day !== day) return null
@@ -162,6 +165,8 @@ async function rankedRun(day: string): Promise<RunStart | null> {
   } catch (reason) {
     rankedNotice.value = failure(reason)
     return null
+  } finally {
+    preparing.value = false
   }
 }
 const highlighted = computed(() => (paused.value ? [] : hintCells.value))
@@ -303,7 +308,7 @@ onMounted(() => {
             @resume="resume(pendingResume)"
             @discard="discardSaved"
           />
-          <div v-else-if="busy" class="empty-board" role="status">
+          <div v-else-if="busy || preparing" class="empty-board" role="status">
             <div class="generating-art">
               <CrownIcon /><LoaderCircle class="spinner" :size="21" />
             </div>

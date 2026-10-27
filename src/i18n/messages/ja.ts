@@ -227,6 +227,7 @@ const ja: Messages<typeof zhHant> = {
     you: '（あなた）',
   },
   account: {
+    loading: '読み込み中…',
     signIn: 'ログイン',
     open: 'アカウント',
     title: 'アカウント',
