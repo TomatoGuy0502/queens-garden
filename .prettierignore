@@ -1,0 +1,2 @@
+# Agent skills are vendored as published; reformatting would break their lock hashes.
+.claude/skills/
