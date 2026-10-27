@@ -1,5 +1,6 @@
 import { shallowRef } from 'vue'
-import { LocalizedError, errorMessage, type Message } from '../../shared/message'
+import { request } from '../services/api'
+import { forgetStats, syncStats } from './useGameStats'
 import { savePlayerName } from './usePlayerName'
 import type { Leaderboard, RunFinish, RunStart } from '../../shared/account'
 import type { RunEvent } from '../queens/replay'
@@ -7,6 +8,7 @@ import type { RunEvent } from '../queens/replay'
 /** Neon Auth returns from Google with this one-time parameter; get-session trades it for a cookie. */
 export const SESSION_VERIFIER = 'neon_auth_session_verifier'
 export interface Account {
+  id: string
   name: string
   image: string | null
   /** Public name on leaderboards; null until the player picks one. */
@@ -17,16 +19,6 @@ const enabled = shallowRef(false)
 const account = shallowRef<Account | null>(null)
 let loaded: Promise<void> = Promise.resolve()
 
-async function request<T>(path: string, init?: { method: string; body?: unknown }): Promise<T> {
-  const response = await fetch(path, {
-    method: init?.method ?? 'GET',
-    headers: init?.body === undefined ? undefined : { 'Content-Type': 'application/json' },
-    body: init?.body === undefined ? undefined : JSON.stringify(init.body),
-  })
-  const data = (await response.json().catch(() => null)) as (T & { error?: Message }) | null
-  if (!response.ok) throw new LocalizedError(data?.error ?? errorMessage('SERVER_ERROR'))
-  return data as T
-}
 /** Reads who is signed in; `verifier` completes a Google sign-in that just returned. */
 export function loadAccount(verifier?: string | null) {
   loaded = readAccount(verifier)
@@ -37,18 +29,22 @@ async function readAccount(verifier?: string | null) {
   enabled.value = !!features?.accounts
   const query = verifier ? `?${SESSION_VERIFIER}=${encodeURIComponent(verifier)}` : ''
   const session = enabled.value
-    ? await request<{ user?: { name: string; image: string | null } } | null>(
+    ? await request<{ user?: { id: string; name: string; image: string | null } } | null>(
         `/api/auth/get-session${query}`,
-      ).catch(() => null)
+      ).catch(() => undefined)
     : null
   if (!session?.user) {
     account.value = null
+    // A session that ended takes the account's statistics off this device; an outage does not.
+    if (session !== undefined) forgetStats()
     return
   }
   try {
     const { nickname } = await request<{ nickname: string | null }>('/api/profile')
-    account.value = { name: session.user.name, image: session.user.image, nickname }
+    const { id, name, image } = session.user
+    account.value = { id, name, image, nickname }
     if (nickname) savePlayerName(nickname)
+    await syncStats(id)
   } catch {
     // Signed in, but the profile is unreachable for now; play on as a guest.
     account.value = null
@@ -64,6 +60,7 @@ async function signIn() {
 async function signOut() {
   await request('/api/auth/sign-out', { method: 'POST', body: {} })
   account.value = null
+  forgetStats()
 }
 async function setNickname(value: string) {
   const { nickname } = await request<{ nickname: string }>('/api/profile', {

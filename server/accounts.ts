@@ -3,6 +3,7 @@ import { type PgDatabase, type PgQueryResultHKT } from 'drizzle-orm/pg-core'
 import * as schema from './schema'
 import { RoomError } from './model'
 import type { RankedResult } from '../src/queens/replay'
+import { emptyStats, parseStats, type StatsData } from '../src/queens/stats'
 import type { LeaderboardEntry } from '../shared/account'
 export interface DailyRun {
   startedAt: Date
@@ -18,6 +19,9 @@ export interface AccountRepository {
   finishRun(userId: string, day: string, result: RankedResult, now: Date): Promise<boolean>
   /** The top `limit` finishers of a day, plus `userId`'s own row wherever it ranks. */
   leaderboard(day: string, userId: string | null, limit: number): Promise<LeaderboardEntry[]>
+  stats(userId: string): Promise<StatsData>
+  /** Applies `change` to the stored statistics atomically and returns the result. */
+  updateStats(userId: string, change: (current: StatsData) => StatsData): Promise<StatsData>
   /** Removes everything the game stores about a user. */
   delete(userId: string): Promise<void>
 }
@@ -29,7 +33,7 @@ const uniqueViolation = (error: unknown): boolean =>
 export function databaseAccountRepository<T extends PgQueryResultHKT>(
   db: PgDatabase<T, typeof schema>,
 ): AccountRepository {
-  const { playerProfiles: profiles, dailyRuns: runs } = schema
+  const { playerProfiles: profiles, dailyRuns: runs, playerStats } = schema
   return {
     async nickname(userId) {
       const rows = await db
@@ -89,8 +93,32 @@ export function databaseAccountRepository<T extends PgQueryResultHKT>(
         .orderBy(ranked.rank)
       return rows.map(({ userId: id, ...entry }) => ({ ...entry, me: id === userId }))
     },
+    async stats(userId) {
+      const rows = await db
+        .select({ data: playerStats.data })
+        .from(playerStats)
+        .where(eq(playerStats.userId, userId))
+      return rows[0] ? parseStats(rows[0].data) : emptyStats()
+    },
+    updateStats(userId, change) {
+      return db.transaction(async (tx) => {
+        // Lock the row (once it exists) so two devices recording at once do not lose a game.
+        const rows = await tx
+          .select({ data: playerStats.data })
+          .from(playerStats)
+          .where(eq(playerStats.userId, userId))
+          .for('update')
+        const data = change(rows[0] ? parseStats(rows[0].data) : emptyStats())
+        await tx
+          .insert(playerStats)
+          .values({ userId, data })
+          .onConflictDoUpdate({ target: playerStats.userId, set: { data, updatedAt: new Date() } })
+        return data
+      })
+    },
     async delete(userId) {
       await db.transaction(async (tx) => {
+        await tx.delete(playerStats).where(eq(playerStats.userId, userId))
         await tx.delete(runs).where(eq(runs.userId, userId))
         await tx.delete(profiles).where(eq(profiles.userId, userId))
       })

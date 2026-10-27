@@ -36,6 +36,13 @@
       "when": 1793074693927,
       "tag": "0004_daily_runs",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1793075352129,
+      "tag": "0005_player_stats",
+      "breakpoints": true
     }
   ]
 }

@@ -4,6 +4,7 @@ import {
   emptyStats,
   formatDuration,
   parseStats,
+  mergeStats,
   recordOutcome,
   type GameOutcome,
 } from '../queens/stats'
@@ -104,4 +105,29 @@ it('only keeps the newest daily dates and validates stored ones', () => {
     },
   })
   expect(Object.keys(parsed.dailies)).toEqual(['2026-10-27'])
+})
+it('merges two play histories by summing buckets and keeping the better daily', () => {
+  const a = recordOutcome(emptyStats(), {
+    size: 8,
+    difficulty: 'easy',
+    seconds: 100,
+    moves: 20,
+    hints: 1,
+    daily: '2026-10-26',
+  }).stats
+  const b = recordOutcome(
+    recordOutcome(emptyStats(), { size: 8, difficulty: 'easy', seconds: 60, moves: 18, hints: 0 })
+      .stats,
+    { size: 6, difficulty: 'hard', seconds: 50, moves: 15, hints: 0, daily: '2026-10-26' },
+  ).stats
+  const merged = mergeStats(a, b)
+  expect(merged.buckets['8:easy']).toEqual({
+    completed: 2,
+    totalSeconds: 160,
+    bestSeconds: 60,
+    withoutHints: 1,
+  })
+  expect(merged.buckets['6:hard'].completed).toBe(1)
+  expect(merged.dailies['2026-10-26']).toEqual({ seconds: 50, moves: 15, hints: 0 })
+  expect(mergeStats(merged, emptyStats())).toEqual(merged)
 })

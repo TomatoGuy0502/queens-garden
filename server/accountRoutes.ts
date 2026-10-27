@@ -5,6 +5,7 @@ import type { Compute } from './compute'
 import { RoomError } from './model'
 import {
   finishRunSchema,
+  outcomeSchema,
   profileSchema,
   type Leaderboard,
   type RunFinish,
@@ -12,6 +13,7 @@ import {
 } from '../shared/account'
 import { dailyConfig, dateKey, isDailyPuzzle, isDateKey } from '../src/queens/daily'
 import { scoreRun } from '../src/queens/replay'
+import { emptyStats, mergeStats, parseStats, recordOutcome } from '../src/queens/stats'
 import type { QueensPuzzle } from '../src/queens/types'
 
 const LEADERBOARD_SIZE = 100
@@ -59,6 +61,23 @@ export function accountRoutes(
   app.delete('/api/profile', async (request) => {
     await accounts.delete((await signedIn(request)).id)
     return { ok: true }
+  })
+
+  // Solo statistics are the player's own record, so they are taken as reported.
+  app.get('/api/stats', async (request) => accounts.stats((await signedIn(request)).id))
+  app.post('/api/stats', { bodyLimit: 128 * 1024 }, async (request) => {
+    const { id } = await signedIn(request)
+    const local = parseStats(request.body)
+    return accounts.updateStats(id, (current) => mergeStats(current, local))
+  })
+  app.post('/api/stats/record', async (request) => {
+    const { id } = await signedIn(request)
+    const outcome = outcomeSchema.parse(request.body)
+    return accounts.updateStats(id, (current) => recordOutcome(current, outcome).stats)
+  })
+  app.delete('/api/stats', async (request) => {
+    const { id } = await signedIn(request)
+    return accounts.updateStats(id, () => emptyStats())
   })
 
   app.post(

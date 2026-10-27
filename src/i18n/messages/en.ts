@@ -154,6 +154,8 @@ const en: Messages<typeof zhHant> = {
     title: 'My stats',
     intro:
       'Your solo results are stored only in this browser and are never uploaded. {total} puzzles completed.',
+    introSynced:
+      'Your solo results are synced to your account and show on every device you sign in on. {total} puzzles completed.',
     storage: 'The browser refused storage, so results last only until this page is closed.',
     caption: 'Best time, average time and completed games for each board size and difficulty',
     size: 'Size',

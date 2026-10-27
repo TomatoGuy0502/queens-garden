@@ -12,6 +12,7 @@ import {
 } from 'drizzle-orm/pg-core'
 import { sql } from 'drizzle-orm'
 import type { QueensPuzzle } from '../src/queens/types'
+import type { StatsData } from '../src/queens/stats'
 import type { PuzzleReplay } from './puzzleCatalogModel'
 import type { RoomEvent, StoredRoom } from './model'
 export const rooms = pgTable('coop_rooms', {
@@ -97,3 +98,9 @@ export const dailyRuns = pgTable(
     index('daily_runs_rank_idx').on(table.day, table.score, table.moves, table.finishedAt),
   ],
 )
+/** A signed-in player's solo statistics, the same shape the browser keeps locally. */
+export const playerStats = pgTable('player_stats', {
+  userId: text('user_id').primaryKey(),
+  data: jsonb('data').$type<StatsData>().notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+})

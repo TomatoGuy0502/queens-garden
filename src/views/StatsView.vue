@@ -2,9 +2,11 @@
 import { computed, shallowRef } from 'vue'
 import AppHeader from '../components/AppHeader.vue'
 import { useGameStats } from '../composables/useGameStats'
+import { useAccount } from '../composables/useAccount'
 import { BOARD_SIZES, DIFFICULTIES } from '../queens/levels'
 import { averageSeconds, bucketKey, formatDuration } from '../queens/stats'
 const { stats, storageAvailable, reset } = useGameStats()
+const { account } = useAccount()
 const confirming = shallowRef(false)
 const rows = computed(() =>
   BOARD_SIZES.map((size) => ({
@@ -35,7 +37,9 @@ function clear() {
   <main class="page-shell">
     <AppHeader />
     <h1>{{ $t('stats.title') }}</h1>
-    <p class="page-description">{{ $t('stats.intro', { total }) }}</p>
+    <p class="page-description">
+      {{ $t(account ? 'stats.introSynced' : 'stats.intro', { total }) }}
+    </p>
     <p v-if="!storageAvailable" class="notice" role="status">{{ $t('stats.storage') }}</p>
     <div v-if="total" class="table-wrap">
       <table>

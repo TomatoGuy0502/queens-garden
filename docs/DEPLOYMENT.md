@@ -81,6 +81,8 @@ Blueprint 預設 `PUZZLE_PREFILL=1`、`PUZZLE_STOCK_TARGET=3`，8×8 各難度�
 - 每個 Neon branch 的 Auth 各自獨立，URL 用 `neon neon-auth status --branch <name>` 查。開發用 branch `dev-auth`（2026-11-26 到期）已啟用 Auth，連線字串與 `NEON_AUTH_BASE_URL` 寫在 `.env.local`。
 - 玩家自己的資料表只存 `user_id`（`neon_auth.user.id`），不對 `neon_auth` 建外鍵；`drizzle.config.ts` 以 `schemaFilter: ['public']` 避免 migration 碰到 Neon 管理的 schema。
 - 託管版不開放 `delete-user`，刪除帳號只刪本站資料（暱稱、成績、排行榜），Google 登入紀錄留在 Neon Auth。
+- 新增 migration：`0003_player_profiles`（暱稱，忽略大小寫唯一）、`0004_daily_runs`（每人每天一筆排名賽，伺服器記開始時間）、`0005_player_stats`（同步的單人成績 JSON）。已在 dev branch `dev-auth` 套用；production 由 Render start command 的 `npm run db:migrate` 套用。
+- 排名賽交卷時，伺服器用 worker 依 seed 重新產生當天題目並重播操作紀錄，同一題在記憶體快取，不另外寫入題庫。
 
 上線前：
 

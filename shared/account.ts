@@ -1,10 +1,21 @@
 import { z } from 'zod'
 import { runLogSchema } from '../src/queens/replay'
+import { BOARD_SIZES, DIFFICULTIES } from '../src/queens/levels'
+import { isDateKey } from '../src/queens/daily'
 export const profileSchema = z.object({ nickname: z.string().trim().min(1).max(24) })
 export const finishRunSchema = z.object({
   day: z.string(),
   seed: z.number().int().min(0).max(0xffffffff),
   log: runLogSchema,
+})
+const count = z.number().int().nonnegative().max(1e9)
+export const outcomeSchema = z.object({
+  size: z.number().refine((size) => BOARD_SIZES.some((item) => item === size)),
+  difficulty: z.enum(DIFFICULTIES),
+  seconds: count,
+  moves: count,
+  hints: count,
+  daily: z.string().refine(isDateKey).optional(),
 })
 export interface LeaderboardEntry {
   rank: number

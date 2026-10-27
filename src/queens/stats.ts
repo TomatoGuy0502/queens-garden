@@ -104,5 +104,27 @@ export function recordOutcome(stats: StatsData, outcome: GameOutcome): RecordedO
     newBest: previousBest !== null && outcome.seconds < previousBest,
   }
 }
+/** Combines two separate play histories, such as a device's games and an account's. */
+export function mergeStats(a: StatsData, b: StatsData): StatsData {
+  const buckets = { ...a.buckets }
+  for (const [key, other] of Object.entries(b.buckets)) {
+    const mine = buckets[key]
+    buckets[key] = mine
+      ? {
+          completed: mine.completed + other.completed,
+          totalSeconds: mine.totalSeconds + other.totalSeconds,
+          bestSeconds: Math.min(mine.bestSeconds, other.bestSeconds),
+          withoutHints: mine.withoutHints + other.withoutHints,
+        }
+      : other
+  }
+  const dailies = { ...a.dailies }
+  for (const [day, other] of Object.entries(b.dailies))
+    if (!dailies[day] || other.seconds < dailies[day].seconds) dailies[day] = other
+  return {
+    buckets,
+    dailies: Object.fromEntries(Object.entries(dailies).sort().slice(-MAX_DAILIES)),
+  }
+}
 export const averageSeconds = (bucket: BucketStats) =>
   Math.round(bucket.totalSeconds / bucket.completed)

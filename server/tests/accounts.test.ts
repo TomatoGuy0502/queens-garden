@@ -5,6 +5,7 @@ import { readFile } from 'node:fs/promises'
 import * as schema from '../schema'
 import { databaseAccountRepository } from '../accounts'
 import { firstPartyCookie } from '../auth'
+import { emptyStats, mergeStats, recordOutcome } from '../../src/queens/stats'
 
 async function repository() {
   const client = new PGlite()
@@ -66,6 +67,21 @@ it('keeps one ranked run per player and day and ranks finishers by score, then m
     'Bob',
     'Alice',
   ])
+  await client.close()
+})
+
+it("keeps a player's statistics and removes them with the account", async () => {
+  const { client, accounts } = await repository()
+  const game = { size: 8, difficulty: 'easy' as const, seconds: 90, moves: 20, hints: 0 }
+  expect(await accounts.stats('a')).toEqual(emptyStats())
+  const local = recordOutcome(emptyStats(), game).stats
+  await accounts.updateStats('a', (current) => mergeStats(current, local))
+  await Promise.all(
+    [1, 2, 3].map(() => accounts.updateStats('a', (current) => recordOutcome(current, game).stats)),
+  )
+  expect((await accounts.stats('a')).buckets['8:easy'].completed).toBe(4)
+  await accounts.delete('a')
+  expect(await accounts.stats('a')).toEqual(emptyStats())
   await client.close()
 })
 
