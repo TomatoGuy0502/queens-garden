@@ -228,6 +228,7 @@ const en: Messages<typeof zhHant> = {
     time: 'Time',
     hints: 'Hints',
     you: '(you)',
+    anonymous: 'Anonymous player',
   },
   account: {
     loading: 'Loading…',

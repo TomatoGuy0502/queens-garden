@@ -19,7 +19,8 @@ export const outcomeSchema = z.object({
 })
 export interface LeaderboardEntry {
   rank: number
-  nickname: string
+  /** Null until the player picks one; shown as an anonymous player. */
+  nickname: string | null
   seconds: number
   moves: number
   hints: number

@@ -207,6 +207,7 @@ export default {
     time: '用時',
     hints: '提示',
     you: '（你）',
+    anonymous: '匿名玩家',
   },
   account: {
     loading: '載入中…',

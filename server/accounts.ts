@@ -83,7 +83,8 @@ export function databaseAccountRepository<T extends PgQueryResultHKT>(
             .as('rank'),
         })
         .from(runs)
-        .innerJoin(profiles, eq(profiles.userId, runs.userId))
+        // A verified run counts even before the player picks a nickname.
+        .leftJoin(profiles, eq(profiles.userId, runs.userId))
         .where(and(eq(runs.day, day), isNotNull(runs.finishedAt)))
         .as('ranked')
       const rows = await db

@@ -62,6 +62,13 @@ it('keeps one ranked run per player and day and ranks finishers by score, then m
   // Unfinished runs and other days stay off the board.
   expect(await accounts.leaderboard('2026-10-26', null, 100)).toEqual([])
   expect(await accounts.leaderboard(day, 'd', 100)).toHaveLength(3)
+  // A finisher without a nickname still ranks, as an anonymous row.
+  await accounts.startRun('e', day, start)
+  await accounts.finishRun('e', day, result(120, 9), start)
+  expect(
+    (await accounts.leaderboard(day, 'e', 0)).map(({ nickname, rank }) => [nickname, rank]),
+  ).toEqual([[null, 4]])
+  await accounts.delete('e')
   await accounts.delete('c')
   expect((await accounts.leaderboard(day, null, 100)).map((entry) => entry.nickname)).toEqual([
     'Bob',

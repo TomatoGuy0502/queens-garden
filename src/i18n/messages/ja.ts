@@ -225,6 +225,7 @@ const ja: Messages<typeof zhHant> = {
     time: 'タイム',
     hints: 'ヒント',
     you: '（あなた）',
+    anonymous: '匿名プレイヤー',
   },
   account: {
     loading: '読み込み中…',
