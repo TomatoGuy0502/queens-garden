@@ -262,7 +262,9 @@ onMounted(() => {
     void resume(saved)
   // Without a specific puzzle in the link, ask before replacing the unfinished game.
   else if (saved && !params.has('seed')) pendingResume.value = saved
-  else void startGame(initialSize, initialDifficulty, initialSeed, linkedDaily)
+  // A link to today's board starts the daily like its card does, so a signed-in run is ranked.
+  else if (linkedDaily) void startDaily()
+  else void startGame(initialSize, initialDifficulty, initialSeed)
 })
 </script>
 <template>
