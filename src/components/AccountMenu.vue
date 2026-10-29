@@ -19,10 +19,15 @@ function open() {
   error.value = null
   dialog.value?.showModal()
 }
-// A first sign-in has no public name yet; ask for one straight away.
-watch(account, (value) => {
-  if (value && !value.nickname) open()
-})
+// A player without a public name is asked for one on every visit; the dialog only exists once
+// `ready` has rendered it, hence the post flush.
+watch(
+  [ready, account],
+  ([isReady, value]) => {
+    if (isReady && value && !value.nickname) open()
+  },
+  { flush: 'post' },
+)
 async function run(action: () => Promise<unknown>) {
   busy.value = true
   error.value = null
