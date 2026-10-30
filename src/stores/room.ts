@@ -244,6 +244,7 @@ export const useRoomStore = defineStore('room', () => {
     const before = state.cells[index]
     const nextState = nextCell(before, action)
     pendingCells.value = [...pendingCells.value, index]
+    game.show(index, nextState)
     try {
       await send({
         type: 'setCell',
@@ -253,8 +254,10 @@ export const useRoomStore = defineStore('room', () => {
         nextState,
       })
     } finally {
-      if (game.state?.id === state.id)
+      if (game.state?.id === state.id) {
         pendingCells.value = pendingCells.value.filter((i) => i !== index)
+        game.settle(index)
+      }
     }
   }
   async function assist(type: 'hint' | 'check') {

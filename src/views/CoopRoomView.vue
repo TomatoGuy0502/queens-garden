@@ -283,7 +283,7 @@ async function reset() {
             </div>
             <QueensBoard
               :puzzle="game.state.puzzle"
-              :cells="game.state.cells"
+              :cells="game.cells"
               :guidance="guidance"
               :paused="game.state.phase === 'paused'"
               :won="game.state.phase === 'completed'"
@@ -584,7 +584,7 @@ async function reset() {
 }
 @media (max-width: 750px) {
   .coop-layout {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
     gap: 30px;
   }
   .coop-aside {

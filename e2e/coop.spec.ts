@@ -688,3 +688,43 @@ test('pages outside a joined room never ask before leaving', async ({ page }) =>
   await page.goto('/')
   expect(dialogs).toEqual([])
 })
+
+test('a large board scrolls inside its own box instead of widening the phone page', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 393, height: 851 })
+  await page.goto('/rooms/new')
+  await page.getByLabel('你的暱稱').fill('Alice')
+  await page.getByLabel('棋盤大小').selectOption('12')
+  await page.getByRole('button', { name: '建立房間', exact: true }).click()
+  await page.getByRole('button', { name: '開始合作', exact: true }).click()
+  await expect(page.getByRole('grid')).toBeVisible({ timeout: 60000 })
+  const widths = await page.evaluate(() => ({
+    page: document.documentElement.scrollWidth,
+    view: document.documentElement.clientWidth,
+  }))
+  expect(widths.page).toBeLessThanOrEqual(widths.view)
+})
+
+test('your own tap shows at once, before the server has answered', async ({ page }) => {
+  await page.goto('/rooms/new')
+  await page.getByLabel('你的暱稱').fill('Alice')
+  await page.getByLabel('棋盤大小').selectOption('6')
+  await page.getByRole('button', { name: '建立房間', exact: true }).click()
+  await page.getByRole('button', { name: '開始合作', exact: true }).click()
+  await expect(page.getByRole('grid')).toBeVisible({ timeout: 30000 })
+  // Hold every command back so only a local update can explain the change.
+  await page.routeWebSocket(/socket\.io/, (ws) => {
+    const server = ws.connectToServer()
+    ws.onMessage((message) =>
+      typeof message === 'string' && message.includes('room:command')
+        ? void setTimeout(() => server.send(message), 1500)
+        : server.send(message),
+    )
+    server.onMessage((message) => ws.send(message))
+  })
+  await page.reload()
+  await expect(page.getByRole('grid')).toBeVisible()
+  await cell(page, 0).click()
+  await expect(cell(page, 0)).toHaveAttribute('data-state', 'marked', { timeout: 500 })
+})
