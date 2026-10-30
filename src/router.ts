@@ -37,6 +37,11 @@ export const router = createRouter({
       meta: { title: 'leaderboard.title' },
     },
     {
+      path: '/rooms',
+      component: () => import('./views/RoomModeView.vue'),
+      meta: { title: 'nav.coop' },
+    },
+    {
       path: '/rooms/new',
       component: () => import('./views/CreateRoomView.vue'),
       meta: { title: 'nav.coop' },

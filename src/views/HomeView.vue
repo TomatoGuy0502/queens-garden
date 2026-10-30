@@ -15,7 +15,7 @@ import DailyChallenge from '../components/DailyChallenge.vue'
         <h2>{{ $t('home.solo.title') }}</h2>
         <p>{{ $t('home.solo.body') }}</p>
         <span>{{ $t('home.solo.cta') }} <ArrowRight :size="16" /></span></RouterLink
-      ><RouterLink to="/rooms/new" class="mode-card"
+      ><RouterLink to="/rooms" class="mode-card"
         ><Users :size="28" />
         <h2>{{ $t('home.coop.title') }}</h2>
         <p>{{ $t('home.coop.body') }}</p>

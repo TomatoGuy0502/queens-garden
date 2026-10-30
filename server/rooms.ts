@@ -1,6 +1,6 @@
 import { createHash, randomBytes, randomInt, randomUUID, timingSafeEqual } from 'node:crypto'
 import type { PuzzleSource } from './puzzleCatalog'
-import { MAX_ROOM_PLAYERS } from '../shared/coop'
+import { maxPlayers, type RoomMode } from '../shared/coop'
 import { failureMessage, message } from '../shared/message'
 import type {
   BoardAction,
@@ -15,11 +15,21 @@ import { ROOM_CODE_ALPHABET, ROOM_CODE_LENGTH, ROOM_CODE_PATTERN } from '../shar
 import type { CellState, PuzzleDefinition } from '../src/queens/types'
 import { HINT_LEVELS } from '../src/queens/strategies'
 import { conflictCells } from '../src/queens/validator'
+import { duelProgress } from '../src/queens/duel'
 import { RoomError, type RoomRepository, type StoredPlayer, type StoredRoom } from './model'
 import type { Compute, HintResult } from './compute'
 const ROOM_TTL = 3 * 60 * 60 * 1000
 const MAX_ACTIONS = 300
 const MAX_RECEIPTS = 1000
+// A duel is a race on private boards: nothing that helps a player or edits a shared board applies.
+const DUEL_FORBIDDEN = new Set<RoomCommand['type']>([
+  'restart',
+  'pause',
+  'setCell',
+  'undo',
+  'redo',
+  'applyHint',
+])
 const hash = (value: string) => createHash('sha256').update(value).digest('hex')
 function player(name: string): { stored: StoredPlayer; token: string } {
   const token = randomBytes(32).toString('hex')
@@ -51,6 +61,8 @@ function freshGame(room: StoredRoom) {
   room.hint = null
   room.message = null
   room.mistakes = []
+  room.boards = {}
+  room.winnerId = null
 }
 export class RoomManager {
   private queues = new Map<string, Promise<void>>()
@@ -102,7 +114,7 @@ export class RoomManager {
   private online(id: string, playerId: string) {
     return !!this.connections.get(id)?.get(playerId)?.size
   }
-  snapshot(room: StoredRoom): RoomSnapshot {
+  snapshot(room: StoredRoom, viewerId?: string): RoomSnapshot {
     const now = Date.now()
     let elapsedMs = 0
     if (room.startedAt !== null)
@@ -117,6 +129,7 @@ export class RoomManager {
     }
     return {
       id: room.id,
+      mode: room.mode,
       hostId: room.hostId,
       settings: room.settings,
       revision: room.revision,
@@ -141,6 +154,20 @@ export class RoomManager {
         hint: room.hint,
         message: room.message,
         mistakes: room.mistakes,
+        duel:
+          room.mode === 'duel'
+            ? {
+                progress: Object.fromEntries(
+                  room.players.map((p) => [
+                    p.id,
+                    duelProgress(room.boards[p.id] ?? [], room.settings.size),
+                  ]),
+                ),
+                winnerId: room.winnerId,
+                // Broadcasts go to both players, so a board only travels in a reply to its owner.
+                mine: viewerId ? room.boards[viewerId] : undefined,
+              }
+            : undefined,
       },
     }
   }
@@ -154,7 +181,8 @@ export class RoomManager {
     room.revision++
     room.checkpointAt = Date.now()
     room.expiresAt = Date.now() + ROOM_TTL
-    const completed = room.phase === 'completed' && ['setCell', 'applyHint', 'redo'].includes(type)
+    const completed =
+      room.phase === 'completed' && ['setCell', 'applyHint', 'redo', 'duelBoard'].includes(type)
     const result = completed
       ? {
           gameId: room.gameId,
@@ -173,11 +201,10 @@ export class RoomManager {
       changes: changes ?? boardAction?.changes,
       result,
     })
-    const state = this.snapshot(room)
-    this.onState(state)
-    return state
+    this.onState(this.snapshot(room))
+    return this.snapshot(room, playerId)
   }
-  async create(name: string, settings: RoomSettings): Promise<RoomAccess> {
+  async create(name: string, settings: RoomSettings, mode: RoomMode = 'coop'): Promise<RoomAccess> {
     for (let attempt = 0; attempt < 16; attempt++) {
       const id = this.makeCode()
       const access = await this.serial(id, async () => {
@@ -186,6 +213,7 @@ export class RoomManager {
         const room = {
           id,
           hostId: stored.id,
+          mode,
           settings,
           players: [stored],
           revision: 0,
@@ -204,6 +232,10 @@ export class RoomManager {
     }
     throw new RoomError('ROOM_CODE_EXHAUSTED')
   }
+  /** What kind of room a code names, so the join page can say so before anyone has joined. */
+  async mode(id: string): Promise<RoomMode> {
+    return (await this.load(id)).mode
+  }
   async join(id: string, name: string): Promise<RoomAccess> {
     return this.serial(id, async () => {
       const room = await this.load(id)
@@ -211,8 +243,10 @@ export class RoomManager {
       room.players = room.players.filter(
         (p) => p.id === room.hostId || this.online(id, p.id) || Date.now() - p.lastSeenAt < 300000,
       )
-      if (room.players.length >= MAX_ROOM_PLAYERS)
-        throw new RoomError('ROOM_FULL', { max: MAX_ROOM_PLAYERS })
+      const max = maxPlayers(room.mode)
+      if (room.players.length >= max) throw new RoomError('ROOM_FULL', { max })
+      // A duel cannot be joined halfway, and a newcomer should not inherit the last result.
+      if (room.mode === 'duel' && room.phase !== 'waiting') freshGame(room)
       const { stored, token } = player(name)
       room.players.push(stored)
       if (!room.hostId) room.hostId = stored.id
@@ -224,7 +258,7 @@ export class RoomManager {
     return this.serial(credentials.roomId, async () => {
       const room = await this.load(credentials.roomId)
       this.authorize(room, credentials)
-      return this.snapshot(room)
+      return this.snapshot(room, credentials.playerId)
     })
   }
   async connect(credentials: Credentials, socketId: string) {
@@ -308,15 +342,19 @@ export class RoomManager {
   private editable(room: StoredRoom) {
     if (room.phase !== 'playing') throw new RoomError('NOT_PLAYING')
   }
-  private completion(room: StoredRoom) {
-    const queens = room.cells.flatMap((cell, index) =>
+  private solved(room: StoredRoom, cells: CellState[]) {
+    const queens = cells.flatMap((cell, index) =>
       cell === 'queen'
         ? [{ row: Math.floor(index / room.settings.size), col: index % room.settings.size }]
         : [],
     )
-    const solved =
+    return (
       queens.length === room.settings.size &&
       conflictCells(room.puzzle!.regions, queens).length === 0
+    )
+  }
+  private completion(room: StoredRoom) {
+    const solved = this.solved(room, room.cells)
     if (solved && room.phase !== 'completed') {
       room.phase = 'completed'
       room.finishedAt = Date.now()
@@ -358,8 +396,10 @@ export class RoomManager {
     const state = await this.serial(credentials.roomId, async () => {
       const room = await this.load(credentials.roomId),
         member = this.authorize(room, credentials)
-      if (this.receipt(room, credentials, command)) return this.snapshot(room)
+      if (this.receipt(room, credentials, command)) return this.snapshot(room, member.id)
       if ('gameId' in command) this.round(room, command.gameId)
+      if (room.mode === 'duel' ? DUEL_FORBIDDEN.has(command.type) : command.type === 'duelBoard')
+        throw new RoomError('INVALID_ACTION')
       switch (command.type) {
         case 'configure':
           this.host(room, member.id)
@@ -368,7 +408,11 @@ export class RoomManager {
           break
         case 'start':
           this.host(room, member.id)
-          if (room.phase !== 'waiting' || this.generating.has(room.id))
+          if (
+            room.phase !== 'waiting' ||
+            this.generating.has(room.id) ||
+            (room.mode === 'duel' && room.players.length < maxPlayers('duel'))
+          )
             throw new RoomError('CANNOT_START')
           room.phase = 'generating'
           room.gameId = randomUUID()
@@ -399,6 +443,17 @@ export class RoomManager {
             room.hostId =
               room.players.find((p) => this.online(room.id, p.id))?.id ?? room.players[0]?.id ?? ''
           room.message = message('notice.playerLeft', { name: member.name })
+          if (room.mode === 'duel' && room.players.length) {
+            // Walking out of a race forfeits it; walking out while it is set up cancels it.
+            if (room.phase === 'playing') {
+              room.phase = 'completed'
+              room.finishedAt = Date.now()
+              room.winnerId = room.players[0].id
+            } else if (room.phase === 'generating') {
+              freshGame(room)
+              room.message = message('notice.playerLeft', { name: member.name })
+            }
+          }
           break
         case 'pause':
           if (room.phase !== 'playing' && room.phase !== 'paused')
@@ -422,6 +477,20 @@ export class RoomManager {
             { index: command.index, before: room.cells[command.index], after: command.nextState },
           ])
           break
+        case 'duelBoard': {
+          // The opponent may have finished while this board was on its way; the snapshot says so.
+          if (room.phase === 'completed') break
+          this.editable(room)
+          if (command.cells.length !== room.cells.length) throw new RoomError('INVALID_INPUT')
+          room.boards[member.id] = command.cells
+          if (this.solved(room, command.cells)) {
+            room.phase = 'completed'
+            room.finishedAt = Date.now()
+            room.winnerId = member.id
+            room.message = message('notice.duelWon', { name: member.name })
+          }
+          break
+        }
         case 'undo':
         case 'redo': {
           if (room.phase !== 'playing' && room.phase !== 'completed')
@@ -517,6 +586,7 @@ export class RoomManager {
       const room = await this.load(credentials.roomId)
       this.authorize(room, credentials)
       this.round(room, command.gameId)
+      if (room.mode === 'duel') throw new RoomError('INVALID_ACTION')
       if (this.receipt(room, credentials, command)) return { room, duplicate: true }
       this.editable(room)
       return { room, duplicate: false }

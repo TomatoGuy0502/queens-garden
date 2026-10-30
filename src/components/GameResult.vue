@@ -4,8 +4,11 @@ import CrownIcon from './CrownIcon.vue'
 import { formatDuration } from '../queens/stats'
 const props = defineProps<{
   time: string
-  moves: number
-  hints: number
+  moves?: number
+  hints?: number
+  /** A duel announces its own outcome instead of the solo summary. */
+  title?: string
+  summary?: string
   /** Personal best context for solo games; omitted for shared rooms. */
   record?: { newBest: boolean; previousBest: number | null; streak?: number }
   nextDisabled?: boolean
@@ -24,13 +27,14 @@ onMounted(() => {
 <template>
   <section ref="result" class="result" aria-labelledby="result-title">
     <CrownIcon filled class="result-crown" />
-    <h2 id="result-title">{{ $t('result.title') }}</h2>
+    <h2 id="result-title">{{ title ?? $t('result.title') }}</h2>
     <p>
       {{
+        summary ??
         $t('result.summary', {
           time,
-          moves: $t('count.moves', moves),
-          hints: $t('count.hints', hints),
+          moves: $t('count.moves', moves ?? 0),
+          hints: $t('count.hints', hints ?? 0),
         })
       }}
     </p>

@@ -5,7 +5,7 @@ import type { Compute } from '../compute'
 import { RoomError } from '../model'
 import type { RoomEvent, RoomRepository, StoredRoom } from '../model'
 import { MAX_ROOM_PLAYERS } from '../../shared/coop'
-import type { Credentials, RoomCommand, RoomSnapshot } from '../../shared/coop'
+import type { Credentials, RoomCommand, RoomMode, RoomSnapshot } from '../../shared/coop'
 import type { QueensPuzzle } from '../../src/queens/types'
 import { generatePuzzle } from '../../src/queens/generator'
 import { logicalHint } from '../../src/queens/difficulty'
@@ -41,9 +41,9 @@ async function deepen(
     snapshot = await manager.command(who, { type: 'hint', actionId: randomUUID(), gameId })
   return snapshot!
 }
-async function game(repository = memory(), engine = compute()) {
+async function game(repository = memory(), engine = compute(), mode: RoomMode = 'coop') {
   const manager = new RoomManager(repository, engine)
-  const host = await manager.create('Alice', { size: 6, difficulty: 'easy' }),
+  const host = await manager.create('Alice', { size: 6, difficulty: 'easy' }, mode),
     guest = await manager.join(host.state.id, 'Bob')
   await manager.connect(host.credentials, 'a')
   await manager.connect(guest.credentials, 'b')
@@ -535,4 +535,128 @@ it('a room runs one generation and one fresh hint at a time, so reset loops cann
     playing.command(player, { type: 'hint', actionId: randomUUID(), gameId: state.game.id }),
   ).rejects.toMatchObject({ code: 'COMPUTE_BUSY' })
   expect(hints).toBe(1)
+})
+
+const duelBoard = (state: RoomSnapshot, cells: ('empty' | 'queen' | 'marked')[]): RoomCommand => ({
+  type: 'duelBoard',
+  actionId: randomUUID(),
+  gameId: state.game.id,
+  cells,
+})
+const solved = () => {
+  const cells = Array<'empty' | 'queen'>(36).fill('empty')
+  puzzle.solution.forEach((col, row) => (cells[row * 6 + col] = 'queen'))
+  return cells
+}
+it('a duel starts only with two players and holds no more than two', async () => {
+  const manager = new RoomManager(memory(), compute())
+  const host = await manager.create('Alice', { size: 6, difficulty: 'easy' }, 'duel')
+  expect(host.state.mode).toBe('duel')
+  await manager.connect(host.credentials, 'a')
+  const start = (gameId: string): RoomCommand => ({ type: 'start', actionId: randomUUID(), gameId })
+  await expect(manager.command(host.credentials, start(host.state.game.id))).rejects.toMatchObject({
+    code: 'CANNOT_START',
+  })
+  await manager.join(host.state.id, 'Bob')
+  await expect(manager.join(host.state.id, 'Carol')).rejects.toMatchObject({ code: 'ROOM_FULL' })
+  await manager.command(host.credentials, start(host.state.game.id))
+})
+it('a duel counts covered rows and columns, wrong or not, and a board only goes back to its owner', async () => {
+  const { manager, host, guest, state } = await game(memory(), compute(), 'duel')
+  const board = Array<'empty' | 'queen' | 'marked'>(36).fill('empty')
+  // Three queens in one row cover one row, however many columns they use.
+  ;[0, 1, 2].forEach((i) => (board[i] = 'queen'))
+  const mine = await manager.command(host, duelBoard(state, board))
+  expect(mine.game.duel?.progress[host.playerId]).toBe(1)
+  expect(mine.game.duel?.mine).toEqual(board)
+  board[7] = 'queen'
+  board[14] = 'queen'
+  expect((await manager.command(host, duelBoard(state, board))).game.duel?.progress).toMatchObject({
+    [host.playerId]: 3,
+    [guest.playerId]: 0,
+  })
+  const theirs = await manager.state(guest)
+  expect(theirs.game.duel?.mine).toBeUndefined()
+  expect(theirs.game.duel?.progress[host.playerId]).toBe(3)
+  const broadcasts: RoomSnapshot[] = []
+  manager.onState = (next) => broadcasts.push(next)
+  await manager.command(
+    host,
+    duelBoard(
+      state,
+      board.map(() => 'empty'),
+    ),
+  )
+  expect(broadcasts.length).toBeGreaterThan(0)
+  expect(JSON.stringify(broadcasts)).not.toContain('"mine"')
+  expect(JSON.stringify(await manager.state(guest))).not.toContain('queen')
+})
+it('the first correct board wins the duel and a late board changes nothing', async () => {
+  const { manager, host, guest, state } = await game(memory(), compute(), 'duel')
+  const wrong = solved()
+  // One queen too many is never a solution, wherever the solution's queens are.
+  wrong[wrong.indexOf('empty')] = 'queen'
+  expect((await manager.command(host, duelBoard(state, wrong))).game.phase).toBe('playing')
+  const won = await manager.command(guest, duelBoard(state, solved()))
+  expect(won.game.phase).toBe('completed')
+  expect(won.game.duel?.winnerId).toBe(guest.playerId)
+  const late = await manager.command(host, duelBoard(state, solved()))
+  expect(late.game.duel).toMatchObject({ winnerId: guest.playerId })
+})
+it('a duel offers no hints, checks, pause, shared edits or restart, and a co-op room no duel boards', async () => {
+  const { manager, host, state } = await game(memory(), compute(), 'duel')
+  const gameId = state.game.id
+  for (const command of [
+    { type: 'hint' },
+    { type: 'check' },
+    { type: 'pause', paused: true },
+    { type: 'restart' },
+    { type: 'setCell', index: 0, expectedVersion: 0, nextState: 'queen' },
+  ] as const)
+    await expect(
+      manager.command(host, { ...command, actionId: randomUUID(), gameId }),
+    ).rejects.toMatchObject({ code: 'INVALID_ACTION' })
+  await expect(manager.command(host, duelBoard(state, ['queen']))).rejects.toMatchObject({
+    code: 'INVALID_INPUT',
+  })
+  const coop = await game()
+  await expect(
+    coop.manager.command(coop.host, duelBoard(coop.state, solved())),
+  ).rejects.toMatchObject({ code: 'INVALID_ACTION' })
+})
+it('leaving a duel in progress forfeits it, and the host can open the next round', async () => {
+  const { manager, host, guest, state } = await game(memory(), compute(), 'duel')
+  const left = await manager.command(guest, { type: 'leave', actionId: randomUUID() })
+  expect(left.game.phase).toBe('completed')
+  expect(left.game.duel?.winnerId).toBe(host.playerId)
+  const next = await manager.command(host, {
+    type: 'reset',
+    actionId: randomUUID(),
+    gameId: state.game.id,
+  })
+  expect(next.game).toMatchObject({ phase: 'waiting', duel: { winnerId: null, progress: {} } })
+})
+it('a newcomer to a duel lands in the lobby instead of the last result', async () => {
+  const { manager, host, guest } = await game(memory(), compute(), 'duel')
+  await manager.command(guest, { type: 'leave', actionId: randomUUID() })
+  expect((await manager.state(host)).game.phase).toBe('completed')
+  const carol = await manager.join(host.roomId, 'Carol')
+  expect(carol.state.game).toMatchObject({ phase: 'waiting', duel: { winnerId: null } })
+  expect(carol.state.players).toHaveLength(2)
+  expect((await manager.state(host)).game.phase).toBe('waiting')
+})
+it('leaving a duel while its puzzle is being prepared cancels the round', async () => {
+  const stuck: Compute = { ...compute(), generate: () => new Promise(() => undefined) }
+  const manager = new RoomManager(memory(), stuck)
+  const host = await manager.create('Alice', { size: 6, difficulty: 'easy' }, 'duel'),
+    guest = await manager.join(host.state.id, 'Bob')
+  const started = await manager.command(host.credentials, {
+    type: 'start',
+    actionId: randomUUID(),
+    gameId: host.state.game.id,
+  })
+  expect(started.game.phase).toBe('generating')
+  const left = await manager.command(guest.credentials, { type: 'leave', actionId: randomUUID() })
+  expect(left.game.phase).toBe('waiting')
+  expect(left.players).toHaveLength(1)
 })

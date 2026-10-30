@@ -1,5 +1,5 @@
 import { errorMessage, type ErrorCode, type Message, type MessageParam } from '../shared/message'
-import type { BoardAction, GameSnapshot, RoomSettings, SharedHint } from '../shared/coop'
+import type { BoardAction, GameSnapshot, RoomMode, RoomSettings, SharedHint } from '../shared/coop'
 import type { CellState, QueensPuzzle } from '../src/queens/types'
 export interface StoredPlayer {
   id: string
@@ -10,6 +10,7 @@ export interface StoredPlayer {
 export interface StoredRoom {
   id: string
   hostId: string
+  mode: RoomMode
   settings: RoomSettings
   players: StoredPlayer[]
   revision: number
@@ -31,6 +32,9 @@ export interface StoredRoom {
   hint: SharedHint | null
   message: Message | null
   mistakes: number[]
+  /** Duel only: each player's own board, keyed by player id. */
+  boards: Record<string, CellState[]>
+  winnerId: string | null
   receipts: Record<string, { playerId: string; fingerprint: string; at?: number }>
 }
 export interface RoomEvent {

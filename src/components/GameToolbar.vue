@@ -12,8 +12,10 @@ const props = withDefaults(
     canUndo: boolean
     canRedo: boolean
     canRestart: boolean
+    /** A duel has no restart, hints or checks. */
+    duel?: boolean
   }>(),
-  { hintLevel: 0, hintRevealed: false },
+  { hintLevel: 0, hintRevealed: false, duel: false },
 )
 const { t } = useI18n()
 const HINT_KEYS = ['hintAsk', 'hintMore', 'hintAnswer', 'hintShown'] as const
@@ -48,8 +50,9 @@ const emit = defineEmits<{
         @click="emit('redo')"
       >
         <Redo2 :size="19" /></button
-      ><span class="tool-divider"></span
+      ><span v-if="!duel" class="tool-divider"></span
       ><button
+        v-if="!duel"
         type="button"
         class="icon-button"
         :aria-label="$t('toolbar.restart')"
@@ -61,7 +64,7 @@ const emit = defineEmits<{
       </button>
     </div>
   </div>
-  <div class="assist-tools">
+  <div v-if="!duel" class="assist-tools">
     <button type="button" :disabled="blocked || assisting || hintRevealed" @click="emit('hint')">
       <Lightbulb :size="17" />{{ assisting ? $t('toolbar.thinking') : hintLabel }}</button
     ><button type="button" :disabled="blocked || assisting" @click="emit('check')">

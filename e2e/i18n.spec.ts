@@ -81,7 +81,7 @@ test('switching language keeps working when browser storage is unavailable', asy
   await page.goto('/')
   await language(page).selectOption('en')
   await expect(heading(page)).toHaveText('Queens Puzzle')
-  await page.getByRole('link', { name: 'Co-op', exact: true }).click()
+  await page.getByRole('link', { name: 'Multiplayer', exact: true }).click()
   await expect(language(page)).toHaveValue('en')
 })
 

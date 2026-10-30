@@ -74,8 +74,8 @@ test('two players share cells, personal undo, markers, hints and team completion
       guestBefore.width,
       0,
     )
-    await page.getByRole('button', { name: '邀請隊友', exact: true }).click()
-    const invite = page.getByRole('dialog', { name: '邀請隊友' })
+    await page.getByRole('button', { name: '邀請朋友', exact: true }).click()
+    const invite = page.getByRole('dialog', { name: '邀請朋友' })
     expect(await invite.getByLabel('房間連結').inputValue()).toBe(page.url())
     await expect(invite.getByRole('img', { name: '房間 QR Code' })).toBeVisible()
     await invite.getByRole('button', { name: '關閉分享' }).click()
@@ -216,7 +216,8 @@ test('navigation between home, solo and cooperation preserves working solo contr
   await page.goto('/')
   await page.getByRole('link', { name: '單人遊戲' }).last().click()
   await expect(page.getByRole('grid')).toBeVisible({ timeout: 30000 })
-  await page.getByRole('link', { name: '多人合作', exact: true }).click()
+  await page.getByRole('link', { name: '多人模式', exact: true }).click()
+  await page.getByRole('link', { name: /^多人合作/ }).click()
   await expect(page.getByRole('heading', { name: '建立房間' })).toBeVisible()
   await page.getByRole('link', { name: '單人遊戲', exact: true }).click()
   await expect(page.getByRole('grid')).toBeVisible({ timeout: 30000 })

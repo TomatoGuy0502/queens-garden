@@ -1,5 +1,6 @@
 import type { Credentials, GameSnapshot, Hover, Player, Point, RoomSnapshot } from '../shared/coop'
 type Context = Pick<RoomSnapshot, 'id' | 'expiresAt'> & {
+  mode?: RoomSnapshot['mode']
   players: Player[]
   game: Pick<GameSnapshot, 'id' | 'phase' | 'cells'>
 }
@@ -21,7 +22,8 @@ export class HoverPresence {
     const players = new Map(state.players.filter((p) => p.connected).map((p) => [p.id, p.name]))
     this.rooms.set(state.id, {
       gameId: state.game.id,
-      enabled: state.game.phase === 'playing',
+      // Duelists must not see each other's cursors, so a duel never admits hovers or points.
+      enabled: state.game.phase === 'playing' && state.mode !== 'duel',
       cells: state.game.cells.length,
       expiresAt: state.expiresAt,
       players,

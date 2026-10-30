@@ -9,7 +9,7 @@ const ja: Messages<typeof zhHant> = {
       'Queens — 各行・各列・各色の領域に、クラウンをちょうど 1 つずつ。その場で生成されるロジックパズル。',
   },
   brand: { home: 'Queens ホーム' },
-  nav: { solo: 'ひとりで', coop: 'みんなで', stats: '成績', tutorial: 'チュートリアル' },
+  nav: { solo: 'ひとりで', coop: 'マルチプレイ', stats: '成績', tutorial: 'チュートリアル' },
   language: { label: '言語' },
   update: {
     available: '新しいバージョンがあります。再読み込みすると更新されます。',
@@ -24,9 +24,9 @@ const ja: Messages<typeof zhHant> = {
       cta: '遊ぶ',
     },
     coop: {
-      title: 'みんなで協力',
-      body: '友だちを招待して、同じ盤面を一緒に操作。推理の共有やマスの指示もできます。',
-      cta: 'ルームを作成・参加',
+      title: 'マルチプレイ',
+      body: '友だちと協力して解く、または 1 対 1 で対戦できます。',
+      cta: 'モードを選ぶ',
     },
     tutorial: {
       title: 'チュートリアル',
@@ -172,10 +172,10 @@ const ja: Messages<typeof zhHant> = {
     clearAll: '成績を消去',
   },
   share: {
-    room: '仲間を招待',
+    room: '友だちを招待',
     puzzle: '問題を共有',
     close: '共有を閉じる',
-    roomDescription: 'リンクまたは QR コードを共有して、仲間をルームに招待しましょう。',
+    roomDescription: 'リンクまたは QR コードを共有して、友だちをルームに招待しましょう。',
     puzzleDescription: 'リンクには盤面サイズ、難易度、シードが含まれ、開くと同じ問題になります。',
     roomQr: 'ルームの QR コード',
     puzzleQr: '問題の QR コード',
@@ -191,7 +191,7 @@ const ja: Messages<typeof zhHant> = {
     copyFailed: '自動でコピーできません。選択されたリンクをコピーしてください。',
     shared: '問題を共有しました。',
     shareFailed: 'システム共有を開けません。リンクのコピーをご利用ください。',
-    roomTitle: 'Queens 協力プレイの問題',
+    roomTitle: 'Queens マルチプレイのルーム',
     puzzleTitle: 'Queens の問題',
   },
   guidance: { row: '同じ行', column: '同じ列', region: '同じ色の領域', adjacent: '周囲 8 マス' },
@@ -303,7 +303,7 @@ const ja: Messages<typeof zhHant> = {
       heading: 'ルームに参加',
       go: 'ルームへ移動',
       invalidCode: '5 文字の英数字のルームコードを入力してください。',
-      panel: '協力ルームに参加',
+      panel: 'ルームに参加',
       reconnecting: '再接続中…',
       submit: 'ルームに参加',
       submitting: '参加中…',
@@ -383,6 +383,47 @@ const ja: Messages<typeof zhHant> = {
       timeout: 'サーバーの応答がタイムアウトしました。再接続して同期してください。',
     },
   },
+  rooms: {
+    intro: '友だちとの遊び方を選んでください。',
+    coop: {
+      title: 'みんなで協力',
+      body: '最大 8 人で同じ盤面を共有。リアルタイムで同期し、推理の共有やマスの指示もできます。',
+      cta: 'ルームを作成・参加',
+    },
+    duel: {
+      title: '1 対 1 対戦',
+      body: '2 人がそれぞれの盤面で同じ問題を解き、先に解いた人の勝ち。相手の進み具合は見えますが、ヒントはありません。',
+      cta: '対戦を作成・参加',
+    },
+  },
+  duel: {
+    title: '1 対 1 対戦',
+    generating: '対戦用の問題を生成中',
+    createIntro:
+      '友だちと同じ問題を同時に解き、先に解いた人の勝ち。ヒントも答え合わせもありません。',
+    leaveConfirm: '対戦中に退出すると負けになり、相手の勝利となります。退出しますか？',
+    lobby: {
+      intro:
+        '2 人で同じ問題を同時にスタート。先に解いた人の勝ちです。盤面はホストが設定し、2 人そろうと開始できます。',
+      invite: 'ルームのリンクを共有して対戦相手を招待',
+      start: '対戦を開始',
+      waitingHost: 'ホストが対戦を開始するのを待っています。',
+    },
+    progress: { label: '{name} の進み具合', value: '{count} / {size}' },
+    result: {
+      win: 'あなたの勝ち！',
+      lose: 'あなたの負け',
+      winTime: '{time} でクリア',
+      loseTime: '{name} が {time} でクリアしました',
+    },
+    aside: {
+      title: '対戦ルール',
+      race: '盤面は 1 人ずつ別々です。正しい答えを先に完成させた人の勝ちです。',
+      progress: '進行バーは、クラウンのある行と列だけを数えます。正誤は関係ありません。',
+      nohelp: 'ヒントも答え合わせもなく、クラウンの除外範囲も表示されません。',
+      leave: '対戦中の退出は負けになります。',
+    },
+  },
   unit: { row: '{index} 行目', column: '{index} 列目', region: '領域 {letter}', separator: '、' },
   strategy: {
     single: {
@@ -442,6 +483,7 @@ const ja: Messages<typeof zhHant> = {
   notice: {
     serviceRestarted: 'サービスが再起動しました。ホストは問題を作り直せます。',
     teamCompleted: 'チームで問題をクリアしました。',
+    duelWon: '{name} が先にクリアしました。',
     hostRestarted: 'ホストがこのラウンドをやり直しました。',
     playerLeft: '{name} がルームを退出しました。',
     paused: 'ゲームを一時停止しました。',
@@ -451,7 +493,7 @@ const ja: Messages<typeof zhHant> = {
     UNAUTHORIZED: 'ルームでの本人確認ができません。もう一度参加してください。',
     ROOM_CODE_EXHAUSTED:
       '今はルームコードを取得できません。しばらくしてからもう一度お試しください。',
-    ROOM_FULL: 'ルームが満員です。協力プレイは最大 {max} 人までです。',
+    ROOM_FULL: 'ルームが満員です。最大 {max} 人までです。',
     ACTION_ID_REUSED: 'その操作 ID はすでに使われています。',
     HOST_ONLY: 'この操作はホストだけができます。',
     STALE_GAME: '前のラウンドの操作だったため、無視されました。',

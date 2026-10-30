@@ -9,7 +9,7 @@ const en: Messages<typeof zhHant> = {
       'Queens — exactly one crown in every row, column and colored region. A logic puzzle generated on the fly.',
   },
   brand: { home: 'Queens home' },
-  nav: { solo: 'Solo', coop: 'Co-op', stats: 'My stats', tutorial: 'Tutorial' },
+  nav: { solo: 'Solo', coop: 'Multiplayer', stats: 'My stats', tutorial: 'Tutorial' },
   language: { label: 'Language' },
   update: {
     available: 'A new version is available. Reload to update.',
@@ -24,9 +24,9 @@ const en: Messages<typeof zhHant> = {
       cta: 'Start playing',
     },
     coop: {
-      title: 'Co-op',
-      body: 'Invite friends to work on one board together, share your reasoning and point at cells.',
-      cta: 'Create or join a room',
+      title: 'Multiplayer',
+      body: 'Solve together with friends, or race one friend head to head.',
+      cta: 'Choose a mode',
     },
     tutorial: {
       title: 'Tutorial',
@@ -169,10 +169,10 @@ const en: Messages<typeof zhHant> = {
     clearAll: 'Clear stats',
   },
   share: {
-    room: 'Invite teammates',
+    room: 'Invite friends',
     puzzle: 'Share puzzle',
     close: 'Close share',
-    roomDescription: 'Share the link or QR code to invite teammates to the room.',
+    roomDescription: 'Share the link or QR code to invite friends to the room.',
     puzzleDescription:
       'The link contains the board size, difficulty and seed, so it opens the same puzzle.',
     roomQr: 'Room QR code',
@@ -189,7 +189,7 @@ const en: Messages<typeof zhHant> = {
     copyFailed: 'Could not copy automatically. Please copy the selected link.',
     shared: 'Puzzle shared.',
     shareFailed: 'Could not open the system share sheet. Please copy the link.',
-    roomTitle: 'Queens co-op puzzle',
+    roomTitle: 'Queens multiplayer room',
     puzzleTitle: 'Queens puzzle',
   },
   guidance: {
@@ -309,7 +309,7 @@ const en: Messages<typeof zhHant> = {
       heading: 'Join a room',
       go: 'Go to room',
       invalidCode: 'Enter a 5-character room code (letters and digits).',
-      panel: 'Join the co-op room',
+      panel: 'Join the room',
       reconnecting: 'Reconnecting…',
       submit: 'Join room',
       submitting: 'Joining…',
@@ -392,6 +392,47 @@ const en: Messages<typeof zhHant> = {
       timeout: 'The server took too long to respond. Reconnect to sync.',
     },
   },
+  rooms: {
+    intro: 'Choose how you want to play with friends.',
+    coop: {
+      title: 'Co-op',
+      body: 'Up to 8 players share one board, in sync, with pointing and shared reasoning.',
+      cta: 'Create or join a room',
+    },
+    duel: {
+      title: '1v1 Duel',
+      body: 'Two players solve the same puzzle on their own boards. First to finish wins. You see their progress, but there are no hints.',
+      cta: 'Create or join a duel',
+    },
+  },
+  duel: {
+    title: '1v1 Duel',
+    generating: 'Generating a duel puzzle',
+    createIntro:
+      'Solve the same puzzle at the same time as a friend. First to finish wins. No hints and no answer checking.',
+    leaveConfirm: 'Leaving during a duel counts as a loss and your opponent wins. Leave anyway?',
+    lobby: {
+      intro:
+        'Two players, one puzzle, one start. The first to finish wins. The host picks the board, and both players must be here to start.',
+      invite: 'Share the room link to invite your opponent',
+      start: 'Start duel',
+      waitingHost: 'Waiting for the host to start the duel.',
+    },
+    progress: { label: "{name}'s progress", value: '{count} / {size}' },
+    result: {
+      win: 'You win!',
+      lose: 'You lost',
+      winTime: 'Finished in {time}',
+      loseTime: '{name} finished in {time}',
+    },
+    aside: {
+      title: 'Duel rules',
+      race: 'Each player has their own board. The first correct solution wins.',
+      progress: 'The progress bar only counts rows and columns that hold a crown, right or wrong.',
+      nohelp: 'There are no hints or checks, and crown exclusion ranges are never shown.',
+      leave: 'Leaving during a duel counts as a loss.',
+    },
+  },
   unit: {
     row: 'row {index}',
     column: 'column {index}',
@@ -458,6 +499,7 @@ const en: Messages<typeof zhHant> = {
   notice: {
     serviceRestarted: 'The service restarted. The host can generate a puzzle again.',
     teamCompleted: 'The team completed the puzzle.',
+    duelWon: '{name} finished the puzzle first.',
     hostRestarted: 'The host restarted this round.',
     playerLeft: '{name} left the room.',
     paused: 'The game is paused.',
@@ -466,7 +508,7 @@ const en: Messages<typeof zhHant> = {
     NOT_FOUND: 'The room does not exist or has expired.',
     UNAUTHORIZED: 'Could not verify your identity in the room. Please join again.',
     ROOM_CODE_EXHAUSTED: 'Could not get a room code right now. Please try again later.',
-    ROOM_FULL: 'The room is full: up to {max} players can play together.',
+    ROOM_FULL: 'The room is full: up to {max} players.',
     ACTION_ID_REUSED: 'That action ID has already been used.',
     HOST_ONLY: 'Only the host can do this.',
     STALE_GAME: 'That action belongs to the previous round and was ignored.',

@@ -14,7 +14,7 @@ const { guidance, storageAvailable } = useGamePreferences()
     >
     <nav>
       <RouterLink to="/solo">{{ $t('nav.solo') }}</RouterLink
-      ><RouterLink to="/rooms/new">{{ $t('nav.coop') }}</RouterLink
+      ><RouterLink to="/rooms">{{ $t('nav.coop') }}</RouterLink
       ><RouterLink to="/stats">{{ $t('nav.stats') }}</RouterLink
       ><RouterLink to="/tutorial">{{ $t('nav.tutorial') }}</RouterLink>
       <div class="tools">

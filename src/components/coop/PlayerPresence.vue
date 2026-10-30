@@ -3,7 +3,17 @@ import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import type { Hover, Player } from '../../../shared/coop'
 const { t } = useI18n()
-const props = defineProps<{ players: Player[]; meId?: string; hovers: Hover[]; size: number }>()
+const props = withDefaults(
+  defineProps<{
+    players: Player[]
+    meId?: string
+    hovers: Hover[]
+    size: number
+    /** A duel never shows where anyone is looking. */
+    showPosition?: boolean
+  }>(),
+  { meId: undefined, showPosition: true },
+)
 const positions = computed(
   () =>
     new Map(
@@ -29,7 +39,9 @@ function position(id: string) {
       <small>{{
         player.connected ? $t('coop.presence.online') : $t('coop.presence.offline')
       }}</small>
-      <small class="hover-position" :data-player-id="player.id">{{ position(player.id) }}</small>
+      <small v-if="showPosition" class="hover-position" :data-player-id="player.id">{{
+        position(player.id)
+      }}</small>
     </span>
   </div>
 </template>

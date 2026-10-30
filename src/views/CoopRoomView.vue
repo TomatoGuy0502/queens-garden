@@ -4,6 +4,7 @@ import { computed, onUnmounted, shallowRef, watch } from 'vue'
 import { useEventListener, useIntervalFn } from '@vueuse/core'
 import { useI18n } from 'vue-i18n'
 import { failureMessage } from '../../shared/message'
+import type { RoomMode } from '../../shared/coop'
 import { useMessage } from '../i18n/message'
 import { useRouter } from 'vue-router'
 import { Clock3, Pause, Play, MousePointer2, LoaderCircle, LogOut } from '@lucide/vue'
@@ -12,6 +13,7 @@ import PlayerPresence from '../components/coop/PlayerPresence.vue'
 import RoundConfirmation from '../components/coop/RoundConfirmation.vue'
 import RoomToast from '../components/coop/RoomToast.vue'
 import RoomLobby from '../components/coop/RoomLobby.vue'
+import DuelPlay from '../components/coop/DuelPlay.vue'
 import QueensBoard from '../components/QueensBoard.vue'
 import GameToolbar from '../components/GameToolbar.vue'
 import GameResult from '../components/GameResult.vue'
@@ -30,6 +32,9 @@ const room = useRoomStore(),
   router = useRouter()
 const { guidance, expandedBoard } = useGamePreferences()
 const name = usePlayerName()
+// Before joining, the room's mode comes from a lookup by code; afterwards from the room itself.
+const knownMode = shallowRef<RoomMode | null>(null)
+const duel = computed(() => (room.room?.mode ?? knownMode.value) === 'duel')
 const joining = shallowRef(false),
   joinError = shallowRef(''),
   pointMode = shallowRef(false)
@@ -55,6 +60,13 @@ useIntervalFn(() => room.clock(), 200)
 watch(
   () => props.roomId,
   (id) => {
+    knownMode.value = null
+    fetch(`/api/rooms/${encodeURIComponent(id)}`)
+      .then((response) => (response.ok ? (response.json() as Promise<{ mode: RoomMode }>) : null))
+      .then((found) => {
+        if (id === props.roomId && found) knownMode.value = found.mode
+      })
+      .catch(() => undefined)
     room.restore(id)
     joinError.value = ''
     pointMode.value = false
@@ -131,7 +143,7 @@ function applyHint() {
 // A joined player who closes the page cannot come back as the same player, so ask first.
 const guard = useLeaveGuard(
   () => !!room.me,
-  () => t('coop.room.leaveConfirm'),
+  () => (duel.value ? t('duel.leaveConfirm') : t('coop.room.leaveConfirm')),
 )
 async function leave() {
   if (!guard.confirmLeave()) return
@@ -156,7 +168,7 @@ async function reset() {
     <AppHeader />
     <div class="room-heading">
       <div>
-        <h1>{{ $t('coop.title') }}</h1>
+        <h1>{{ duel ? $t('duel.title') : $t('coop.title') }}</h1>
         <p>
           {{ $t('coop.room.label') }}
           <span class="room-code" role="group" :aria-label="$t('coop.code.group', { code: roomId })"
@@ -200,7 +212,8 @@ async function reset() {
         :players="room.room.players"
         :me-id="room.credentials?.playerId"
         :hovers="room.hovers"
-        :size="game.state?.puzzle?.size ?? 0" />
+        :size="game.state?.puzzle?.size ?? 0"
+        :show-position="!duel" />
       <p v-if="!room.connected" class="connection-notice" role="status">
         {{ $t('coop.room.disconnected') }}
         <button type="button" class="text-button" @click="room.reconnect">
@@ -212,6 +225,7 @@ async function reset() {
         <section class="coop-play">
           <RoomLobby
             v-if="game.state?.phase === 'waiting'"
+            :mode="room.room.mode"
             :players="room.room.players"
             :settings="room.room.settings"
             :me-id="room.credentials!.playerId"
@@ -227,9 +241,10 @@ async function reset() {
             role="status"
           >
             <LoaderCircle :size="30" class="spinner" />
-            <h2>{{ $t('coop.room.generating.title') }}</h2>
+            <h2>{{ duel ? $t('duel.generating') : $t('coop.room.generating.title') }}</h2>
             <p>{{ $t('coop.room.generating.body') }}</p>
           </div>
+          <DuelPlay v-else-if="duel && game.state?.puzzle" @change="confirmRound('new')" />
           <template v-else-if="game.state?.puzzle"
             ><div class="coop-meta">
               <div>
@@ -374,10 +389,19 @@ async function reset() {
           </p>
         </section>
         <aside class="coop-aside">
-          <h2>{{ $t('coop.room.aside.title') }}</h2>
-          <p>{{ $t('coop.room.aside.sync') }}</p>
-          <p>{{ $t('coop.room.aside.join') }}</p>
-          <p>{{ $t('coop.room.aside.guidance') }}</p>
+          <template v-if="duel">
+            <h2>{{ $t('duel.aside.title') }}</h2>
+            <p>{{ $t('duel.aside.race') }}</p>
+            <p>{{ $t('duel.aside.progress') }}</p>
+            <p>{{ $t('duel.aside.nohelp') }}</p>
+            <p>{{ $t('duel.aside.leave') }}</p>
+          </template>
+          <template v-else>
+            <h2>{{ $t('coop.room.aside.title') }}</h2>
+            <p>{{ $t('coop.room.aside.sync') }}</p>
+            <p>{{ $t('coop.room.aside.join') }}</p>
+            <p>{{ $t('coop.room.aside.guidance') }}</p>
+          </template>
           <GameRules />
         </aside></div
     ></template>

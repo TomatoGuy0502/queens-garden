@@ -4,11 +4,13 @@ import { nextCell, type CellAction } from '../queens/cells'
 import { LocalizedError, failureMessage, message, type Message } from '../../shared/message'
 import {
   credentialsSchema,
+  maxPlayers,
   type Credentials,
   type Point,
   type Hover,
   type RoomAccess,
   type RoomCommand,
+  type RoomMode,
   type RoomSettings,
   type RoomSnapshot,
 } from '../../shared/coop'
@@ -50,7 +52,11 @@ export const useRoomStore = defineStore('room', () => {
   )
   const me = computed(() => room.value?.players.find((p) => p.id === credentials.value?.playerId))
   const canStart = computed(
-    () => isHost.value && connected.value && game.state?.phase === 'waiting',
+    () =>
+      isHost.value &&
+      connected.value &&
+      game.state?.phase === 'waiting' &&
+      (room.value?.mode !== 'duel' || room.value.players.length >= maxPlayers('duel')),
   )
   const myActions = computed(
     () => game.state?.actions.filter((a) => a.playerId === credentials.value?.playerId) ?? [],
@@ -185,9 +191,9 @@ export const useRoomStore = defineStore('room', () => {
       throw new LocalizedError(data.error ?? message('coop.join.failed'), 'Request failed')
     return data
   }
-  async function create(name: string, settings: RoomSettings) {
+  async function create(name: string, settings: RoomSettings, mode: RoomMode = 'coop') {
     error.value = null
-    const access = await post('/api/rooms', { name, ...settings })
+    const access = await post('/api/rooms', { name, mode, ...settings })
     remember(access)
     return access.credentials.roomId
   }

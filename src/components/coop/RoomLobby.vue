@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { MAX_ROOM_PLAYERS } from '../../../shared/coop'
-import type { Player, RoomSettings } from '../../../shared/coop'
+import { maxPlayers } from '../../../shared/coop'
+import type { Player, RoomMode, RoomSettings } from '../../../shared/coop'
 import { BOARD_SIZES, DIFFICULTIES } from '../../queens/levels'
 import type { Difficulty } from '../../queens/types'
 const props = defineProps<{
+  mode: RoomMode
   players: Player[]
   settings: RoomSettings
   meId: string
@@ -30,10 +31,16 @@ function difficulty(event: Event) {
     <h2 id="lobby-title">
       {{ $t('coop.lobby.title') }}
       <span class="player-count">{{
-        $t('coop.lobby.count', { count: players.length, max: MAX_ROOM_PLAYERS })
+        $t('coop.lobby.count', { count: players.length, max: maxPlayers(mode) })
       }}</span>
     </h2>
-    <p class="page-description">{{ $t('coop.lobby.intro', { max: MAX_ROOM_PLAYERS }) }}</p>
+    <p class="page-description">
+      {{
+        mode === 'duel'
+          ? $t('duel.lobby.intro')
+          : $t('coop.lobby.intro', { max: maxPlayers('coop') })
+      }}
+    </p>
     <div class="players">
       <div v-for="player in players" :key="player.id" class="player-row">
         <span class="avatar">{{ Array.from(player.name)[0] }}</span>
@@ -45,8 +52,8 @@ function difficulty(event: Event) {
           }}</small>
         </div>
       </div>
-      <div v-if="players.length < MAX_ROOM_PLAYERS" class="empty-seat">
-        {{ $t('coop.lobby.invite') }}
+      <div v-if="players.length < maxPlayers(mode)" class="empty-seat">
+        {{ mode === 'duel' ? $t('duel.lobby.invite') : $t('coop.lobby.invite') }}
       </div>
     </div>
     <div class="lobby-settings room-form">
@@ -78,10 +85,12 @@ function difficulty(event: Event) {
         :disabled="!canStart || pending"
         @click="emit('start')"
       >
-        {{ $t('coop.lobby.start') }}
+        {{ mode === 'duel' ? $t('duel.lobby.start') : $t('coop.lobby.start') }}
       </button>
     </div>
-    <p v-if="meId !== hostId" class="setting-note">{{ $t('coop.lobby.waitingHost') }}</p>
+    <p v-if="meId !== hostId" class="setting-note">
+      {{ mode === 'duel' ? $t('duel.lobby.waitingHost') : $t('coop.lobby.waitingHost') }}
+    </p>
   </section>
 </template>
 <style scoped>

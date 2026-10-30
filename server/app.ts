@@ -109,9 +109,14 @@ export async function createApp(options: {
     '/api/rooms',
     { config: { rateLimit: { max: options.roomLimit ?? 5, timeWindow: '1 minute' } } },
     async (request) => {
-      const { name, ...settings } = createRoomSchema.parse(request.body)
-      return manager.create(name, settings)
+      const { name, mode, ...settings } = createRoomSchema.parse(request.body)
+      return manager.create(name, settings, mode)
     },
+  )
+  app.get<{ Params: { roomId: string } }>(
+    '/api/rooms/:roomId',
+    { config: { rateLimit: { max: 60, timeWindow: '1 minute' } } },
+    async (request) => ({ mode: await manager.mode(roomCodeSchema.parse(request.params.roomId)) }),
   )
   app.post<{ Params: { roomId: string } }>(
     '/api/rooms/:roomId/join',

@@ -4,6 +4,11 @@ import { ROOM_CODE_PATTERN } from './roomCode'
 import { BOARD_SIZES, DIFFICULTIES } from '../src/queens/levels'
 import type { CellState, DeductionStep, PuzzleDefinition } from '../src/queens/types'
 export const MAX_ROOM_PLAYERS = 8
+export const MAX_DUEL_PLAYERS = 2
+export const ROOM_MODES = ['coop', 'duel'] as const
+export type RoomMode = (typeof ROOM_MODES)[number]
+export const maxPlayers = (mode: RoomMode) =>
+  mode === 'duel' ? MAX_DUEL_PLAYERS : MAX_ROOM_PLAYERS
 
 export const sizeSchema = z.literal(BOARD_SIZES)
 export const difficultySchema = z.enum(DIFFICULTIES)
@@ -12,7 +17,10 @@ export const settingsSchema = z.object({
   difficulty: difficultySchema,
   seed: z.number().int().min(0).max(0xffffffff).optional(),
 })
-export const createRoomSchema = settingsSchema.extend({ name: z.string().trim().min(1).max(24) })
+export const createRoomSchema = settingsSchema.extend({
+  name: z.string().trim().min(1).max(24),
+  mode: z.enum(ROOM_MODES).default('coop'),
+})
 export const joinRoomSchema = z.object({ name: z.string().trim().min(1).max(24) })
 export const roomCodeSchema = z.string().trim().toUpperCase().regex(ROOM_CODE_PATTERN)
 export const credentialsSchema = z.object({
@@ -36,6 +44,11 @@ export const commandSchema = z.discriminatedUnion('type', [
     index: z.number().int().min(0).max(143),
     expectedVersion: z.number().int().min(0),
     nextState: z.enum(['empty', 'queen', 'marked']),
+  }),
+  z.object({
+    ...round,
+    type: z.literal('duelBoard'),
+    cells: z.array(z.enum(['empty', 'queen', 'marked'])).max(144),
   }),
   z.object({ ...round, type: z.literal('undo'), targetId: z.uuid() }),
   z.object({ ...round, type: z.literal('redo'), targetId: z.uuid() }),
@@ -71,6 +84,14 @@ export interface SharedHint {
   /** 1 = where to look, 2 = the technique, 3 = the answer; 0 when there is no logical step. */
   level: number
 }
+/** A duel keeps one board per player; only the player's own board ever travels back to them. */
+export interface DuelSnapshot {
+  /** Per player id: rows and columns covered by queens, right or wrong. */
+  progress: Record<string, number>
+  winnerId: string | null
+  /** The viewer's own board, present only in replies addressed to that viewer. */
+  mine?: CellState[]
+}
 export interface GameSnapshot {
   id: string
   phase: 'waiting' | 'generating' | 'playing' | 'paused' | 'completed'
@@ -86,9 +107,11 @@ export interface GameSnapshot {
   /** The latest room-wide notice; null when there is none. */
   message: Message | null
   mistakes: number[]
+  duel?: DuelSnapshot
 }
 export interface RoomSnapshot {
   id: string
+  mode: RoomMode
   hostId: string
   settings: RoomSettings
   players: Player[]

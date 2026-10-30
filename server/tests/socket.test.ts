@@ -235,3 +235,84 @@ it('foreground computation preempts background generation on a single worker', a
     await pool.close()
   }
 })
+
+it('a duel is looked up by code, and each board travels only to its owner over real sockets', async () => {
+  const records = new Map<string, StoredRoom>()
+  const { app } = await createApp({
+    repository: {
+      get: (id) => Promise.resolve(structuredClone(records.get(id) ?? null)),
+      save: (room) => {
+        records.set(room.id, structuredClone(room))
+        return Promise.resolve()
+      },
+      deleteExpired: () => Promise.resolve(),
+    },
+    compute: {
+      generate: () => Promise.resolve(generatePuzzle({ size: 6, seed: 42, difficulty: 'easy' })),
+      hint: (regions, cells) => Promise.resolve(logicalHint(regions, cells)),
+      close: () => Promise.resolve(),
+    },
+  })
+  const address = await app.listen({ port: 0, host: '127.0.0.1' })
+  const created = await app.inject({
+    method: 'POST',
+    url: '/api/rooms',
+    payload: { name: 'A', size: 6, difficulty: 'easy', mode: 'duel' },
+  })
+  const access = created.json<{ credentials: Credentials; state: RoomSnapshot }>()
+  const host = access.credentials
+  const lookup = await app.inject({ method: 'GET', url: `/api/rooms/${host.roomId}` })
+  expect(lookup.json()).toEqual({ mode: 'duel' })
+  expect((await app.inject({ method: 'GET', url: '/api/rooms/ZZZZZ' })).statusCode).toBe(404)
+  const guest = (
+    await app.inject({
+      method: 'POST',
+      url: `/api/rooms/${host.roomId}/join`,
+      payload: { name: 'B' },
+    })
+  ).json<{ credentials: Credentials }>().credentials
+  const connect = (auth: Credentials) => {
+    const socket: Socket<ServerEvents, ClientEvents> = io(address, {
+      auth,
+      transports: ['websocket'],
+      forceNew: true,
+      autoConnect: false,
+    })
+    return new Promise<Socket<ServerEvents, ClientEvents>>((resolve, reject) => {
+      socket.once('connect', () => resolve(socket))
+      socket.once('connect_error', reject)
+      socket.connect()
+    })
+  }
+  const a = await connect(host),
+    b = await connect(guest)
+  let seen: RoomSnapshot | undefined
+  b.on('room:state', (state) => {
+    seen = state
+  })
+  const send = (socket: typeof a, command: Parameters<ClientEvents['room:command']>[0]) =>
+    new Promise<RoomReply>((resolve) => socket.emit('room:command', command, resolve))
+  try {
+    const gameId = access.state.game.id
+    await send(a, { type: 'start', actionId: randomUUID(), gameId })
+    await expect.poll(() => seen?.game.phase).toBe('playing')
+    const cells = Array<'empty' | 'queen'>(36).fill('empty')
+    cells[0] = 'queen'
+    // Starting opens a new round with a new id.
+    const reply = await send(a, {
+      type: 'duelBoard',
+      actionId: randomUUID(),
+      gameId: seen!.game.id,
+      cells,
+    })
+    expect(reply.ok && reply.state.game.duel?.mine).toEqual(cells)
+    await expect.poll(() => seen?.game.duel?.progress[host.playerId]).toBe(1)
+    expect(seen?.game.duel?.mine).toBeUndefined()
+    const synced = await new Promise<RoomReply>((resolve) => a.emit('room:sync', resolve))
+    expect(synced.ok && synced.state.game.duel?.mine).toEqual(cells)
+  } finally {
+    a.close()
+    b.close()
+    await app.close()
+  }
+})

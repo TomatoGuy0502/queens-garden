@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import { shallowRef } from 'vue'
+import { computed, shallowRef } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { failureMessage } from '../../shared/message'
 import { useMessage } from '../i18n/message'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { usePlayerName } from '../composables/usePlayerName'
 import RoomCodeInput from '../components/coop/RoomCodeInput.vue'
 import { parseRoomCode } from '../../shared/roomCode'
@@ -15,7 +15,9 @@ import type { Difficulty } from '../queens/types'
 const { t } = useI18n()
 const render = useMessage()
 const room = useRoomStore(),
-  router = useRouter()
+  router = useRouter(),
+  route = useRoute()
+const duel = computed(() => route.query.mode === 'duel')
 const name = usePlayerName()
 const size = shallowRef<RoomSettings['size']>(8),
   difficulty = shallowRef<Difficulty>('easy'),
@@ -26,10 +28,11 @@ async function create() {
   busy.value = true
   error.value = ''
   try {
-    const id = await room.create(name.value.trim(), {
-      size: size.value,
-      difficulty: difficulty.value,
-    })
+    const id = await room.create(
+      name.value.trim(),
+      { size: size.value, difficulty: difficulty.value },
+      duel.value ? 'duel' : 'coop',
+    )
     await router.push(`/rooms/${id}`)
   } catch (reason) {
     error.value = render(failureMessage(reason))
@@ -49,11 +52,13 @@ async function join() {
 <template>
   <main class="page-shell">
     <AppHeader />
-    <h1>{{ $t('coop.title') }}</h1>
+    <h1>{{ duel ? $t('duel.title') : $t('coop.title') }}</h1>
     <div class="room-forms">
       <section>
         <h2>{{ $t('coop.create.heading') }}</h2>
-        <p class="page-description">{{ $t('coop.create.intro') }}</p>
+        <p class="page-description">
+          {{ duel ? $t('duel.createIntro') : $t('coop.create.intro') }}
+        </p>
         <form class="room-form" @submit.prevent="create">
           <label for="player-name">{{ $t('coop.create.name') }}</label
           ><input
