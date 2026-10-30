@@ -81,7 +81,11 @@ watch(
           </tr>
         </thead>
         <tbody>
-          <tr v-for="entry in entries" :key="`${entry.rank}:${entry.nickname}`" :class="{ me: entry.me }">
+          <tr
+            v-for="entry in entries"
+            :key="`${entry.rank}:${entry.nickname}`"
+            :class="{ me: entry.me }"
+          >
             <td>{{ entry.rank }}</td>
             <th scope="row">
               {{ entry.nickname ?? $t('leaderboard.anonymous')
