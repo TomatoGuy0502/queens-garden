@@ -1,3 +1,4 @@
+import { SOLO_ONLY } from '../deployment'
 import { shallowRef } from 'vue'
 import { request } from '../services/api'
 import { forgetStats, syncStats } from './useGameStats'
@@ -28,6 +29,7 @@ export function loadAccount(verifier?: string | null) {
   return loaded
 }
 async function readAccount(verifier?: string | null) {
+  if (SOLO_ONLY) return
   const features = await request<{ accounts: boolean }>('/api/features').catch(() => null)
   enabled.value = !!features?.accounts
   const query = verifier ? `?${SESSION_VERIFIER}=${encodeURIComponent(verifier)}` : ''

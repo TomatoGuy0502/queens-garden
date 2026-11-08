@@ -1,4 +1,5 @@
-import { createRouter, createWebHistory } from 'vue-router'
+import { SOLO_ONLY } from './deployment'
+import { createRouter, createWebHistory, createWebHashHistory } from 'vue-router'
 import { SESSION_VERIFIER } from './composables/useAccount'
 
 declare module 'vue-router' {
@@ -8,7 +9,7 @@ declare module 'vue-router' {
   }
 }
 export const router = createRouter({
-  history: createWebHistory(),
+  history: SOLO_ONLY ? createWebHashHistory(import.meta.env.BASE_URL) : createWebHistory(),
   routes: [
     {
       path: '/',
@@ -61,6 +62,8 @@ export const router = createRouter({
 })
 // main.ts already handed the sign-in verifier to loadAccount; keep it out of every route's query.
 router.beforeEach((to) => {
+  if (SOLO_ONLY && (to.path === '/leaderboard' || to.path.startsWith('/rooms')))
+    return { path: '/', replace: true }
   if (!(SESSION_VERIFIER in to.query)) return true
   const { [SESSION_VERIFIER]: _verifier, ...query } = to.query
   return { ...to, query, replace: true }

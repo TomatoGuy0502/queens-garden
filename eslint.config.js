@@ -8,6 +8,7 @@ export default withVueTs(
     name: 'queens/ignores',
     ignores: [
       'dist/**',
+      'dist-solo/**',
       'dist-server/**',
       'node_modules/**',
       'playwright-report/**',

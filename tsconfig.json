@@ -20,6 +20,7 @@
     "src/**/*.vue",
     "*.ts",
     "e2e/**/*.ts",
+    "e2e-solo/**/*.ts",
     "server/**/*.ts",
     "shared/**/*.ts"
   ]

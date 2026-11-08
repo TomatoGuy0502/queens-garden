@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { SOLO_ONLY } from '../deployment'
+import { useRoute } from 'vue-router'
 import { computed, onMounted, onUnmounted, shallowRef, watch } from 'vue'
 import { Clock3, Pause, Play, LoaderCircle } from '@lucide/vue'
 import CrownIcon from './CrownIcon.vue'
@@ -68,7 +70,11 @@ const {
   mistakes,
   blocked,
 } = storeToRefs(game)
-const params = new URLSearchParams(location.search)
+const params = new URLSearchParams(
+  Object.entries(useRoute().query).flatMap(([key, value]) =>
+    typeof value === 'string' ? [[key, value]] : [],
+  ),
+)
 const requestedSize = Number(params.get('size') ?? 8)
 const initialSize = BOARD_SIZES.find((size) => size === requestedSize) ?? 8
 const requestedDifficulty = params.get('difficulty')
@@ -362,9 +368,11 @@ onMounted(() => {
                     {{ $t('ranked.retry') }}
                   </button>
                 </template>
-                <RouterLink v-if="daily" :to="{ path: '/leaderboard', query: { day: daily } }">{{
-                  $t('ranked.leaderboard')
-                }}</RouterLink>
+                <RouterLink
+                  v-if="daily && !SOLO_ONLY"
+                  :to="{ path: '/leaderboard', query: { day: daily } }"
+                  >{{ $t('ranked.leaderboard') }}</RouterLink
+                >
               </GameResult>
             </template>
           </QueensBoard>

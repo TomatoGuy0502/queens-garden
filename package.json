@@ -11,6 +11,7 @@
     "test:watch": "vitest",
     "lint": "npm run lint:oxlint && npm run lint:eslint",
     "e2e": "playwright test",
+    "e2e:solo": "playwright test --config playwright.solo.config.ts",
     "format": "oxfmt .",
     "format:check": "oxfmt --check .",
     "lint:oxlint": "oxlint --deny-warnings src server shared e2e *.ts",
@@ -24,7 +25,8 @@
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "test:server": "npm run build:worker && vitest run --config vitest.server.config.ts",
-    "puzzles:seed": "npm run build:worker && node --import tsx server/tools/seedPuzzles.ts"
+    "puzzles:seed": "npm run build:worker && node --import tsx server/tools/seedPuzzles.ts",
+    "build:solo": "vue-tsc --noEmit && vite build --mode solo"
   },
   "dependencies": {
     "@fastify/rate-limit": "^11.2.1",

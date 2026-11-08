@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { SOLO_ONLY } from '../deployment'
 import AccountMenu from './AccountMenu.vue'
 import CrownIcon from './CrownIcon.vue'
 import GamePreferences from './GamePreferences.vue'
@@ -14,14 +15,14 @@ const { guidance, storageAvailable } = useGamePreferences()
     >
     <nav>
       <RouterLink to="/solo">{{ $t('nav.solo') }}</RouterLink
-      ><RouterLink to="/rooms">{{ $t('nav.coop') }}</RouterLink
+      ><RouterLink v-if="!SOLO_ONLY" to="/rooms">{{ $t('nav.coop') }}</RouterLink
       ><RouterLink to="/stats">{{ $t('nav.stats') }}</RouterLink
       ><RouterLink to="/tutorial">{{ $t('nav.tutorial') }}</RouterLink>
       <div class="tools">
         <LanguageSwitcher /><ThemeToggle /><GamePreferences
           v-model="guidance"
           :storage-available="storageAvailable"
-        /><AccountMenu />
+        /><AccountMenu v-if="!SOLO_ONLY" />
       </div>
     </nav>
   </header>
