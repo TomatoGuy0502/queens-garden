@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { SOLO_ONLY } from '../deployment'
 import { Crown, Users, GraduationCap, ArrowRight } from '@lucide/vue'
 import AppHeader from '../components/AppHeader.vue'
 import DailyChallenge from '../components/DailyChallenge.vue'
@@ -15,7 +16,7 @@ import DailyChallenge from '../components/DailyChallenge.vue'
         <h2>{{ $t('home.solo.title') }}</h2>
         <p>{{ $t('home.solo.body') }}</p>
         <span>{{ $t('home.solo.cta') }} <ArrowRight :size="16" /></span></RouterLink
-      ><RouterLink to="/rooms" class="mode-card"
+      ><RouterLink v-if="!SOLO_ONLY" to="/rooms" class="mode-card"
         ><Users :size="28" />
         <h2>{{ $t('home.coop.title') }}</h2>
         <p>{{ $t('home.coop.body') }}</p>

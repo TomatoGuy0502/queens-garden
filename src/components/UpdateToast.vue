@@ -12,7 +12,7 @@ const check = () => void refresh()
 async function refresh() {
   if (available.value || document.visibilityState !== 'visible') return
   try {
-    const response = await fetch('/', { cache: 'no-store' })
+    const response = await fetch(import.meta.env.BASE_URL, { cache: 'no-store' })
     if (!response.ok) return
     const latest = entryOf(new DOMParser().parseFromString(await response.text(), 'text/html'))
     if (latest && latest !== current) {

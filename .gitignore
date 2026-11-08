@@ -9,3 +9,4 @@ dist-server/
 .env
 .neon
 .eslintcache
+dist-solo/

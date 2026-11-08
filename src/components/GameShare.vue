@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { SOLO_ONLY } from '../deployment'
 import { computed, shallowRef, useTemplateRef } from 'vue'
 import { useI18n } from 'vue-i18n'
 import QRCode from 'qrcode'
@@ -16,12 +17,14 @@ const shareUrl = computed(() => {
   if (props.roomId) return new URL(`/rooms/${props.roomId}`, location.origin).href
   if (!props.puzzle) throw new Error('Nothing to share.')
   const url = new URL(location.pathname, location.origin)
-  url.search = new URLSearchParams({
+  const query = new URLSearchParams({
     size: String(props.puzzle.size),
     difficulty: props.puzzle.difficulty,
     seed: String(props.puzzle.seed),
     v: props.puzzle.version,
   }).toString()
+  if (SOLO_ONLY) url.hash = `/solo?${query}`
+  else url.search = query
   return url.href
 })
 const qr = computed(() => {

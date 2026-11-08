@@ -90,3 +90,22 @@ Blueprint 預設 `PUZZLE_PREFILL=1`、`PUZZLE_STOCK_TARGET=3`，8×8 各難度�
 2. 加入正式網域：`neon neon-auth domain add https://<app>.onrender.com --branch production`。
 3. 目前使用 Neon 共用的 Google key，同意畫面會顯示 Neon 的名稱。要換成自己的：在 Google Cloud 建 OAuth client，redirect URI 填 `neon neon-auth oauth-provider list` 顯示的 callback（共用 key 時為 `https://neonauth.<region>.aws.neon.tech/auth/oauth/callback/google`，自有 key 依 Neon 文件為 `{NEON_AUTH_BASE_URL}/callback/google`），再用 `neon neon-auth oauth-provider` 設定並發布同意畫面。
 4. 建議關閉用不到的 email/password 登入：`neon neon-auth config email-password`。
+
+## GitHub Pages：獨立單人版
+
+`npm run build:solo` 只產生靜態前端 (`dist-solo/`)，不需要啟動後端、資料庫或設定 secrets。
+保留單人遊戲、每日挑戰（非排名）、教學、本機進度與統計；隱藏帳號、排行榜與多人入口，並且不查詢 `/api/features`。
+原本的 `npm run build` 與完整服務部署方式維持不變。
+
+1. 在 GitHub 的 **Settings → Pages → Build and deployment → Source** 選擇 **GitHub Actions**。
+2. 將此變更合併到 `master`，或手動執行 **Deploy solo game to GitHub Pages** workflow。
+3. 部署網址為 `https://TomatoGuy0502.github.io/queens-garden/`（以 workflow 回傳網址為準）。
+
+此 repository 是私人專案，GitHub Pages 的可用性取決於帳戶方案；私人 repository 通常需要 GitHub Pro / Team / Enterprise。無需將原始碼改為公開。
+一般 Pages 網站可公開存取，因此請先確認 Pages 的存取設定符合需求。
+
+單人版採用 `#/solo`、`#/tutorial` 等路由，重新整理與分享連結均可直接由靜態主機載入。
+GitHub Actions 會自動設定部署子路徑；本機可使用 `PAGES_BASE_PATH=/ npm run build:solo` 後以 `npx vite preview --mode solo` 檢視。
+進度與統計儲存在該網站來源的瀏覽器 localStorage，不會自動搬移完整服務網址下的紀錄或同步帳號。
+
+驗證靜態部署：`npx playwright install chromium` 後執行 `npm run e2e:solo`；測試以 Pages 子路徑啟動純靜態伺服器，檢查分享、重新整理、完成遊戲、本機統計與零後端請求。
