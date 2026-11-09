@@ -3,6 +3,7 @@ import { computed, shallowRef, nextTick, useTemplateRef, watch } from 'vue'
 import { useEventListener } from '@vueuse/core'
 import { Pause, Play } from '@lucide/vue'
 import QueensCell from './QueensCell.vue'
+import { useGamePreferences } from '../composables/useGamePreferences'
 import { guidedCells, type BoardGuidance } from '../queens/guidance'
 import type { CellState, PuzzleDefinition } from '../queens/types'
 const props = withDefaults(
@@ -33,6 +34,8 @@ const emit = defineEmits<{
 }>()
 const focusIndex = shallowRef(0),
   board = useTemplateRef<HTMLDivElement>('board')
+// The larger board fits the screen instead of scrolling, which frees a touch drag for marking.
+const { expandedBoard } = useGamePreferences()
 const rows = computed(() =>
   props.puzzle.regions.map((regions, row) =>
     regions.map((region, col) => ({
@@ -82,6 +85,48 @@ function reviewKey(event: KeyboardEvent) {
   }
 }
 useEventListener(window, 'keydown', reviewKey)
+// Dragging across cells marks every empty one, or clears every X when it starts on an X.
+let drag: { from: CellState; seen: Set<number>; moved: boolean } | null = null,
+  dragged = false
+function cellAt(x: number, y: number) {
+  const cell = document.elementFromPoint(x, y)?.closest<HTMLElement>('[data-index]')
+  return cell && board.value?.contains(cell) ? Number(cell.dataset.index) : null
+}
+function cross(index: number) {
+  if (!drag || drag.seen.has(index)) return
+  drag.seen.add(index)
+  if (props.cells[index] === drag.from) emit('mark', index)
+}
+function startDrag(event: PointerEvent) {
+  dragged = false
+  // A scrolling board needs the touch drag to scroll, so only the larger board marks by touch.
+  if (props.won || event.button !== 0 || (event.pointerType === 'touch' && !expandedBoard.value))
+    return
+  const index = cellAt(event.clientX, event.clientY)
+  if (index === null || props.cells[index] === 'queen') return
+  drag = { from: props.cells[index], seen: new Set([index]), moved: false }
+}
+useEventListener(window, 'pointermove', (event: PointerEvent) => {
+  if (!drag) return
+  const index = cellAt(event.clientX, event.clientY)
+  if (index === null || drag.seen.has(index)) return
+  if (!drag.moved) {
+    drag.moved = dragged = true
+    const [start] = drag.seen
+    drag.seen.clear()
+    cross(start)
+  }
+  cross(index)
+})
+for (const type of ['pointerup', 'pointercancel'])
+  useEventListener(window, type, () => (drag = null))
+// The release after a drag must not also cycle the cell it ends on.
+function swallowClick(event: MouseEvent) {
+  if (!dragged) return
+  dragged = false
+  event.stopPropagation()
+  event.preventDefault()
+}
 function focus(index: number) {
   focusIndex.value = index
   emit('hover', index)
@@ -111,7 +156,12 @@ async function navigate(index: number, event: KeyboardEvent) {
 </script>
 <template>
   <div class="board-stage">
-    <div class="board-scroll" :style="{ '--minimum-size': `${puzzle.size * 40 + 4}px` }">
+    <div
+      class="board-scroll"
+      :style="{
+        '--minimum-size': expandedBoard ? '0px' : `${puzzle.size * 40 + 4}px`,
+      }"
+    >
       <div class="board-frame">
         <div
           class="column-axis"
@@ -136,8 +186,10 @@ async function navigate(index: number, event: KeyboardEvent) {
             :aria-readonly="won && reviewing"
             :aria-rowcount="puzzle.size"
             :aria-colcount="puzzle.size"
-            :class="{ concealed: paused }"
+            :class="{ concealed: paused, drawable: expandedBoard }"
             :inert="paused || (busy && !readOnlyReview)"
+            @pointerdown="startDrag"
+            @click.capture="swallowClick"
             @pointerleave="emit('hover', null)"
           >
             <div
@@ -224,7 +276,9 @@ async function navigate(index: number, event: KeyboardEvent) {
       </button>
     </div>
   </Teleport>
-  <p v-if="puzzle.size >= 8" class="scroll-note">{{ $t('board.scroll') }}</p>
+  <p v-if="puzzle.size >= 8 && !expandedBoard" class="scroll-note">
+    {{ $t('board.scroll') }}
+  </p>
 </template>
 <style scoped>
 .review-controls {
@@ -339,6 +393,10 @@ async function navigate(index: number, event: KeyboardEvent) {
 .board {
   position: relative;
   transition: opacity 0.2s;
+}
+.drawable {
+  /* The page cannot scroll from a touch on the board, so the finger can draw marks instead. */
+  touch-action: none;
 }
 .concealed {
   visibility: hidden;

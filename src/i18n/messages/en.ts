@@ -251,7 +251,7 @@ const en: Messages<typeof zhHant> = {
     close: 'Close settings',
     expanded: 'Larger board',
     expandedNote:
-      'Let the board use the full width; settings, co-op controls and rules move below.',
+      'Let the board use the full width without side scrolling, so you can drag across cells to mark them; settings, co-op controls and rules move below.',
     intro: 'After you place a crown, affected cells are marked with light stripes.',
     guidance: 'Show crown exclusion zones',
     range: 'Guidance zones',

@@ -227,7 +227,8 @@ export default {
     title: '遊玩設定',
     close: '關閉設定',
     expanded: '放大棋盤',
-    expandedNote: '讓棋盤使用整行寬度，設定、合作操作與規則移到下方。',
+    expandedNote:
+      '讓棋盤使用整行寬度且不必左右滑動，手指滑過格子即可連續打叉；設定、合作操作與規則移到下方。',
     intro: '放置皇冠後，以淺色斜線標示受影響的格子。',
     guidance: '顯示皇冠排除範圍',
     range: '引導範圍',

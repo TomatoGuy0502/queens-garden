@@ -93,3 +93,40 @@ test('play settings close from the cross or by clicking outside, but not from in
   await dialog.getByRole('button', { name: '關閉設定', exact: true }).click()
   await expect(dialog).toBeHidden()
 })
+
+test('dragging across cells marks them, and a drag from an X clears them', async ({ page }) => {
+  await page.goto(`/?size=6&difficulty=easy&seed=42&v=${GENERATOR_VERSION}`)
+  await expect(page.getByRole('gridcell')).toHaveCount(36)
+  const centre = async (index: number) => {
+    const box = (await page.locator(`[data-index="${index}"]`).boundingBox())!
+    return [box.x + box.width / 2, box.y + box.height / 2] as const
+  }
+  const drag = async (from: number, to: number) => {
+    await page.mouse.move(...(await centre(from)))
+    await page.mouse.down()
+    for (let index = from + 1; index <= to; index++)
+      await page.mouse.move(...(await centre(index)), { steps: 3 })
+    await page.mouse.up()
+  }
+  const states = () =>
+    Promise.all(
+      [0, 1, 2, 3].map((i) => page.locator(`[data-index="${i}"]`).getAttribute('data-state')),
+    )
+  await drag(0, 3)
+  expect(await states()).toEqual(['marked', 'marked', 'marked', 'marked'])
+  await drag(0, 2)
+  expect(await states()).toEqual(['empty', 'empty', 'empty', 'marked'])
+  await page.getByRole('button', { name: '復原', exact: true }).click()
+  expect(await states()).toEqual(['empty', 'empty', 'marked', 'marked'])
+})
+
+test('the larger board fits a phone without scrolling sideways', async ({ page }) => {
+  await page.setViewportSize({ width: 375, height: 800 })
+  await page.goto(`/?size=12&difficulty=easy&seed=42&v=${GENERATOR_VERSION}`)
+  await expect(page.getByRole('gridcell')).toHaveCount(144, { timeout: 60000 })
+  const dialog = await settings(page)
+  await dialog.getByRole('switch', { name: '放大棋盤', exact: true }).check()
+  await dialog.getByRole('button', { name: '關閉設定', exact: true }).click()
+  const scroller = page.locator('.board-scroll')
+  expect(await scroller.evaluate((el) => el.scrollWidth <= el.clientWidth)).toBe(true)
+})
