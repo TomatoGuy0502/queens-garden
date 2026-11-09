@@ -101,6 +101,8 @@
 html {
   /* Reserve the scrollbar's width on every page, so short and long pages line up. */
   scrollbar-gutter: stable;
+  /* No double-tap zoom on phones; pinch zoom still works for accessibility. */
+  touch-action: manipulation;
 }
 body {
   margin: 0;
