@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { computed, shallowRef, nextTick, useTemplateRef, watch } from 'vue'
 import { useEventListener } from '@vueuse/core'
-import { Pause, Play } from '@lucide/vue'
+import BoardPauseCover from './BoardPauseCover.vue'
+import BoardReviewBar from './BoardReviewBar.vue'
 import QueensCell from './QueensCell.vue'
 import { useGamePreferences } from '../composables/useGamePreferences'
 import { guidedCells, type BoardGuidance, type GuidanceReason } from '../queens/guidance'
@@ -276,19 +277,11 @@ async function navigate(index: number, event: KeyboardEvent) {
               />
             </svg>
           </div>
-          <div v-if="paused && !embedded" class="pause-cover">
-            <Pause :size="28" />
-            <h2>{{ $t('board.pausedTitle') }}</h2>
-            <p>{{ $t('board.pausedBody') }}</p>
-            <button
-              type="button"
-              class="primary"
-              :disabled="canResume === false"
-              @click="emit('resume')"
-            >
-              <Play :size="16" /> {{ $t('board.resume') }}
-            </button>
-          </div>
+          <BoardPauseCover
+            v-if="paused && !embedded"
+            :can-resume="canResume"
+            @resume="emit('resume')"
+          />
         </div>
       </div>
     </div>
@@ -296,49 +289,12 @@ async function navigate(index: number, event: KeyboardEvent) {
       <slot name="result" />
     </div>
   </div>
-  <Teleport to="body">
-    <div
-      v-if="won && reviewing && !embedded"
-      class="review-controls"
-      role="region"
-      :aria-label="$t('board.reviewLabel')"
-    >
-      <span>{{ $t('board.reviewing') }}</span>
-      <button type="button" class="primary" @click="emit('endReview')">
-        {{ $t('board.back') }}
-      </button>
-    </div>
-  </Teleport>
+  <BoardReviewBar v-if="won && reviewing && !embedded" @end-review="emit('endReview')" />
   <p v-if="puzzle.size >= 8 && !expandedBoard && !embedded" class="scroll-note">
     {{ $t('board.scroll') }}
   </p>
 </template>
 <style scoped>
-.review-controls {
-  position: fixed;
-  bottom: max(16px, env(safe-area-inset-bottom));
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 90;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 14px;
-  width: min(460px, calc(100vw - 32px));
-  padding: 12px 14px;
-  border: 1px solid var(--line);
-  border-radius: 6px;
-  background: var(--surface);
-  box-shadow: 0 4px 20px #30263a18;
-}
-.review-controls > span {
-  font-size: 12px;
-  line-height: 1.6;
-  color: var(--muted);
-}
-.review-controls > button {
-  flex-shrink: 0;
-}
 .board-stage {
   position: relative;
 }
@@ -433,25 +389,6 @@ async function navigate(index: number, event: KeyboardEvent) {
 }
 .concealed {
   visibility: hidden;
-}
-.pause-cover {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-direction: column;
-  background: var(--subtle);
-  gap: 12px;
-}
-.pause-cover h2 {
-  font-size: 21px;
-  margin: 0;
-}
-.pause-cover p {
-  font-size: 13px;
-  color: var(--muted);
-  margin: 0 0 9px;
 }
 .complete {
   animation: celebrate 0.8s ease-out;

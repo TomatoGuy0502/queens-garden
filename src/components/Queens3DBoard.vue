@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { Pause, Play } from '@lucide/vue'
 import { useEventListener } from '@vueuse/core'
 import { computed, nextTick, shallowRef, useTemplateRef } from 'vue'
 import { guidedCells, type BoardGuidance } from '../queens/guidance'
@@ -7,6 +6,8 @@ import type { CellState, PuzzleDefinition } from '../queens/types'
 import { pillarGuided } from '../queens3d/play'
 import { layerRegions } from '../queens3d/regions'
 import type { Puzzle3DDefinition } from '../queens3d/types'
+import BoardPauseCover from './BoardPauseCover.vue'
+import BoardReviewBar from './BoardReviewBar.vue'
 import QueensBoard from './QueensBoard.vue'
 
 // Same props and events as QueensBoard, with cells numbered through all layers.
@@ -211,29 +212,10 @@ useEventListener(window, 'keydown', (event: KeyboardEvent) => {
       </section>
     </div>
     <div v-if="placeholder"></div>
-    <div v-else-if="paused" class="cover">
-      <Pause :size="28" />
-      <h2>{{ $t('board.pausedTitle') }}</h2>
-      <p>{{ $t('board.pausedBody') }}</p>
-      <button type="button" class="primary" :disabled="canResume === false" @click="emit('resume')">
-        <Play :size="16" /> {{ $t('board.resume') }}
-      </button>
-    </div>
+    <BoardPauseCover v-else-if="paused" :can-resume="canResume" @resume="emit('resume')" />
     <div v-else-if="won && !reviewing" class="cover result-cover"><slot name="result" /></div>
   </div>
-  <Teleport to="body">
-    <div
-      v-if="won && reviewing"
-      class="review-controls"
-      role="region"
-      :aria-label="$t('board.reviewLabel')"
-    >
-      <span>{{ $t('board.reviewing') }}</span>
-      <button type="button" class="primary" @click="emit('endReview')">
-        {{ $t('board.back') }}
-      </button>
-    </div>
-  </Teleport>
+  <BoardReviewBar v-if="won && reviewing" @end-review="emit('endReview')" />
 </template>
 <style scoped>
 .stage {
@@ -333,40 +315,9 @@ useEventListener(window, 'keydown', (event: KeyboardEvent) => {
   border-radius: 5px;
   background: var(--subtle);
 }
-.cover h2 {
-  font-size: 21px;
-  margin: 0;
-}
-.cover p {
-  font-size: 13px;
-  color: var(--muted);
-  margin: 0 0 9px;
-}
 .result-cover {
   padding: 20px;
   background: var(--result-overlay);
-}
-.review-controls {
-  position: fixed;
-  bottom: max(16px, env(safe-area-inset-bottom));
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 90;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 14px;
-  width: min(460px, calc(100vw - 32px));
-  padding: 12px 14px;
-  border: 1px solid var(--line);
-  border-radius: 6px;
-  background: var(--surface);
-  box-shadow: 0 4px 20px #30263a18;
-}
-.review-controls > span {
-  font-size: 12px;
-  line-height: 1.6;
-  color: var(--muted);
 }
 @media (max-width: 650px) {
   .tabs {
