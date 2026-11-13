@@ -10,10 +10,11 @@ import { hallSets } from './deductions/hall'
 import { contradictionReasoning } from './deductions/contradiction'
 
 /**
- * Score a Level 3 board must reach to be offered as hard or expert. No size has a threshold
- * until its score distribution is measured, so such boards stay unrated and are not delivered.
+ * Score a Level 3 board must reach to be offered as hard: just above the highest medium score
+ * measured for that size (146 and 213 over 300 seeds). Expert has no threshold yet, so no board
+ * is rated expert.
  */
-export const HARD_MIN_SCORE_3D: Readonly<Record<number, number>> = {}
+export const HARD_MIN_SCORE_3D: Readonly<Record<number, number>> = { 5: 150, 6: 220 }
 export const EXPERT_MIN_SCORE_3D: Readonly<Record<number, number>> = {}
 const MIN_ADVANCED_STEPS = 3
 const MIN_EXPERT_CONTRADICTIONS = 2

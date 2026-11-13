@@ -3,7 +3,8 @@ import { DIFFICULTIES } from '../queens/levels'
 import { random } from '../queens/random'
 import { MIN_REGION_AREA } from '../queens/validator'
 import { evaluateDifficulty3d } from './difficulty'
-import { growRegions3d, mutateRegions3d, validRegions3d } from './regions'
+import { solve } from '../queens/solver'
+import { growRegions3d, layerRegions, mutateRegions3d, validRegions3d } from './regions'
 import { generateSkeleton } from './skeleton'
 import { solve3d, uniqueSolution3d } from './solver'
 import type { Generate3DOptions, Queens3DPuzzle } from './types'
@@ -14,6 +15,10 @@ import {
   GENERATOR_3D_VERSION,
 } from './version'
 
+/** Whether every layer alone, with its rows, columns, regions and no pillars, has several solutions. */
+export const layersAmbiguous = (regions: number[][][]) =>
+  regions.every((_, z) => solve(layerRegions(regions, z), 2).solutionCount > 1)
+
 /** Fixed work budget, not wall-clock cutoffs: identical inputs reproduce identical output. */
 export function generatePuzzle3d(options: Generate3DOptions): Queens3DPuzzle {
   const {
@@ -21,6 +26,7 @@ export function generatePuzzle3d(options: Generate3DOptions): Queens3DPuzzle {
     seed,
     maxAttempts = DEFAULT_3D_MAX_ATTEMPTS,
     mutationBudget = DEFAULT_3D_MUTATION_BUDGET,
+    layered = true,
   } = options
   if (
     (options.difficulty !== undefined && !DIFFICULTIES.includes(options.difficulty)) ||
@@ -49,6 +55,7 @@ export function generatePuzzle3d(options: Generate3DOptions): Queens3DPuzzle {
         uniqueSolution3d(regions, solution) &&
         validRegions3d(regions, minimumArea)
       ) {
+        if (layered && !layersAmbiguous(regions)) break
         const analysis = evaluateDifficulty3d(regions)
         if (
           analysis.difficulty !== 'unrated' &&
@@ -56,7 +63,7 @@ export function generatePuzzle3d(options: Generate3DOptions): Queens3DPuzzle {
           (!options.difficulty || options.difficulty === analysis.difficulty)
         )
           return {
-            id: `3d-${GENERATOR_3D_VERSION}-${size}-${seed}-${options.difficulty ?? 'any'}-${mutationBudget}`,
+            id: `3d-${GENERATOR_3D_VERSION}-${size}-${seed}-${options.difficulty ?? 'any'}-${mutationBudget}${layered ? '' : '-flat'}`,
             version: GENERATOR_3D_VERSION,
             size,
             seed,
@@ -64,7 +71,12 @@ export function generatePuzzle3d(options: Generate3DOptions): Queens3DPuzzle {
             solution,
             difficulty: analysis.difficulty,
             difficultyScore: analysis.score,
-            generation: { maxAttempts, mutationBudget, requestedDifficulty: options.difficulty },
+            generation: {
+              maxAttempts,
+              mutationBudget,
+              requestedDifficulty: options.difficulty,
+              layered,
+            },
             analysis,
           }
         break

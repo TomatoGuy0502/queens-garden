@@ -6,7 +6,7 @@ import { random } from '../../queens/random'
 import { MIN_REGION_AREA } from '../../queens/validator'
 import { applyStep, createState3d } from '../../queens3d/deductions/state'
 import { logicalHint3d, nextDeduction3d } from '../../queens3d/difficulty'
-import { generatePuzzle3d } from '../../queens3d/generator'
+import { generatePuzzle3d, layersAmbiguous } from '../../queens3d/generator'
 import { cellIndex } from '../../queens3d/geometry'
 import { growRegions3d, mutateRegions3d, validRegions3d } from '../../queens3d/regions'
 import { generateSkeleton, isValidSkeleton } from '../../queens3d/skeleton'
@@ -25,7 +25,7 @@ function expectSafe(step: Deduction3DStep, solutions: Set<number>[], label: stri
 }
 
 for (const size of [5, 6])
-  for (const difficulty of ['easy', 'medium'] as const)
+  for (const difficulty of ['easy', 'medium', 'hard'] as const)
     it(`${size}×${size}×${size} ${difficulty}: seed 42 gives a verified, reproducible board`, () => {
       const puzzle = generatePuzzle3d({ size, seed: 42, difficulty })
       expect(puzzle.difficulty).toBe(difficulty)
@@ -33,18 +33,35 @@ for (const size of [5, 6])
       expect(isValidSkeleton(puzzle.solution)).toBe(true)
       expect(validRegions3d(puzzle.regions, MIN_REGION_AREA[difficulty])).toBe(true)
       expect(uniqueSolution3d(puzzle.regions, puzzle.solution)).toBe(true)
+      expect(layersAmbiguous(puzzle.regions)).toBe(true)
       expect(generatePuzzle3d({ size, seed: 42, difficulty })).toEqual(puzzle)
       expect(JSON.parse(JSON.stringify(puzzle))).toEqual(puzzle)
       const solution = [crowns(puzzle.solution)]
       puzzle.analysis.steps.forEach((step, i) => expectSafe(step, solution, `step ${i}`))
     })
 it('fails explicitly when the budget runs out or the level has no threshold yet', () => {
-  for (const difficulty of ['hard', 'expert'] as const)
-    expect(() => generatePuzzle3d({ size: 5, seed: 1, difficulty, maxAttempts: 3 })).toThrow(
-      expect.objectContaining({ localized: { key: 'errors.GENERATION_BUDGET' } }),
-    )
+  const budget = expect.objectContaining({ localized: { key: 'errors.GENERATION_BUDGET' } })
+  expect(() =>
+    generatePuzzle3d({ size: 5, seed: 1, difficulty: 'expert', maxAttempts: 3 }),
+  ).toThrow(budget)
+  // A single attempt rarely passes the layered requirement, and never fails any other way.
+  let failures = 0
+  for (let seed = 0; seed < 20; seed++)
+    try {
+      generatePuzzle3d({ size: 5, seed, difficulty: 'easy', maxAttempts: 1 })
+    } catch (error) {
+      expect(error).toEqual(budget)
+      failures++
+    }
+  expect(failures).toBeGreaterThan(0)
   for (const size of [4, 7, 5.5])
     expect(() => generatePuzzle3d({ size, seed: 1 })).toThrow('生成參數不合法。')
+})
+it('can turn the layered requirement off, as a different recipe', () => {
+  const flat = generatePuzzle3d({ size: 5, seed: 42, difficulty: 'easy', layered: false })
+  expect(flat.generation.layered).toBe(false)
+  expect(uniqueSolution3d(flat.regions, flat.solution)).toBe(true)
+  expect(flat.id).not.toBe(generatePuzzle3d({ size: 5, seed: 42, difficulty: 'easy' }).id)
 })
 it('keeps regions connected, in their layer and above the minimum area through 250 mutations', () => {
   for (const minimumArea of [2, 3, 4]) {

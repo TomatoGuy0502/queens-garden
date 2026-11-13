@@ -9,7 +9,12 @@ export interface Puzzle3DDefinition {
   seed: number
   difficulty: Difficulty
   difficultyScore: number
-  generation: { maxAttempts: number; mutationBudget: number; requestedDifficulty?: Difficulty }
+  generation: {
+    maxAttempts: number
+    mutationBudget: number
+    requestedDifficulty?: Difficulty
+    layered: boolean
+  }
 }
 export interface Queens3DPuzzle extends Puzzle3DDefinition {
   /** The skeleton: solution[r][c] = layer of the crown in pillar (r, c). */
@@ -34,4 +39,9 @@ export interface Generate3DOptions {
   difficulty?: Difficulty
   maxAttempts?: number
   mutationBudget?: number
+  /**
+   * Only accept boards where every layer on its own (without pillars) has several solutions, so
+   * no layer can be finished as a separate 2D puzzle. On by default.
+   */
+  layered?: boolean
 }
