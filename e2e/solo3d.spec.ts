@@ -80,8 +80,11 @@ test('a 5×5×5 board can be completed, and two crowns in one pillar are flagged
     for (let c = 0; c < N; c++) await queen(page, solution[r][c], r * N + c)
   await expect(page.getByRole('heading', { name: '關卡完成' })).toBeVisible()
   await expect(page.getByText(/次操作 · 0 次提示/)).toBeVisible()
-  // Stacked boards keep no stats.
-  expect(await page.evaluate(() => localStorage.getItem('queens:stats:v1'))).toBeNull()
+  // The win is kept in its own stacked bucket, apart from the flat 5 × 5 sizes.
+  const stats = (await page.evaluate(() => localStorage.getItem('queens:stats:v1'))) ?? ''
+  expect(Object.keys((JSON.parse(stats) as { buckets: object }).buckets)).toEqual(['3d:5:easy'])
+  await page.goto('/stats')
+  await expect(page.getByRole('row', { name: /5 × 5 × 5/ })).toBeVisible()
 })
 
 test('single player offers the classic and the stacked board, the stacked one marked new', async ({
