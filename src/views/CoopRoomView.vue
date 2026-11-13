@@ -242,7 +242,8 @@ async function reset() {
             :me-id="room.credentials!.playerId"
             :host-id="room.room.hostId"
             :can-start="room.canStart"
-            :pending="!!room.pending || !room.connected"
+            :pending="!!room.pending"
+            :connected="room.connected"
             @configure="room.send({ type: 'configure', settings: $event })"
             @start="room.send({ type: 'start' })"
           />

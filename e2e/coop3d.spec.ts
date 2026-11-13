@@ -16,14 +16,15 @@ test('a co-op room plays a stacked board that both players see', async ({
     await host.getByLabel('你的暱稱').fill('Alice')
     await host.getByRole('button', { name: '建立房間', exact: true }).click()
     await expect(host.getByRole('heading', { name: /等待室/ })).toBeVisible()
-    await host.getByLabel('棋盤類型').selectOption('stacked')
+    await expect(host.locator('.kind-card .badge')).toHaveText('NEW')
+    await host.getByRole('radio', { name: '疊層（3D）' }).check()
     await expect(host.getByLabel('棋盤大小')).toHaveValue('5')
     await guest.goto(host.url())
     await guest.getByLabel('你的暱稱').fill('Bob')
     await guest.getByRole('button', { name: '加入房間', exact: true }).click()
     // The guest sees the host's choice but cannot change it.
-    await expect(guest.getByLabel('棋盤類型')).toHaveValue('stacked')
-    await expect(guest.getByLabel('棋盤類型')).toBeDisabled()
+    await expect(guest.getByRole('radio', { name: '疊層（3D）' })).toBeChecked()
+    await expect(guest.getByRole('radio', { name: '疊層（3D）' })).toBeDisabled()
     await host.getByRole('button', { name: '開始合作', exact: true }).click()
     for (const page of [host, guest]) {
       await expect(page.locator('[data-layer="4"][data-index="24"]')).toBeVisible({
@@ -44,4 +45,38 @@ test('a co-op room plays a stacked board that both players see', async ({
   } finally {
     await context.close()
   }
+})
+
+test('the lobby shows a board choice at once, before the server has answered', async ({
+  page,
+  isMobile,
+}) => {
+  test.skip(isMobile, 'The lobby is the same on a phone.')
+  await page.goto('/rooms/new')
+  await page.getByLabel('你的暱稱').fill('Alice')
+  await page.getByRole('button', { name: '建立房間', exact: true }).click()
+  await expect(page.getByRole('heading', { name: /等待室/ })).toBeVisible()
+  // Hold every command back so only a local update can explain the change.
+  await page.routeWebSocket(/socket\.io/, (ws) => {
+    const server = ws.connectToServer()
+    ws.onMessage((message) =>
+      typeof message === 'string' && message.includes('room:command')
+        ? void setTimeout(() => server.send(message), 1500)
+        : server.send(message),
+    )
+    server.onMessage((message) => ws.send(message))
+  })
+  await page.reload()
+  await expect(page.getByRole('radio', { name: '經典（2D）' })).toBeChecked()
+  await page.getByRole('radio', { name: '疊層（3D）' }).check({ force: true })
+  await expect(page.locator('.kind-card.selected')).toContainText('疊層（3D）', { timeout: 500 })
+  await expect(page.getByLabel('棋盤大小')).toHaveValue('5', { timeout: 500 })
+  // Only starting waits for the change; the other settings stay editable meanwhile.
+  await expect(page.getByLabel('棋盤大小')).toBeEnabled()
+  await expect(page.getByLabel('難度')).toBeEnabled()
+  await expect(page.getByRole('radio', { name: '經典（2D）' })).toBeEnabled()
+  await expect(page.getByRole('button', { name: '開始合作', exact: true })).toBeDisabled()
+  // The room's answer arrives and agrees with it.
+  await expect(page.getByLabel('棋盤大小')).toBeEnabled()
+  await expect(page.locator('.kind-card.selected')).toContainText('疊層（3D）')
 })

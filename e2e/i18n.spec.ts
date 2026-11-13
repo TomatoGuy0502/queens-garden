@@ -140,6 +140,7 @@ test.describe('co-op screens', () => {
     await expect(page).toHaveURL(/\/rooms\/[A-Z0-9]{5}$/)
     await expect(page.getByRole('heading', { name: /Lobby/ })).toBeVisible()
     await page.getByLabel('Board size').selectOption('6')
+    await expect(page.getByRole('radio', { name: 'Classic (2D)' })).toBeChecked()
     await expect(page.locator('.player-count')).toHaveText('1 / 8 players')
     await expect(page.locator('.player-row')).toContainText('Alice (you)')
     await expect(page.locator('.player-row')).toContainText('Host')
