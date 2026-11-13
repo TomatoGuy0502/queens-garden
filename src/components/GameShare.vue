@@ -3,7 +3,8 @@ import { SOLO_ONLY } from '../deployment'
 import { computed, shallowRef, useTemplateRef } from 'vue'
 import { useI18n } from 'vue-i18n'
 import QRCode from 'qrcode'
-import { Share2, Copy, Check, X } from '@lucide/vue'
+import { Share2, Copy, Check } from '@lucide/vue'
+import ModalDialog from './ModalDialog.vue'
 import type { PuzzleDefinition } from '../queens/types'
 const props = defineProps<{
   puzzle?: Pick<PuzzleDefinition, 'size' | 'difficulty' | 'seed' | 'version'>
@@ -12,7 +13,7 @@ const props = defineProps<{
   path?: string
 }>()
 const { t } = useI18n()
-const dialog = useTemplateRef<HTMLDialogElement>('dialog')
+const dialog = useTemplateRef('dialog')
 const linkInput = useTemplateRef<HTMLInputElement>('linkInput')
 const status = shallowRef(''),
   copied = shallowRef(false)
@@ -75,23 +76,14 @@ async function share() {
   <button type="button" class="text-button share-button" @click="open">
     <Share2 :size="14" />{{ shareTitle }}
   </button>
-  <dialog
+  <ModalDialog
     ref="dialog"
     class="share-dialog"
-    aria-labelledby="share-title"
+    :title="shareTitle"
+    :close-label="$t('share.close')"
+    :width="460"
     aria-describedby="share-description"
   >
-    <div class="share-header">
-      <h2 id="share-title">{{ shareTitle }}</h2>
-      <button
-        type="button"
-        class="icon-button"
-        :aria-label="$t('share.close')"
-        @click="dialog?.close()"
-      >
-        <X :size="19" />
-      </button>
-    </div>
     <p id="share-description">
       {{ $t(roomId ? 'share.roomDescription' : 'share.puzzleDescription') }}
     </p>
@@ -128,7 +120,7 @@ async function share() {
       </button>
     </div>
     <p class="share-status" role="status" aria-live="polite">{{ status }}</p>
-  </dialog>
+  </ModalDialog>
 </template>
 <style scoped>
 .share-button {
@@ -137,34 +129,6 @@ async function share() {
   gap: 6px;
   min-height: 32px;
   font-size: 11px;
-}
-.share-dialog {
-  width: min(460px, calc(100% - 36px));
-  padding: 24px;
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  background: var(--page);
-  color: var(--ink);
-  font:
-    13px/1.8 Inter,
-    'PingFang TC',
-    system-ui,
-    sans-serif;
-  box-shadow: 0 16px 60px #30263a22;
-}
-.share-dialog::backdrop {
-  background: var(--backdrop);
-}
-.share-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 16px;
-}
-.share-header h2 {
-  margin: 0;
-  font-size: 19px;
-  font-weight: 550;
 }
 .share-dialog p {
   color: var(--muted);

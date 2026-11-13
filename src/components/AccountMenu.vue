@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { shallowRef, useTemplateRef, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { UserRound, X } from '@lucide/vue'
+import { UserRound } from '@lucide/vue'
+import ModalDialog from './ModalDialog.vue'
 import { useAccount } from '../composables/useAccount'
 import { usePlayerName } from '../composables/usePlayerName'
 import { useMessage } from '../i18n/message'
@@ -9,7 +10,7 @@ import { LocalizedError, errorMessage, type Message } from '../../shared/message
 const { enabled, account, ready, signIn, signOut, setNickname, deleteAccount } = useAccount()
 const { t } = useI18n()
 const render = useMessage()
-const dialog = useTemplateRef<HTMLDialogElement>('dialog')
+const dialog = useTemplateRef('dialog')
 const nickname = shallowRef('')
 const busy = shallowRef(false)
 const error = shallowRef<Message | null>(null)
@@ -52,19 +53,6 @@ async function remove() {
   if (!confirm(t('account.deleteConfirm'))) return
   if (await run(deleteAccount)) dialog.value?.close()
 }
-// A click on the dialog itself, outside its box, can only have landed on the backdrop.
-function closeOnBackdrop(event: MouseEvent) {
-  const element = dialog.value
-  if (!element || event.target !== element) return
-  const box = element.getBoundingClientRect()
-  if (
-    event.clientX < box.left ||
-    event.clientX > box.right ||
-    event.clientY < box.top ||
-    event.clientY > box.bottom
-  )
-    element.close()
-}
 </script>
 <template>
   <!-- Holds the button's place while the session loads, so the header does not jump. -->
@@ -91,23 +79,13 @@ function closeOnBackdrop(event: MouseEvent) {
       <UserRound v-else :size="18" /><span>{{ account.nickname ?? $t('account.open') }}</span>
     </button>
     <p v-if="error && !account" class="account-error" role="alert">{{ render(error) }}</p>
-    <dialog
+    <ModalDialog
       ref="dialog"
       class="account-dialog"
-      aria-labelledby="account-title"
-      @click="closeOnBackdrop"
+      :title="$t('account.title')"
+      :close-label="$t('account.close')"
+      :width="400"
     >
-      <div class="account-header">
-        <h2 id="account-title">{{ $t('account.title') }}</h2>
-        <button
-          type="button"
-          class="icon-button"
-          :aria-label="$t('account.close')"
-          @click="dialog?.close()"
-        >
-          <X :size="19" />
-        </button>
-      </div>
       <form class="room-form" @submit.prevent="save">
         <label for="account-nickname">{{ $t('account.nickname') }}</label>
         <input
@@ -130,7 +108,7 @@ function closeOnBackdrop(event: MouseEvent) {
           {{ $t('account.delete') }}
         </button>
       </div>
-    </dialog>
+    </ModalDialog>
   </template>
 </template>
 <style scoped>
@@ -159,36 +137,6 @@ function closeOnBackdrop(event: MouseEvent) {
   width: 22px;
   height: 22px;
   border-radius: 50%;
-}
-.account-dialog {
-  width: min(400px, calc(100% - 36px));
-  max-height: calc(100dvh - 36px);
-  overflow-y: auto;
-  padding: 24px;
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  background: var(--page);
-  color: var(--ink);
-  font:
-    13px/1.8 Inter,
-    'PingFang TC',
-    system-ui,
-    sans-serif;
-  box-shadow: 0 16px 60px #30263a22;
-}
-.account-dialog::backdrop {
-  background: var(--backdrop);
-}
-.account-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 16px;
-}
-.account-header h2 {
-  margin: 0;
-  font-size: 19px;
-  font-weight: 550;
 }
 small {
   color: var(--muted);

@@ -1,26 +1,14 @@
 <script setup lang="ts">
 import { computed, useTemplateRef } from 'vue'
 import { useRoute } from 'vue-router'
-import { Settings2, X } from '@lucide/vue'
+import { Settings2 } from '@lucide/vue'
+import ModalDialog from './ModalDialog.vue'
 import { useGamePreferences } from '../composables/useGamePreferences'
 import type { BoardGuidance } from '../queens/guidance'
 const { expandedBoard } = useGamePreferences()
 const preferences = defineModel<BoardGuidance>({ required: true })
 defineProps<{ storageAvailable: boolean }>()
-const dialog = useTemplateRef<HTMLDialogElement>('dialog')
-// A click on the dialog itself, outside its box, can only have landed on the backdrop.
-function closeOnBackdrop(event: MouseEvent) {
-  const element = dialog.value
-  if (!element || event.target !== element) return
-  const box = element.getBoundingClientRect()
-  if (
-    event.clientX < box.left ||
-    event.clientX > box.right ||
-    event.clientY < box.top ||
-    event.clientY > box.bottom
-  )
-    element.close()
-}
+const dialog = useTemplateRef('dialog')
 const route = useRoute()
 // Pillars only exist on the stacked board, so its option is only offered there.
 const ranges = computed(() => [
@@ -44,24 +32,13 @@ function update(key: keyof BoardGuidance, event: Event) {
   >
     <Settings2 :size="18" />
   </button>
-  <dialog
+  <ModalDialog
     ref="dialog"
     class="preferences-dialog"
-    aria-labelledby="preferences-title"
+    :title="$t('preferences.title')"
+    :close-label="$t('preferences.close')"
     aria-describedby="preferences-description"
-    @click="closeOnBackdrop"
   >
-    <div class="preferences-header">
-      <h2 id="preferences-title">{{ $t('preferences.title') }}</h2>
-      <button
-        type="button"
-        class="icon-button"
-        :aria-label="$t('preferences.close')"
-        @click="dialog?.close()"
-      >
-        <X :size="19" />
-      </button>
-    </div>
     <label class="guidance-toggle layout-toggle">
       <span
         >{{ $t('preferences.expanded')
@@ -100,7 +77,7 @@ function update(key: keyof BoardGuidance, event: Event) {
     <p class="storage-note" role="status">
       {{ $t(storageAvailable ? 'preferences.saved' : 'preferences.unsaved') }}
     </p>
-  </dialog>
+  </ModalDialog>
 </template>
 <style scoped>
 .preferences-button {
@@ -112,34 +89,6 @@ function update(key: keyof BoardGuidance, event: Event) {
 }
 .preferences-button:hover {
   color: var(--accent);
-}
-.preferences-dialog {
-  width: min(440px, calc(100% - 36px));
-  padding: 24px;
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  background: var(--page);
-  color: var(--ink);
-  font:
-    13px/1.8 Inter,
-    'PingFang TC',
-    system-ui,
-    sans-serif;
-  box-shadow: 0 16px 60px #30263a22;
-}
-.preferences-dialog::backdrop {
-  background: var(--backdrop);
-}
-.preferences-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 16px;
-}
-.preferences-header h2 {
-  margin: 0;
-  font-size: 19px;
-  font-weight: 550;
 }
 .preferences-dialog p {
   color: var(--muted);
@@ -199,10 +148,6 @@ legend {
 }
 fieldset:disabled {
   opacity: 0.45;
-}
-.preferences-dialog {
-  max-height: calc(100dvh - 36px);
-  overflow-y: auto;
 }
 .guidance-note {
   font-size: 12px;
