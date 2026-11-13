@@ -51,12 +51,4 @@ input {
   outline: 2px solid var(--accent);
   outline-offset: 1px;
 }
-.sr-only {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  overflow: hidden;
-  clip: rect(0 0 0 0);
-  white-space: nowrap;
-}
 </style>

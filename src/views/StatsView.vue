@@ -113,6 +113,9 @@ function clear() {
   </main>
 </template>
 <style scoped>
+.table-wrap {
+  margin-top: 16px;
+}
 h2 {
   font-size: 17px;
   font-weight: 550;
@@ -126,32 +129,14 @@ h2 {
   border-radius: 5px;
   color: var(--muted);
 }
-.table-wrap {
-  margin-top: 16px;
-  overflow-x: auto;
-  border: 1px solid var(--line);
-  border-radius: 7px;
-  background: var(--surface);
-}
 table {
-  width: 100%;
   min-width: 560px;
-  border-collapse: collapse;
   font-size: 12px;
 }
 th,
 td {
   padding: 14px 16px;
-  text-align: left;
   vertical-align: top;
-  border-bottom: 1px solid var(--line);
-}
-tbody tr:last-child > * {
-  border-bottom: 0;
-}
-thead th {
-  color: var(--muted);
-  font-weight: 500;
 }
 tbody th {
   font-weight: 550;
@@ -198,13 +183,5 @@ td .empty {
 .reset p {
   margin: 0;
   color: var(--muted);
-}
-.sr-only {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  overflow: hidden;
-  clip: rect(0 0 0 0);
-  white-space: nowrap;
 }
 </style>

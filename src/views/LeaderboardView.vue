@@ -103,6 +103,9 @@ watch(
   </main>
 </template>
 <style scoped>
+.table-wrap {
+  margin-top: 18px;
+}
 .days {
   display: flex;
   align-items: center;
@@ -123,33 +126,17 @@ watch(
   border-radius: 5px;
   color: var(--muted);
 }
-.table-wrap {
-  margin-top: 18px;
-  overflow-x: auto;
-  border: 1px solid var(--line);
-  border-radius: 7px;
-  background: var(--surface);
-}
 table {
-  width: 100%;
-  border-collapse: collapse;
   font-size: 13px;
   font-variant-numeric: tabular-nums;
 }
 th,
 td {
   padding: 12px 16px;
-  text-align: left;
-  border-bottom: 1px solid var(--line);
   white-space: nowrap;
 }
-tbody tr:last-child > * {
-  border-bottom: 0;
-}
 thead th {
-  color: var(--muted);
   font-size: 12px;
-  font-weight: 500;
 }
 tbody th {
   font-weight: 500;
@@ -167,14 +154,6 @@ tr.me {
 tr.me span {
   color: var(--accent);
   font-size: 12px;
-}
-.sr-only {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  overflow: hidden;
-  clip: rect(0 0 0 0);
-  white-space: nowrap;
 }
 @media (max-width: 650px) {
   th,
