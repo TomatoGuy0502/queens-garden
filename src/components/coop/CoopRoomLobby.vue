@@ -89,7 +89,6 @@ function setDifficulty(difficulty: Difficulty) {
     </div>
     <div class="lobby-settings">
       <fieldset
-        v-if="mode === 'coop'"
         class="board-kinds"
         :disabled="meId !== hostId || !connected"
         :class="{ locked: meId !== hostId }"

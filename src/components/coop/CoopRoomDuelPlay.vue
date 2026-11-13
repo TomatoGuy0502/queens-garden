@@ -3,10 +3,12 @@ import { computed, shallowRef, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useMessage } from '../../i18n/message'
 import GameMeta from '../GameMeta.vue'
+import Queens3DBoard from '../Queens3DBoard.vue'
 import QueensBoard from '../QueensBoard.vue'
 import GameToolbar from '../GameToolbar.vue'
 import GameResult from '../GameResult.vue'
 import type { PuzzleDefinition } from '../../queens/types'
+import { isPuzzle3d } from '../../queens3d/play'
 import { DEFAULT_GUIDANCE } from '../../queens/guidance'
 import { boardLabel } from '../../queens/levels'
 import { duelProgress } from '../../queens/duel'
@@ -23,8 +25,12 @@ const reviewing = shallowRef(false)
 watch([() => game.state?.id, () => game.state?.phase], () => {
   reviewing.value = false
 })
-// A duel is always on the flat board.
-const puzzle = computed(() => game.state!.puzzle! as PuzzleDefinition)
+const puzzle = computed(() => game.state!.puzzle!)
+const stacked = computed(() => isPuzzle3d(puzzle.value))
+// The stacked board takes the flat board's props and events.
+const board = computed(() => (stacked.value ? Queens3DBoard : QueensBoard))
+// Crowns on a full board, which is where a progress bar ends.
+const total = computed(() => puzzle.value.size ** (stacked.value ? 2 : 1))
 const meId = computed(() => room.credentials?.playerId)
 const finished = computed(() => game.state?.phase === 'completed')
 const racers = computed(() =>
@@ -49,7 +55,11 @@ const guidance = { ...DEFAULT_GUIDANCE, enabled: false }
 const idle = computed(() => !room.connected || game.state?.phase !== 'playing')
 </script>
 <template>
-  <GameMeta :difficulty="puzzle.difficulty" :size="boardLabel(puzzle.size)" :time="game.time" />
+  <GameMeta
+    :difficulty="puzzle.difficulty"
+    :size="boardLabel(puzzle.size, stacked)"
+    :time="game.time"
+  />
   <ul class="duel-progress">
     <li v-for="racer in racers" :key="racer.id">
       <span class="duel-name">{{ racer.name }}{{ racer.id === meId ? $t('coop.you') : '' }}</span>
@@ -58,19 +68,20 @@ const idle = computed(() => !room.connected || game.state?.phase !== 'playing')
         role="progressbar"
         :aria-label="$t('duel.progress.label', { name: racer.name })"
         aria-valuemin="0"
-        :aria-valuemax="puzzle.size"
+        :aria-valuemax="total"
         :aria-valuenow="racer.count"
         :data-player-id="racer.id"
       >
-        <i :style="{ width: `${(racer.count / puzzle.size) * 100}%` }"></i>
+        <i :style="{ width: `${(racer.count / total) * 100}%` }"></i>
       </div>
       <span class="duel-count">{{
-        $t('duel.progress.value', { count: racer.count, size: puzzle.size })
+        $t('duel.progress.value', { count: racer.count, size: total })
       }}</span>
     </li>
   </ul>
-  <QueensBoard
-    :puzzle="puzzle"
+  <component
+    :is="board"
+    :puzzle="puzzle as PuzzleDefinition"
     :cells="duel.cells"
     :guidance="guidance"
     :paused="false"
@@ -92,7 +103,7 @@ const idle = computed(() => !room.connected || game.state?.phase !== 'playing')
         :next-label="room.isHost ? $t('coop.room.next') : $t('coop.room.waitHost')"
         @review="reviewing = true"
         @next="room.send({ type: 'reset' })" /></template
-  ></QueensBoard>
+  ></component>
   <GameToolbar
     duel
     :blocked="idle"

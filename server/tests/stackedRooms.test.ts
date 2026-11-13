@@ -95,10 +95,52 @@ it('a shared hint is a stacked step', async () => {
   })
   expect(hinted.game.hint?.step?.cells.every((cell) => cell < 125)).toBe(true)
 })
-it('stacked settings must use stacked sizes and leave duels flat', () => {
+it('stacked settings must use stacked sizes, in co-op rooms and duels alike', () => {
   const base = { name: 'A', difficulty: 'easy', stacked: true }
   expect(createRoomSchema.safeParse({ ...base, size: 5 }).success).toBe(true)
   expect(createRoomSchema.safeParse({ ...base, size: 8 }).success).toBe(false)
-  expect(createRoomSchema.safeParse({ ...base, size: 5, mode: 'duel' }).success).toBe(false)
+  expect(createRoomSchema.safeParse({ ...base, size: 5, mode: 'duel' }).success).toBe(true)
+  expect(createRoomSchema.safeParse({ ...base, size: 8, mode: 'duel' }).success).toBe(false)
   expect(createRoomSchema.safeParse({ name: 'A', difficulty: 'easy', size: 5 }).success).toBe(false)
+})
+it('a stacked duel counts layer rows and columns, and a correct skeleton wins', async () => {
+  const manager = new RoomManager(memory(), compute())
+  const host = await manager.create('Alice', { size: 8, difficulty: 'easy' }, 'duel')
+  const guest = await manager.join(host.state.id, 'Bob')
+  await manager.connect(host.credentials, 'a')
+  await manager.connect(guest.credentials, 'b')
+  await manager.command(host.credentials, {
+    type: 'configure',
+    actionId: randomUUID(),
+    gameId: host.state.game.id,
+    settings: { size: 5, difficulty: 'easy', stacked: true },
+  })
+  await manager.command(host.credentials, {
+    type: 'start',
+    actionId: randomUUID(),
+    gameId: host.state.game.id,
+  })
+  let state = await manager.state(host.credentials)
+  for (let i = 0; i < 50 && state.game.phase === 'generating'; i++) {
+    await new Promise((r) => setTimeout(r, 1))
+    state = await manager.state(host.credentials)
+  }
+  expect(state.game.cells).toHaveLength(125)
+  const board = (cells: number[]): RoomCommand => {
+    const states = Array<'empty' | 'queen'>(125).fill('empty')
+    for (const cell of cells) states[cell] = 'queen'
+    return { type: 'duelBoard', actionId: randomUUID(), gameId: state.game.id, cells: states }
+  }
+  // The same cell on two layers covers two layer rows and two layer columns.
+  const two = await manager.command(host.credentials, board([0, 25]))
+  expect(two.game.duel?.progress[host.credentials.playerId]).toBe(2)
+  // Two crowns in one row of one layer cover a single layer row.
+  const row = await manager.command(host.credentials, board([0, 2]))
+  expect(row.game.duel?.progress[host.credentials.playerId]).toBe(1)
+  const won = await manager.command(guest.credentials, board(crowns()))
+  expect(won.game.duel).toMatchObject({
+    winnerId: guest.credentials.playerId,
+    progress: { [guest.credentials.playerId]: 25 },
+  })
+  expect(won.game.phase).toBe('completed')
 })

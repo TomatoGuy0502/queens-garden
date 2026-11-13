@@ -421,7 +421,6 @@ export class RoomManager {
         case 'configure':
           this.host(room, member.id)
           if (room.phase !== 'waiting') throw new RoomError('NOT_WAITING')
-          if (room.mode === 'duel' && command.settings.stacked) throw new RoomError('INVALID_INPUT')
           room.settings = command.settings
           break
         case 'start':

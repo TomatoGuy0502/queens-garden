@@ -79,3 +79,34 @@ test('two players race on their own boards with progress, no help, and a winner'
     await context.close()
   }
 })
+test('a duel can race on a stacked board', async ({ page, browser, isMobile }) => {
+  test.skip(isMobile, 'The layers are tabs on a narrow screen; layout has its own tests.')
+  await page.goto('/rooms/new?mode=duel')
+  await page.getByLabel('你的暱稱').fill('Alice')
+  await page.getByRole('button', { name: '建立房間', exact: true }).click()
+  await page.getByRole('radio', { name: '疊層（3D）' }).check()
+  await expect(page.getByLabel('棋盤大小')).toHaveValue('5')
+  const context = await browser.newContext({ locale: 'zh-TW' })
+  const guest = await context.newPage()
+  try {
+    await guest.goto(page.url())
+    await guest.getByLabel('你的暱稱').fill('Bob')
+    await guest.getByRole('button', { name: '加入房間', exact: true }).click()
+    await expect(guest.getByRole('radio', { name: '疊層（3D）' })).toBeChecked()
+    await page.getByRole('button', { name: '開始對戰', exact: true }).click()
+    for (const player of [page, guest])
+      await expect(player.locator('[data-layer]')).toHaveCount(125, { timeout: 50000 })
+    await expect(bar(guest, 'Alice')).toHaveText('0 / 25')
+    // The same cell on two layers covers a row and a column of each layer.
+    for (const layer of [0, 2]) {
+      const target = page.locator(`[data-layer="${layer}"][data-index="0"]`)
+      await target.click()
+      await target.click()
+      await expect(target).toHaveAttribute('data-state', 'queen')
+    }
+    await expect(bar(guest, 'Alice')).toHaveText('2 / 25')
+    await expect(guest.locator('[data-state="queen"]')).toHaveCount(0)
+  } finally {
+    await context.close()
+  }
+})

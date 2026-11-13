@@ -2,6 +2,7 @@ import { shallowRef, watch } from 'vue'
 import { defineStore } from 'pinia'
 import { nextCell, type CellAction } from '../queens/cells'
 import type { CellState } from '../queens/types'
+import { isPuzzle3d } from '../queens3d/play'
 import { useCoopGameStore } from './game'
 import { useRoomStore } from './room'
 interface Move {
@@ -30,7 +31,9 @@ export const useDuelStore = defineStore('duel', () => {
         cells.value = []
       } else {
         boardOf = state.id
-        cells.value = state.duel?.mine ?? Array<CellState>(state.puzzle.size ** 2).fill('empty')
+        cells.value =
+          state.duel?.mine ??
+          Array<CellState>(state.puzzle.size ** (isPuzzle3d(state.puzzle) ? 3 : 2)).fill('empty')
       }
       past.value = []
       future.value = []

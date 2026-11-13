@@ -23,7 +23,7 @@ export const settingsSchema = z.object({
   /** A stacked (3D) board: as many layers as rows. */
   stacked: z.boolean().optional(),
 })
-/** A stacked board has its own sizes and no expert level yet; a duel keeps the flat board. */
+/** A stacked board has its own sizes and no expert level yet. */
 export const validSettings = ({ size, difficulty, stacked }: z.infer<typeof settingsSchema>) =>
   stacked
     ? BOARD_SIZES_3D.some((n) => n === size) && difficulty !== 'expert'
@@ -33,7 +33,7 @@ export const createRoomSchema = settingsSchema
     name: z.string().trim().min(1).max(24),
     mode: z.enum(ROOM_MODES).default('coop'),
   })
-  .refine((room) => validSettings(room) && !(room.stacked && room.mode === 'duel'))
+  .refine(validSettings)
 export const joinRoomSchema = z.object({ name: z.string().trim().min(1).max(24) })
 export const roomCodeSchema = z.string().trim().toUpperCase().regex(ROOM_CODE_PATTERN)
 export const credentialsSchema = z.object({
