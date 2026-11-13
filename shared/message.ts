@@ -9,6 +9,9 @@ export type MessageParam =
   /** A row (0..n-1), column (n..2n-1) or region (2n..3n-1) of an n×n board. */
   | { unit: number; n: number }
   | { units: number[]; n: number }
+  /** A unit of an n-layer stacked board: n² layer rows, layer columns, pillars, then regions. */
+  | { unit3: number; n: number }
+  | { units3: number[]; n: number }
 export interface Message {
   key: string
   params?: Record<string, MessageParam>

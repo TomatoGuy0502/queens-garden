@@ -426,6 +426,18 @@ const ja: Messages<typeof zhHant> = {
     },
   },
   unit: { row: '{index} 行目', column: '{index} 列目', region: '領域 {letter}', separator: '、' },
+  unit3: {
+    layerRow: '{layer} 層の {index} 行目',
+    layerCol: '{layer} 層の {index} 列目',
+    pillar: '柱（{row}, {col}）',
+    region: '{layer} 層の領域 {letter}',
+  },
+  reason3d: {
+    single:
+      '{unit}は、使用済みの行・列・柱・領域とクラウンに隣接するマスを除くと、候補が 1 マスだけ残ります。{layer} 層の {row} 行目、{col} 列目にクラウンを置けます。',
+    contradiction:
+      '{layer} 層の {row} 行目、{col} 列目にクラウンがあると仮定し、{count} ステップの単一候補・隣接除外・交差の推論を行うと、{consequence}。この仮定は矛盾するため、このマスは除外できます。',
+  },
   strategy: {
     single: {
       label: '単一候補',

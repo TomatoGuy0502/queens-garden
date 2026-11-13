@@ -398,6 +398,18 @@ export default {
     },
   },
   unit: { row: '第 {index} 列', column: '第 {index} 欄', region: '區域 {letter}', separator: '、' },
+  unit3: {
+    layerRow: '第 {layer} 層第 {index} 列',
+    layerCol: '第 {layer} 層第 {index} 欄',
+    pillar: '柱（{row}, {col}）',
+    region: '第 {layer} 層區域 {letter}',
+  },
+  reason3d: {
+    single:
+      '{unit} 排除已占用的列、欄、柱、區域及皇冠相鄰格後，只剩一個候選格。可在第 {layer} 層第 {row} 列、第 {col} 欄放皇冠。',
+    contradiction:
+      '假設第 {layer} 層第 {row} 列、第 {col} 欄有皇冠，經 {count} 步單一候選、相鄰排除與交集推理後，會造成{consequence}。這個假設矛盾，因此可排除此格。',
+  },
   strategy: {
     single: {
       label: '單一候選',

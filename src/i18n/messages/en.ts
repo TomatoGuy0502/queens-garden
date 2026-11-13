@@ -439,6 +439,18 @@ const en: Messages<typeof zhHant> = {
     region: 'region {letter}',
     separator: ', ',
   },
+  unit3: {
+    layerRow: 'row {index} of layer {layer}',
+    layerCol: 'column {index} of layer {layer}',
+    pillar: 'pillar ({row}, {col})',
+    region: 'region {letter} of layer {layer}',
+  },
+  reason3d: {
+    single:
+      'In {unit}, once the occupied rows, columns, pillars and regions and the cells next to crowns are excluded, only one candidate cell remains. Place a crown in layer {layer} at row {row}, column {col}.',
+    contradiction:
+      'Suppose there is a crown in layer {layer} at row {row}, column {col}. After {count} step of single-candidate, adjacency and intersection reasoning, this leads to {consequence}. The assumption is contradictory, so this cell can be eliminated. | Suppose there is a crown in layer {layer} at row {row}, column {col}. After {count} steps of single-candidate, adjacency and intersection reasoning, this leads to {consequence}. The assumption is contradictory, so this cell can be eliminated.',
+  },
   strategy: {
     single: {
       label: 'Single candidate',
