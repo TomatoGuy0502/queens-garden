@@ -206,6 +206,14 @@ button:not(:disabled):hover {
   font-weight: 500;
   margin: 42px 0 14px;
 }
+.spinner {
+  animation: spin 1.4s linear infinite;
+}
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
 .sr-only {
   position: absolute;
   width: 1px;

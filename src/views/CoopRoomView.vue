@@ -543,9 +543,6 @@ async function reset() {
 .generating-panel p {
   font-size: 12px;
 }
-.spinner {
-  animation: spin 1.5s linear infinite;
-}
 .point-tools {
   display: flex;
   align-items: center;
@@ -582,11 +579,6 @@ async function reset() {
 }
 .change-round {
   margin-top: 14px;
-}
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
 }
 .coop-layout.expanded {
   grid-template-columns: minmax(0, 1fr);

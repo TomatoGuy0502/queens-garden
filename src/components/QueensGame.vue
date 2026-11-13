@@ -754,7 +754,6 @@ onMounted(() => {
   gap: 19px;
 }
 .spinner {
-  animation: spin 1.4s linear infinite;
   color: var(--accent);
 }
 .loading-bars {
@@ -803,11 +802,6 @@ onMounted(() => {
 .restart-confirm .primary {
   font-size: 12px;
   padding: 8px 13px;
-}
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
 }
 @keyframes pulse {
   50% {
