@@ -115,6 +115,18 @@ const en: Messages<typeof zhHant> = {
     next: 'Play again →',
     review: 'View the board',
   },
+  resultShare: {
+    button: 'Share result',
+    done: 'Copied',
+    title: '{name} {board}',
+    daily: '{name} daily {date} · {board}',
+    best: 'new best',
+    streak: '{days}-day streak',
+    rank: 'rank #{rank}',
+    copied: 'Result copied. Paste it to a friend.',
+    shared: 'Result shared.',
+    manual: 'Could not copy automatically. Copy the text below.',
+  },
   daily: {
     title: 'Daily challenge · {date}',
     today:

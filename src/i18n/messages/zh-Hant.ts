@@ -104,6 +104,18 @@ export default {
     next: '再來一局 →',
     review: '查看棋盤',
   },
+  resultShare: {
+    button: '分享成績',
+    done: '已複製',
+    title: '{name} {board}',
+    daily: '{name} 每日挑戰 {date} · {board}',
+    best: '新紀錄',
+    streak: '連續 {days} 天',
+    rank: '第 {rank} 名',
+    copied: '已複製成績，貼給朋友吧。',
+    shared: '已分享成績。',
+    manual: '無法自動複製，請複製下面的文字。',
+  },
   daily: {
     title: '每日挑戰 · {date}',
     today: '今天是 {size} × {size} · {difficulty}，所有人拿到同一題，台灣時間午夜換題。',

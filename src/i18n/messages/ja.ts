@@ -117,6 +117,18 @@ const ja: Messages<typeof zhHant> = {
     next: 'もう一度遊ぶ →',
     review: '盤面を見る',
   },
+  resultShare: {
+    button: '結果をシェア',
+    done: 'コピー済み',
+    title: '{name} {board}',
+    daily: '{name} デイリー {date} · {board}',
+    best: '自己ベスト',
+    streak: '{days} 日連続',
+    rank: '{rank} 位',
+    copied: '結果をコピーしました。友だちに貼り付けましょう。',
+    shared: '結果をシェアしました。',
+    manual: '自動でコピーできませんでした。下のテキストをコピーしてください。',
+  },
   daily: {
     title: 'デイリーチャレンジ · {date}',
     today:

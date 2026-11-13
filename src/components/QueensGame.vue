@@ -13,6 +13,7 @@ import GameSettings from './GameSettings.vue'
 import GameToolbar from './GameToolbar.vue'
 import GameRules from './GameRules.vue'
 import GameResult from './GameResult.vue'
+import GameResultShare from './GameResultShare.vue'
 import GameShare from './GameShare.vue'
 import AppHeader from './AppHeader.vue'
 import DailyChallenge from './DailyChallenge.vue'
@@ -381,6 +382,16 @@ onMounted(() => {
                     :to="{ path: '/leaderboard', query: { day: daily } }"
                     >{{ $t('ranked.leaderboard') }}</RouterLink
                   >
+                  <GameResultShare
+                    :puzzle="puzzle"
+                    :stacked="stacked"
+                    :daily="daily"
+                    :time="time"
+                    :hints="hints"
+                    :new-best="lastRecord?.newBest"
+                    :streak="lastRecord?.streak"
+                    :rank="typeof rankedResult === 'object' ? rankedResult?.rank : null"
+                  />
                 </GameResult>
               </template>
             </component>

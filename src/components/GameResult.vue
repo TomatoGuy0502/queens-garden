@@ -67,6 +67,7 @@ onMounted(() => {
 </template>
 <style scoped>
 .result {
+  position: relative;
   display: flex;
   flex-direction: column;
   align-items: center;

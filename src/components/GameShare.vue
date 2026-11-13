@@ -1,11 +1,11 @@
 <script setup lang="ts">
-import { SOLO_ONLY } from '../deployment'
 import { computed, shallowRef, useTemplateRef } from 'vue'
 import { useI18n } from 'vue-i18n'
 import QRCode from 'qrcode'
 import { Share2, Copy, Check } from '@lucide/vue'
 import BaseModalDialog from './BaseModalDialog.vue'
 import type { PuzzleDefinition } from '../queens/types'
+import { puzzleLink } from '../services/puzzleLink'
 const props = defineProps<{
   puzzle?: Pick<PuzzleDefinition, 'size' | 'difficulty' | 'seed' | 'version'>
   roomId?: string
@@ -22,16 +22,7 @@ const shareTitle = computed(() => t(props.roomId ? 'share.room' : 'share.puzzle'
 const shareUrl = computed(() => {
   if (props.roomId) return new URL(`/rooms/${props.roomId}`, location.origin).href
   if (!props.puzzle) throw new Error('Nothing to share.')
-  const url = new URL(location.pathname, location.origin)
-  const query = new URLSearchParams({
-    size: String(props.puzzle.size),
-    difficulty: props.puzzle.difficulty,
-    seed: String(props.puzzle.seed),
-    v: props.puzzle.version,
-  }).toString()
-  if (SOLO_ONLY) url.hash = `${props.path ?? '/solo'}?${query}`
-  else url.search = query
-  return url.href
+  return puzzleLink(props.puzzle, props.path)
 })
 const qr = computed(() => {
   const { modules } = QRCode.create(shareUrl.value, { errorCorrectionLevel: 'M' })

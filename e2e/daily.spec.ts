@@ -183,3 +183,29 @@ test("the leaderboard offers a day's board, as an ordinary game once the day is 
   await expect(page.getByRole('gridcell')).toHaveCount(size * size, { timeout: 60000 })
   expect(await regions()).toEqual(practised)
 })
+test('a finished daily shares a short result with a link to the same day', async ({ page }) => {
+  const key = '2026-10-27'
+  await day(page, key)
+  await page.addInitScript(() => {
+    const copies: string[] = []
+    Object.assign(window, { copies })
+    Object.defineProperty(navigator, 'clipboard', {
+      value: { writeText: (text: string) => Promise.resolve(void copies.push(text)) },
+    })
+  })
+  await page.goto('/')
+  await playToday(page, key)
+  await page.getByRole('button', { name: '分享成績' }).click()
+  await expect(page.locator('.result').getByRole('button', { name: '已複製' })).toBeVisible()
+  await expect(
+    page.getByRole('status').filter({ hasText: '已複製成績，貼給朋友吧。' }),
+  ).toHaveCount(1)
+  const [text] = await page.evaluate(() => (window as unknown as { copies: string[] }).copies)
+  const { size, difficulty } = dailyConfig(key)
+  const lines = text.split('\n')
+  expect(lines[0]).toBe(
+    `Queens 每日挑戰 ${key} · ${size} × ${size} · ${zhHant.difficulty[difficulty]}`,
+  )
+  expect(lines[1]).toMatch(/^⏱ \d\d:\d\d · 💡 0 次提示 · 🔥 連續 1 天$/)
+  expect(new URL(lines[2]).search).toBe(`?daily=${key}`)
+})
