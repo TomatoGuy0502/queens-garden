@@ -177,7 +177,13 @@ export default {
     roomTitle: 'Queens 多人房間',
     puzzleTitle: 'Queens 關卡',
   },
-  guidance: { row: '同一列', column: '同一欄', region: '同一色區', adjacent: '周圍八格' },
+  guidance: {
+    row: '同一列',
+    column: '同一欄',
+    region: '同一色區',
+    adjacent: '周圍八格',
+    pillar: '同一柱',
+  },
   ranked: {
     badge: '每日排名賽',
     signIn: '登入後開始挑戰，成績才會計入排行榜。',
@@ -358,6 +364,7 @@ export default {
       timeout: '等待伺服器回應逾時，請重新連線同步。',
     },
   },
+  play: { intro: '選擇棋盤類型。', classic: '經典 Queens', new: 'NEW' },
   rooms: {
     intro: '選擇和朋友一起玩的方式。',
     coop: {
@@ -398,6 +405,24 @@ export default {
     },
   },
   unit: { row: '第 {index} 列', column: '第 {index} 欄', region: '區域 {letter}', separator: '、' },
+  stacked: {
+    nav: '3D Queens',
+    home: {
+      title: '3D Queens（疊層）',
+      body: '把好幾盤 Queens 疊起來：每一根柱也只能有一頂皇冠，必須跨層推理。',
+      cta: '開始疊層挑戰',
+    },
+    rules: {
+      intro: '每一層都是一盤 Queens，上面的規則在每一層各自成立。',
+      pillars: '每一根柱（各層的同一格）加起來恰好一頂皇冠。',
+      apart: '不同層的皇冠不算相鄰。',
+      keys: '按 [ 與 ]（或 PageUp、PageDown）切換到上一層、下一層的同一格。',
+    },
+    layer: '第 {layer} 層',
+    boardLabel: '第 {layer} 層棋盤；方向鍵移動，[ 與 ] 切換層',
+    tabs: '選擇顯示的層',
+    cell: '第 {layer} 層，{label}',
+  },
   unit3: {
     layerRow: '第 {layer} 層第 {index} 列',
     layerCol: '第 {layer} 層第 {index} 欄',

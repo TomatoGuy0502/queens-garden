@@ -14,7 +14,7 @@ const { guidance, storageAvailable } = useGamePreferences()
       ><CrownIcon /><span>queens<span class="brand-dot">.</span></span></RouterLink
     >
     <nav>
-      <RouterLink to="/solo">{{ $t('nav.solo') }}</RouterLink
+      <RouterLink to="/play">{{ $t('nav.solo') }}</RouterLink
       ><RouterLink v-if="!SOLO_ONLY" to="/rooms">{{ $t('nav.coop') }}</RouterLink
       ><RouterLink to="/stats">{{ $t('nav.stats') }}</RouterLink
       ><RouterLink to="/tutorial">{{ $t('nav.tutorial') }}</RouterLink>

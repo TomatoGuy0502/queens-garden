@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { Crown, Rows3, Columns3, Shapes, MoveDiagonal } from '@lucide/vue'
+import { Crown, Rows3, Columns3, Shapes, MoveDiagonal, Layers } from '@lucide/vue'
+defineProps<{ stacked?: boolean }>()
 </script>
 <template>
   <section id="rules" class="rules" aria-labelledby="rules-title">
@@ -19,6 +20,12 @@ import { Crown, Rows3, Columns3, Shapes, MoveDiagonal } from '@lucide/vue'
           >{{ $t('rules.adjacent') }}<small>{{ $t('rules.adjacentNote') }}</small></span
         >
       </li>
+      <li v-if="stacked">
+        <Layers :size="18" /><span
+          >{{ $t('stacked.rules.pillars')
+          }}<small>{{ $t('stacked.rules.intro') }} {{ $t('stacked.rules.apart') }}</small></span
+        >
+      </li>
     </ul>
     <div class="mini-example" aria-hidden="true">
       <div class="example-cells">
@@ -30,6 +37,7 @@ import { Crown, Rows3, Columns3, Shapes, MoveDiagonal } from '@lucide/vue'
     <details>
       <summary>{{ $t('rules.shortcuts') }}</summary>
       <p>{{ $t('rules.shortcutsBody') }}</p>
+      <p v-if="stacked">{{ $t('stacked.rules.keys') }}</p>
     </details>
   </section>
 </template>

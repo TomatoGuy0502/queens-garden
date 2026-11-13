@@ -1,10 +1,11 @@
 <script setup lang="ts">
 import { SOLO_ONLY } from '../deployment'
 import { useRoute } from 'vue-router'
-import { computed, onMounted, onUnmounted, shallowRef, watch } from 'vue'
+import { computed, onMounted, onUnmounted, shallowRef, useTemplateRef, watch } from 'vue'
 import { Clock3, Pause, Play, LoaderCircle } from '@lucide/vue'
 import CrownIcon from './CrownIcon.vue'
 import QueensBoard from './QueensBoard.vue'
+import Queens3DBoard from './Queens3DBoard.vue'
 import GameSettings from './GameSettings.vue'
 import GameToolbar from './GameToolbar.vue'
 import GameRules from './GameRules.vue'
@@ -30,6 +31,9 @@ import {
   isDateKey,
 } from '../queens/daily'
 import { useSoloGameStore } from '../stores/solo'
+import { useSolo3dGameStore } from '../stores/solo3d'
+import { BOARD_SIZES_3D, GENERATOR_3D_VERSION } from '../queens3d/version'
+import { blankPuzzle3d } from '../queens3d/play'
 import { storeToRefs } from 'pinia'
 import { GENERATOR_VERSION } from '../queens/version'
 import { BOARD_SIZES, DIFFICULTIES } from '../queens/levels'
@@ -37,10 +41,35 @@ import type { Difficulty } from '../queens/types'
 import { finishRankedRun, startRankedRun } from '../composables/useAccount'
 import type { RunFinish, RunStart } from '../../shared/account'
 import { LocalizedError, errorMessage, message, type Message } from '../../shared/message'
+const props = defineProps<{
+  /** Plays the stacked (3D) board: no daily challenge, tutorial or stats, and its own save. */
+  stacked?: boolean
+}>()
 const render = useMessage()
-const game = useSoloGameStore()
-useProgressAutosave(game)
-const progress = useSoloProgress()
+// The stacked store differs only in its puzzle's regions, which just the board component reads.
+const game = (props.stacked ? useSolo3dGameStore() : useSoloGameStore()) as ReturnType<
+  typeof useSoloGameStore
+>
+const kind = props.stacked
+  ? {
+      version: GENERATOR_3D_VERSION,
+      sizes: BOARD_SIZES_3D as readonly number[],
+      // Expert has no measured threshold on stacked boards yet.
+      difficulties: DIFFICULTIES.filter((item) => item !== 'expert'),
+      defaultSize: 5,
+      cellCount: (size: number) => size ** 3,
+    }
+  : {
+      version: GENERATOR_VERSION,
+      sizes: BOARD_SIZES as readonly number[],
+      difficulties: [...DIFFICULTIES],
+      defaultSize: 8,
+      cellCount: (size: number) => size ** 2,
+    }
+const progress = props.stacked
+  ? useSoloProgress('queens3d:solo-progress:v1', kind)
+  : useSoloProgress()
+useProgressAutosave(game, progress)
 onUnmounted(() => game.$dispose())
 const { guidance, expandedBoard } = useGamePreferences()
 const {
@@ -75,18 +104,18 @@ const params = new URLSearchParams(
     typeof value === 'string' ? [[key, value]] : [],
   ),
 )
-const requestedSize = Number(params.get('size') ?? 8)
-const initialSize = BOARD_SIZES.find((size) => size === requestedSize) ?? 8
+const requestedSize = Number(params.get('size') ?? kind.defaultSize)
+const initialSize = kind.sizes.find((size) => size === requestedSize) ?? kind.defaultSize
 const requestedDifficulty = params.get('difficulty')
 const initialDifficulty: Difficulty =
-  DIFFICULTIES.find((difficulty) => difficulty === requestedDifficulty) ?? 'easy'
+  kind.difficulties.find((difficulty) => difficulty === requestedDifficulty) ?? 'easy'
 const displayDifficulty = shallowRef<Difficulty>(initialDifficulty)
 const requestedSeed = params.get('seed')
 const initialSeed =
   requestedSeed !== null && /^\d+$/.test(requestedSeed) && Number(requestedSeed) <= 0xffffffff
     ? Number(requestedSeed)
     : crypto.getRandomValues(new Uint32Array(1))[0]
-const dailyParam = params.get('daily')
+const dailyParam = props.stacked ? null : params.get('daily')
 // A link only counts as today's challenge when it really is today's board; old days stay closed.
 const linkedDaily =
   isDateKey(dailyParam) &&
@@ -98,7 +127,7 @@ const linkedDaily =
   })
     ? dailyParam
     : null
-const versionMismatch = shallowRef(params.has('v') && params.get('v') !== GENERATOR_VERSION)
+const versionMismatch = shallowRef(params.has('v') && params.get('v') !== kind.version)
 const restartConfirm = shallowRef(false)
 const reviewing = shallowRef(false)
 watch([won, () => puzzle.value?.id], () => {
@@ -114,7 +143,8 @@ let scored = ''
 // Score each attempt once; undo then redo of the final move must not count as a new win.
 watch(won, (isWon) => {
   const current = puzzle.value
-  if (!isWon || !current) return
+  // Stacked boards keep no stats yet.
+  if (!isWon || !current || props.stacked) return
   const key = `${current.id}#${attempt.value}`
   if (scored === key) return
   scored = key
@@ -215,10 +245,25 @@ async function startGame(
     difficulty,
     seed,
     dailyDate,
-    saved && restoreProgress(saved),
+    saved && restoreProgress(saved, kind.cellCount),
   )
   if (status === 'ready' && run) game.startRanked(run.elapsedMs, saved?.log)
   return status
+}
+// Before a stacked board exists, a hidden blank one holds its place, so the prompts shown over
+// it are exactly as tall as the board that follows and nothing jumps.
+const placeholder = computed(() =>
+  props.stacked &&
+  (versionMismatch.value || pendingResume.value || busy.value || preparing.value || !puzzle.value)
+    ? blankPuzzle3d(shown.value.size)
+    : null,
+)
+const playArea = useTemplateRef<HTMLElement>('playArea')
+/** The settings can sit below the board, so a game started from them brings the board back into view. */
+function startFromSettings(size: number, difficulty: Difficulty, seed: number) {
+  if (playArea.value && playArea.value.getBoundingClientRect().top < 0)
+    playArea.value.scrollIntoView()
+  return startGame(size, difficulty, seed)
 }
 async function resume(saved: SavedProgress) {
   // Only today's challenge keeps its daily label; an older unfinished day is a normal puzzle.
@@ -277,18 +322,20 @@ onMounted(() => {
   <div class="page-shell">
     <AppHeader />
     <main>
-      <h1>{{ $t('nav.solo') }}</h1>
-      <div class="game-layout" :class="{ expanded: expandedBoard }">
-        <section class="play-area" :aria-label="$t('game.area')" :aria-busy="busy">
+      <h1>{{ $t(stacked ? 'stacked.nav' : 'nav.solo') }}</h1>
+      <div class="game-layout" :class="{ expanded: expandedBoard || stacked }">
+        <section ref="playArea" class="play-area" :aria-label="$t('game.area')" :aria-busy="busy">
           <div class="game-meta">
             <div class="puzzle-meta">
               <span v-if="shown.daily" class="difficulty-badge daily-badge">{{
                 $t(ranked ? 'ranked.badge' : 'game.dailyBadge')
               }}</span
               ><span class="difficulty-badge">{{ $t(`difficulty.${shown.difficulty}`) }}</span
-              ><span class="board-size">{{ shown.size }} × {{ shown.size }}</span
+              ><span class="board-size"
+                >{{ shown.size }} × {{ shown.size }}{{ stacked ? ` × ${shown.size}` : '' }}</span
               ><span v-if="puzzle" class="queen-count"
-                ><CrownIcon /> {{ queens.length }}<span>/ {{ puzzle.size }}</span></span
+                ><CrownIcon /> {{ queens.length
+                }}<span>/ {{ stacked ? puzzle.size ** 2 : puzzle.size }}</span></span
               >
             </div>
             <div class="timer">
@@ -305,81 +352,98 @@ onMounted(() => {
               </button>
             </div>
           </div>
-          <div v-if="versionMismatch" class="empty-board">
-            <CrownIcon />
-            <h2>{{ $t('game.versionMismatch.title') }}</h2>
-            <p>{{ $t('game.versionMismatch.body', { version: GENERATOR_VERSION }) }}</p>
-          </div>
-          <ResumePrompt
-            v-else-if="pendingResume"
-            :saved="pendingResume"
-            @resume="resume(pendingResume)"
-            @discard="discardSaved"
-          />
-          <div v-else-if="busy || preparing" class="empty-board" role="status">
-            <div class="generating-art">
-              <CrownIcon /><LoaderCircle class="spinner" :size="21" />
+          <div class="board-slot" :class="{ reserved: placeholder }">
+            <Queens3DBoard
+              v-if="placeholder"
+              placeholder
+              inert
+              aria-hidden="true"
+              :puzzle="placeholder"
+              :cells="Array(placeholder.size ** 3).fill('empty')"
+              :guidance="guidance"
+              :paused="false"
+              :won="false"
+              :highlighted="[]"
+              :mistakes="[]"
+              :busy="false"
+            />
+            <div v-if="versionMismatch" class="empty-board">
+              <CrownIcon />
+              <h2>{{ $t('game.versionMismatch.title') }}</h2>
+              <p>{{ $t('game.versionMismatch.body', { version: kind.version }) }}</p>
             </div>
-            <h2>{{ $t('game.generating.title') }}</h2>
-            <p>{{ $t('game.generating.body') }}</p>
-            <span class="loading-bars"><i></i><i></i><i></i></span>
-          </div>
-          <QueensBoard
-            v-else-if="puzzle"
-            :key="puzzle.id"
-            :puzzle="puzzle"
-            :cells="cells"
-            :guidance="guidance"
-            :paused="paused"
-            :won="won"
-            :reviewing="reviewing"
-            :highlighted="highlighted"
-            :mistakes="allMistakes"
-            :busy="busy"
-            @end-review="reviewing = false"
-            @play="game.edit($event)"
-            @mark="game.edit($event, 'mark')"
-            @crown="game.edit($event, 'queen')"
-            @resume="game.togglePause"
-          >
-            <template #result>
-              <GameResult
-                :time="time"
-                :moves="moves"
-                :hints="hints"
-                :record="lastRecord ?? undefined"
-                :next-label="inDaily ? $t('game.freePlay') : undefined"
-                @next="nextGame"
-                @review="reviewing = true"
-              >
-                <p v-if="rankedResult === 'pending'" class="ranked-status" role="status">
-                  {{ $t('ranked.submitting') }}
-                </p>
-                <p v-else-if="rankedResult" class="ranked-status" role="status">
-                  {{
-                    rankedResult.rank
-                      ? $t('ranked.rank', { rank: rankedResult.rank })
-                      : $t('ranked.recorded')
-                  }}
-                </p>
-                <template v-else-if="ranked && rankedNotice">
-                  <p class="ranked-status" role="alert">{{ render(rankedNotice) }}</p>
-                  <button type="button" class="text-button" @click="submitRanked">
-                    {{ $t('ranked.retry') }}
-                  </button>
-                </template>
-                <RouterLink
-                  v-if="daily && !SOLO_ONLY"
-                  :to="{ path: '/leaderboard', query: { day: daily } }"
-                  >{{ $t('ranked.leaderboard') }}</RouterLink
+            <ResumePrompt
+              v-else-if="pendingResume"
+              :saved="pendingResume"
+              @resume="resume(pendingResume)"
+              @discard="discardSaved"
+            />
+            <div v-else-if="busy || preparing" class="empty-board" role="status">
+              <div class="generating-art">
+                <CrownIcon /><LoaderCircle class="spinner" :size="21" />
+              </div>
+              <h2>{{ $t('game.generating.title') }}</h2>
+              <p>{{ $t('game.generating.body') }}</p>
+              <span class="loading-bars"><i></i><i></i><i></i></span>
+            </div>
+            <component
+              :is="stacked ? Queens3DBoard : QueensBoard"
+              v-else-if="puzzle"
+              :key="puzzle.id"
+              :puzzle="puzzle"
+              :cells="cells"
+              :guidance="guidance"
+              :paused="paused"
+              :won="won"
+              :reviewing="reviewing"
+              :highlighted="highlighted"
+              :mistakes="allMistakes"
+              :busy="busy"
+              @end-review="reviewing = false"
+              @play="game.edit($event)"
+              @mark="game.edit($event, 'mark')"
+              @crown="game.edit($event, 'queen')"
+              @resume="game.togglePause"
+            >
+              <template #result>
+                <GameResult
+                  :time="time"
+                  :moves="moves"
+                  :hints="hints"
+                  :record="lastRecord ?? undefined"
+                  :next-label="inDaily ? $t('game.freePlay') : undefined"
+                  @next="nextGame"
+                  @review="reviewing = true"
                 >
-              </GameResult>
-            </template>
-          </QueensBoard>
-          <div v-else class="empty-board">
-            <CrownIcon />
-            <h2>{{ $t('game.idle.title') }}</h2>
-            <p>{{ $t('game.idle.body') }}</p>
+                  <p v-if="rankedResult === 'pending'" class="ranked-status" role="status">
+                    {{ $t('ranked.submitting') }}
+                  </p>
+                  <p v-else-if="rankedResult" class="ranked-status" role="status">
+                    {{
+                      rankedResult.rank
+                        ? $t('ranked.rank', { rank: rankedResult.rank })
+                        : $t('ranked.recorded')
+                    }}
+                  </p>
+                  <template v-else-if="ranked && rankedNotice">
+                    <p class="ranked-status" role="alert">{{ render(rankedNotice) }}</p>
+                    <button type="button" class="text-button" @click="submitRanked">
+                      {{ $t('ranked.retry') }}
+                    </button>
+                  </template>
+                  <RouterLink
+                    v-if="daily && !SOLO_ONLY"
+                    :to="{ path: '/leaderboard', query: { day: daily } }"
+                    >{{ $t('ranked.leaderboard') }}</RouterLink
+                  >
+                </GameResult>
+              </template>
+            </component>
+            <div v-else class="empty-board">
+              <CrownIcon />
+              <h2>{{ $t('game.idle.title') }}</h2>
+              <p>{{ $t('game.idle.body') }}</p>
+            </div>
           </div>
           <div v-if="error" class="error-notice" role="alert">{{ render(error) }}</div>
           <p v-if="ranked && !won" class="ranked-note">{{ $t('ranked.clock') }}</p>
@@ -455,7 +519,7 @@ onMounted(() => {
               <span class="dot-separator">·</span>
               {{ $t('game.score', { score: puzzle.difficultyScore }) }}</span
             >
-            <GameShare :puzzle="puzzle" />
+            <GameShare :puzzle="puzzle" :path="stacked ? '/solo3d' : '/solo'" />
           </div>
         </section>
         <aside class="side-panel">
@@ -469,19 +533,28 @@ onMounted(() => {
             {{ $t('game.leaveDaily') }}
           </button>
           <template v-else>
-            <TutorialPrompt />
-            <DailyChallenge class="daily-panel" in-game :busy="busy" @start="startDaily" />
+            <TutorialPrompt v-if="!stacked" />
+            <DailyChallenge
+              v-if="!stacked"
+              class="daily-panel"
+              in-game
+              :busy="busy"
+              @start="startDaily"
+            />
             <GameSettings
               :busy="busy"
               :initial-size="initialSize"
               :initial-difficulty="initialDifficulty"
               :initial-seed="initialSeed"
               :current-seed="puzzle?.seed"
-              @start="startGame"
+              :sizes="kind.sizes"
+              :difficulties="kind.difficulties"
+              :stacked="stacked"
+              @start="startFromSettings"
               @cancel="game.cancelGeneration"
             />
           </template>
-          <GameRules />
+          <GameRules :stacked="stacked" />
         </aside>
       </div>
     </main>
@@ -629,7 +702,7 @@ h1 {
   justify-content: space-between;
   gap: 8px;
   font:
-    9px ui-monospace,
+    11px ui-monospace,
     monospace;
   color: var(--muted);
   padding: 19px 0;
@@ -637,6 +710,16 @@ h1 {
 }
 .dot-separator {
   margin: 0 5px;
+}
+.board-slot.reserved {
+  position: relative;
+}
+.reserved > .empty-board {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  width: auto;
+  aspect-ratio: auto;
 }
 .empty-board {
   width: 100%;
@@ -809,7 +892,7 @@ h1 {
     margin-bottom: 13px;
   }
   .puzzle-footer {
-    font-size: 8px;
+    font-size: 10px;
   }
   .queen-count {
     font-size: 11px;

@@ -17,6 +17,10 @@ const props = defineProps<{
   mistake: boolean
   disabled: boolean
   readOnly?: boolean
+  /** On a stacked board: which layer the cell is in. */
+  layer?: number
+  /** The same pillar is hovered or focused in another layer. */
+  linked?: boolean
 }>()
 // A board holds up to 144 cells, so they read the shared translator instead of each calling useI18n.
 const { t } = i18n.global
@@ -27,7 +31,7 @@ const participantLabel = computed(() =>
   ].join(t('cell.people')),
 )
 const cellLabel = computed(() => {
-  const { index, size, region, state, guidanceReasons } = props
+  const { index, size, region, state, guidanceReasons, layer } = props
   const stateLabel = t(
     `cell.${state === 'queen' ? 'queen' : state === 'marked' ? 'marked' : 'empty'}`,
   )
@@ -36,13 +40,14 @@ const cellLabel = computed(() => {
         reasons: guidanceReasons.map((reason) => t(`guidance.${reason}`)).join(t('cell.list')),
       })
     : ''
-  return t('cell.label', {
+  const label = t('cell.label', {
     row: Math.floor(index / size) + 1,
     col: (index % size) + 1,
     region: String.fromCharCode(65 + region),
     state: stateLabel,
     guidance: guidanceLabel,
   })
+  return layer === undefined ? label : t('stacked.cell', { layer: layer + 1, label })
 })
 const emit = defineEmits<{
   play: [index: number]
@@ -58,6 +63,7 @@ const emit = defineEmits<{
     class="cell"
     role="gridcell"
     :data-index="index"
+    :data-layer="layer"
     :data-region="region"
     :data-state="state"
     :data-hovered="!!hoverNames?.length"
@@ -68,6 +74,7 @@ const emit = defineEmits<{
       guided: guidanceReasons.length > 0,
       highlighted,
       mistake,
+      linked,
       pointing: !!pointNames?.length,
       hovering: !!hoverNames?.length,
     }"
@@ -131,7 +138,8 @@ const emit = defineEmits<{
     ),
     linear-gradient(var(--guidance-wash), var(--guidance-wash));
 }
-.hovering::before {
+.hovering::before,
+.linked::before {
   content: '';
   position: absolute;
   inset: 5px;
@@ -166,7 +174,7 @@ const emit = defineEmits<{
   animation: appear 0.18s ease-out;
 }
 .cell-mark {
-  font-size: clamp(20px, 4.6vw, 39px);
+  font-size: var(--mark-size, clamp(20px, 4.6vw, 39px));
   font-weight: 300;
   line-height: 1;
   opacity: 0.65;

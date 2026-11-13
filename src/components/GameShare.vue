@@ -5,7 +5,12 @@ import { useI18n } from 'vue-i18n'
 import QRCode from 'qrcode'
 import { Share2, Copy, Check, X } from '@lucide/vue'
 import type { PuzzleDefinition } from '../queens/types'
-const props = defineProps<{ puzzle?: PuzzleDefinition; roomId?: string }>()
+const props = defineProps<{
+  puzzle?: Pick<PuzzleDefinition, 'size' | 'difficulty' | 'seed' | 'version'>
+  roomId?: string
+  /** Route of the board being shared, for builds that keep the route in the hash. */
+  path?: string
+}>()
 const { t } = useI18n()
 const dialog = useTemplateRef<HTMLDialogElement>('dialog')
 const linkInput = useTemplateRef<HTMLInputElement>('linkInput')
@@ -23,7 +28,7 @@ const shareUrl = computed(() => {
     seed: String(props.puzzle.seed),
     v: props.puzzle.version,
   }).toString()
-  if (SOLO_ONLY) url.hash = `/solo?${query}`
+  if (SOLO_ONLY) url.hash = `${props.path ?? '/solo'}?${query}`
   else url.search = query
   return url.href
 })

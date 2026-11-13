@@ -197,6 +197,7 @@ const en: Messages<typeof zhHant> = {
     column: 'Same column',
     region: 'Same color region',
     adjacent: 'The eight surrounding cells',
+    pillar: 'Same pillar',
   },
   ranked: {
     badge: 'Ranked daily',
@@ -392,6 +393,7 @@ const en: Messages<typeof zhHant> = {
       timeout: 'The server took too long to respond. Reconnect to sync.',
     },
   },
+  play: { intro: 'Choose the kind of board.', classic: 'Classic Queens', new: 'NEW' },
   rooms: {
     intro: 'Choose how you want to play with friends.',
     coop: {
@@ -438,6 +440,24 @@ const en: Messages<typeof zhHant> = {
     column: 'column {index}',
     region: 'region {letter}',
     separator: ', ',
+  },
+  stacked: {
+    nav: '3D Queens',
+    home: {
+      title: '3D Queens (stacked)',
+      body: 'Several Queens boards stacked up: every pillar also holds exactly one crown, so you have to reason across layers.',
+      cta: 'Start a stacked puzzle',
+    },
+    rules: {
+      intro: 'Every layer is a Queens board: the rules above hold in each layer on its own.',
+      pillars: 'Every pillar (the same cell in all layers) holds exactly one crown in total.',
+      apart: 'Crowns in different layers never count as touching.',
+      keys: 'Press [ and ] (or PageUp and PageDown) to move to the same cell one layer up or down.',
+    },
+    layer: 'Layer {layer}',
+    boardLabel: 'Layer {layer} board; arrow keys move, [ and ] change layer',
+    tabs: 'Choose the layer to show',
+    cell: 'Layer {layer}, {label}',
   },
   unit3: {
     layerRow: 'row {index} of layer {layer}',

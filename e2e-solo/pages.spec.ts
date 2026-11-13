@@ -42,6 +42,12 @@ test('Pages subpath supports sharing, refresh, completion and local stats withou
   await page.goto('/queens-garden/#/stats')
   await page.reload()
   await expect(page.locator('main')).toBeVisible()
+  // The stacked board is client-only too, and shares its link through the hash route.
+  await page.goto('/queens-garden/#/solo3d?size=5&difficulty=easy&seed=42&v=1.0.0')
+  await expect(page.locator('.cell[data-layer]')).toHaveCount(125)
+  await page.locator('.share-button').click()
+  expect(await page.locator('#share-link').inputValue()).toContain('/queens-garden/#/solo3d?')
+  await page.keyboard.press('Escape')
   await page.goto('/queens-garden/#/rooms')
   await expect(page).toHaveURL(/#\/$/)
   expect(backend).toEqual([])

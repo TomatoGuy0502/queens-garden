@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { useTemplateRef } from 'vue'
+import { computed, useTemplateRef } from 'vue'
+import { useRoute } from 'vue-router'
 import { Settings2, X } from '@lucide/vue'
 import { useGamePreferences } from '../composables/useGamePreferences'
 import type { BoardGuidance } from '../queens/guidance'
@@ -20,12 +21,15 @@ function closeOnBackdrop(event: MouseEvent) {
   )
     element.close()
 }
-const ranges = [
-  { key: 'rows', label: 'guidance.row' },
-  { key: 'columns', label: 'guidance.column' },
-  { key: 'regions', label: 'guidance.region' },
-  { key: 'adjacent', label: 'guidance.adjacent' },
-] as const
+const route = useRoute()
+// Pillars only exist on the stacked board, so its option is only offered there.
+const ranges = computed(() => [
+  { key: 'rows', label: 'guidance.row' } as const,
+  { key: 'columns', label: 'guidance.column' } as const,
+  { key: 'regions', label: 'guidance.region' } as const,
+  { key: 'adjacent', label: 'guidance.adjacent' } as const,
+  ...(route.path === '/solo3d' ? [{ key: 'pillars', label: 'guidance.pillar' } as const] : []),
+])
 function update(key: keyof BoardGuidance, event: Event) {
   preferences.value = { ...preferences.value, [key]: (event.target as HTMLInputElement).checked }
 }
@@ -87,7 +91,7 @@ function update(key: keyof BoardGuidance, event: Event) {
       <label v-for="range in ranges" :key="range.key" class="range-option"
         ><input
           type="checkbox"
-          :checked="preferences[range.key]"
+          :checked="preferences[range.key] ?? true"
           @change="update(range.key, $event)"
         />{{ $t(range.label) }}</label
       >

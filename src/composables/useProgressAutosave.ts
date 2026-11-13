@@ -1,11 +1,11 @@
 import { onBeforeUnmount, watch } from 'vue'
 import { useEventListener, useIntervalFn } from '@vueuse/core'
 import { hasProgress, sameGame, encodeCells, type SavedProgress } from '../queens/progress'
-import type { CellState, PuzzleDefinition } from '../queens/types'
+import type { CellState } from '../queens/types'
 import { useSoloProgress } from './useSoloProgress'
 
 interface AutosaveSource {
-  puzzle: PuzzleDefinition | null
+  puzzle: { id: string } | null
   cells: CellState[]
   history: CellState[][]
   future: CellState[][]
@@ -19,8 +19,10 @@ const SAVE_DELAY_MS = 300
 const TICK_MS = 5000
 
 /** Keeps the unfinished solo game in storage so it survives a reload or a closed tab. */
-export function useProgressAutosave(game: AutosaveSource) {
-  const { read, write, clear } = useSoloProgress()
+export function useProgressAutosave(
+  game: AutosaveSource,
+  { read, write, clear }: ReturnType<typeof useSoloProgress> = useSoloProgress(),
+) {
   function flush() {
     const progress = game.exportProgress()
     if (!progress) return

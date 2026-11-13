@@ -57,14 +57,25 @@ const count = (value: unknown, max = Number.MAX_SAFE_INTEGER) =>
   typeof value === 'number' && Number.isSafeInteger(value) && value >= 0 && value <= max
     ? value
     : null
+/** What a save must match to be resumable; the defaults describe the flat board. */
+export interface ProgressRules {
+  version: string
+  sizes: readonly number[]
+  cellCount: (size: number) => number
+}
+const FLAT_RULES: ProgressRules = {
+  version: GENERATOR_VERSION,
+  sizes: BOARD_SIZES,
+  cellCount: (size) => size ** 2,
+}
 /** Saved data is untrusted: anything malformed, or from another generator version, is dropped. */
-export function parseProgress(raw: unknown): SavedProgress | null {
+export function parseProgress(raw: unknown, rules = FLAT_RULES): SavedProgress | null {
   if (!raw || typeof raw !== 'object') return null
   const value = raw as Record<string, unknown>
   const { size, difficulty, seed, cells, history, future } = value
   if (
-    value.version !== GENERATOR_VERSION ||
-    !BOARD_SIZES.some((item) => item === size) ||
+    value.version !== rules.version ||
+    !rules.sizes.some((item) => item === size) ||
     !DIFFICULTIES.some((item) => item === difficulty) ||
     count(seed, 0xffffffff) === null ||
     (value.daily !== null && !isDateKey(value.daily)) ||
@@ -73,7 +84,7 @@ export function parseProgress(raw: unknown): SavedProgress | null {
     !Array.isArray(future)
   )
     return null
-  const length = (size as number) ** 2
+  const length = rules.cellCount(size as number)
   const boards = (list: unknown[]) =>
     list.length <= MAX_SAVED_HISTORY &&
     list.every((item) => typeof item === 'string' && decodeCells(item, length) !== null)
@@ -94,7 +105,7 @@ export function parseProgress(raw: unknown): SavedProgress | null {
   )
     return null
   return {
-    version: GENERATOR_VERSION,
+    version: rules.version,
     size: size as number,
     difficulty: difficulty as Difficulty,
     seed: seed as number,
@@ -109,8 +120,11 @@ export function parseProgress(raw: unknown): SavedProgress | null {
     savedAt,
   }
 }
-export function restoreProgress(progress: SavedProgress): RestoredProgress {
-  const length = progress.size ** 2
+export function restoreProgress(
+  progress: SavedProgress,
+  cellCount = FLAT_RULES.cellCount,
+): RestoredProgress {
+  const length = cellCount(progress.size)
   const decode = (text: string) => decodeCells(text, length)!
   return {
     cells: decode(progress.cells),

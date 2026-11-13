@@ -4,7 +4,7 @@ import { useEventListener } from '@vueuse/core'
 import { Pause, Play } from '@lucide/vue'
 import QueensCell from './QueensCell.vue'
 import { useGamePreferences } from '../composables/useGamePreferences'
-import { guidedCells, type BoardGuidance } from '../queens/guidance'
+import { guidedCells, type BoardGuidance, type GuidanceReason } from '../queens/guidance'
 import type { CellState, PuzzleDefinition } from '../queens/types'
 const props = withDefaults(
   defineProps<{
@@ -21,8 +21,23 @@ const props = withDefaults(
     pendingCells?: number[]
     points?: { index: number; name: string }[]
     hovers?: { index: number | null; name: string }[]
+    /** Set when the board is one layer of a stacked board, which draws the covers itself. */
+    layer?: number
+    /** Cell whose pillar is hovered or focused in another layer. */
+    linked?: number | null
+    /** Cells in the pillar of a crown in another layer. */
+    pillarGuided?: number[]
   }>(),
-  { reviewing: false, canResume: true, pendingCells: () => [], points: () => [], hovers: () => [] },
+  {
+    reviewing: false,
+    canResume: true,
+    pendingCells: () => [],
+    points: () => [],
+    hovers: () => [],
+    layer: undefined,
+    linked: null,
+    pillarGuided: () => [],
+  },
 )
 const emit = defineEmits<{
   play: [index: number]
@@ -45,7 +60,13 @@ const rows = computed(() =>
   ),
 )
 const readOnlyReview = computed(() => props.won && props.reviewing)
-const exclusions = computed(() => guidedCells(props.puzzle.regions, props.cells, props.guidance))
+const embedded = computed(() => props.layer !== undefined)
+const exclusions = computed(() => {
+  const guided = guidedCells(props.puzzle.regions, props.cells, props.guidance)
+  for (const index of props.pillarGuided)
+    guided.set(index, [...(guided.get(index) ?? []), 'pillar' satisfies GuidanceReason])
+  return guided
+})
 // Draw each shared boundary once. Square caps overlap at vertices, closing every corner.
 const boundaryPath = computed(() => {
   const { size: n, regions } = props.puzzle
@@ -74,6 +95,7 @@ watch(
 )
 function reviewKey(event: KeyboardEvent) {
   if (
+    !embedded.value &&
     props.won &&
     props.reviewing &&
     event.key === 'Escape' &&
@@ -159,7 +181,7 @@ async function navigate(index: number, event: KeyboardEvent) {
     <div
       class="board-scroll"
       :style="{
-        '--minimum-size': expandedBoard ? '0px' : `${puzzle.size * 40 + 4}px`,
+        '--minimum-size': expandedBoard || embedded ? '0px' : `${puzzle.size * 40 + 4}px`,
       }"
     >
       <div class="board-frame">
@@ -182,7 +204,11 @@ async function navigate(index: number, event: KeyboardEvent) {
             ref="board"
             class="board"
             role="grid"
-            :aria-label="$t('board.label')"
+            :aria-label="
+              layer === undefined
+                ? $t('board.label')
+                : $t('stacked.boardLabel', { layer: layer + 1 })
+            "
             :aria-readonly="won && reviewing"
             :aria-rowcount="puzzle.size"
             :aria-colcount="puzzle.size"
@@ -204,6 +230,8 @@ async function navigate(index: number, event: KeyboardEvent) {
                 :key="cell.index"
                 v-bind="cell"
                 :size="puzzle.size"
+                :layer="layer"
+                :linked="linked === cell.index"
                 :state="cells[cell.index]"
                 :guidance-reasons="exclusions.get(cell.index) ?? []"
                 :active="focusIndex === cell.index"
@@ -245,7 +273,7 @@ async function navigate(index: number, event: KeyboardEvent) {
               />
             </svg>
           </div>
-          <div v-if="paused" class="pause-cover">
+          <div v-if="paused && !embedded" class="pause-cover">
             <Pause :size="28" />
             <h2>{{ $t('board.pausedTitle') }}</h2>
             <p>{{ $t('board.pausedBody') }}</p>
@@ -261,11 +289,13 @@ async function navigate(index: number, event: KeyboardEvent) {
         </div>
       </div>
     </div>
-    <div v-if="won && !reviewing" class="result-cover"><slot name="result" /></div>
+    <div v-if="won && !reviewing && !embedded" class="result-cover">
+      <slot name="result" />
+    </div>
   </div>
   <Teleport to="body">
     <div
-      v-if="won && reviewing"
+      v-if="won && reviewing && !embedded"
       class="review-controls"
       role="region"
       :aria-label="$t('board.reviewLabel')"
@@ -276,7 +306,7 @@ async function navigate(index: number, event: KeyboardEvent) {
       </button>
     </div>
   </Teleport>
-  <p v-if="puzzle.size >= 8 && !expandedBoard" class="scroll-note">
+  <p v-if="puzzle.size >= 8 && !expandedBoard && !embedded" class="scroll-note">
     {{ $t('board.scroll') }}
   </p>
 </template>

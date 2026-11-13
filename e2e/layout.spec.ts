@@ -70,6 +70,7 @@ test('expanded board remains usable across routes when browser storage is blocke
   await expect(coopSettings.getByRole('switch', { name: '放大棋盤', exact: true })).toBeChecked()
   await coopSettings.getByRole('button', { name: '關閉設定', exact: true }).click()
   await page.getByRole('link', { name: '單人遊戲', exact: true }).click()
+  await page.getByRole('link', { name: /^經典 Queens/ }).click()
   await expect(page.getByRole('grid')).toBeVisible({ timeout: 30000 })
   await stacked(page)
   expect(errors).toEqual([])

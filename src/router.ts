@@ -23,6 +23,16 @@ export const router = createRouter({
       meta: { title: 'nav.solo' },
     },
     {
+      path: '/play',
+      component: () => import('./views/SoloModeView.vue'),
+      meta: { title: 'nav.solo' },
+    },
+    {
+      path: '/solo3d',
+      component: () => import('./views/Solo3DView.vue'),
+      meta: { title: 'stacked.nav' },
+    },
+    {
       path: '/tutorial',
       component: () => import('./views/TutorialView.vue'),
       meta: { title: 'nav.tutorial' },

@@ -4,13 +4,20 @@ import { shallowRef, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { BOARD_SIZES, DIFFICULTIES } from '../queens/levels'
 import type { Difficulty } from '../queens/types'
-const props = defineProps<{
-  busy: boolean
-  initialSize: number
-  initialDifficulty: Difficulty
-  initialSeed: number
-  currentSeed?: number
-}>()
+const props = withDefaults(
+  defineProps<{
+    busy: boolean
+    initialSize: number
+    initialDifficulty: Difficulty
+    initialSeed: number
+    currentSeed?: number
+    sizes?: readonly number[]
+    difficulties?: readonly Difficulty[]
+    /** A stacked board has as many layers as rows. */
+    stacked?: boolean
+  }>(),
+  { currentSeed: undefined, sizes: () => BOARD_SIZES, difficulties: () => DIFFICULTIES },
+)
 const emit = defineEmits<{
   start: [size: number, difficulty: Difficulty, seed: number]
   cancel: []
@@ -53,8 +60,9 @@ function loadSeed() {
           >{{ $t('settings.size.label') }} <span>{{ $t('settings.size.caption') }}</span></label
         >
         <select id="size" v-model="size">
-          <option v-for="n in BOARD_SIZES" :key="n" :value="n">
-            {{ n }} × {{ n }}{{ n === 12 ? ` · ${$t('settings.size.advanced')}` : '' }}
+          <option v-for="n in sizes" :key="n" :value="n">
+            {{ n }} × {{ n }}{{ stacked ? ` × ${n}` : ''
+            }}{{ n === 12 ? ` · ${$t('settings.size.advanced')}` : '' }}
           </option>
         </select>
         <label for="difficulty"
@@ -68,7 +76,7 @@ function loadSeed() {
           :aria-label="$t('settings.difficulty.label')"
         >
           <button
-            v-for="item in DIFFICULTIES"
+            v-for="item in difficulties"
             :key="item"
             type="button"
             :aria-pressed="difficulty === item"

@@ -11,14 +11,42 @@ import {
   type RestoredProgress,
   type SavedProgress,
 } from '../queens/progress'
-import { HINT_LEVELS, hintView } from '../queens/strategies'
+import { HINT_LEVELS, hintView, type HintView } from '../queens/strategies'
 import { formatDuration } from '../queens/stats'
 import { conflictCells } from '../queens/validator'
 import type { RunEvent } from '../queens/replay'
 
-export function useQueensGame() {
+type BasePuzzle = Pick<PuzzleDefinition, 'id' | 'version' | 'size' | 'seed' | 'difficulty'>
+/** What differs between kinds of board; the rest of a solo game is the same. */
+export interface GameVariant<P> {
+  /** Route the board lives on; its query reproduces the puzzle. */
+  path: string
+  worker: () => Worker
+  cellCount: (size: number) => number
+  crowns: (size: number) => number
+  conflicts: (puzzle: P, cells: CellState[]) => number[]
+  hintView: (step: DeductionStep, level: number, puzzle: P) => HintView
+}
+const FLAT: GameVariant<PuzzleDefinition> = {
+  path: '/solo',
+  worker: () => new Worker(new URL('../queens/worker.ts', import.meta.url), { type: 'module' }),
+  cellCount: (size) => size ** 2,
+  crowns: (size) => size,
+  conflicts: ({ regions, size }, cells) =>
+    conflictCells(
+      regions,
+      cells.flatMap((state, i) =>
+        state === 'queen' ? [{ row: Math.floor(i / size), col: i % size }] : [],
+      ),
+    ),
+  hintView: (step, level, { regions }) => hintView(step, level, regions),
+}
+
+export function useQueensGame<P extends BasePuzzle = PuzzleDefinition>(
+  variant = FLAT as unknown as GameVariant<P>,
+) {
   const router = useRouter()
-  const puzzle = shallowRef<PuzzleDefinition | null>(null)
+  const puzzle = shallowRef<P | null>(null)
   const cells = shallowRef<CellState[]>([])
   const history = shallowRef<CellState[][]>([]),
     future = shallowRef<CellState[][]>([])
@@ -56,24 +84,22 @@ export function useQueensGame() {
     number,
     { resolve: (response: WorkerResponse) => void; reject: (reason: Error) => void }
   >()
-  const queens = computed(() =>
-    cells.value.flatMap((state, i) =>
-      state === 'queen'
-        ? [{ row: Math.floor(i / puzzle.value!.size), col: i % puzzle.value!.size }]
-        : [],
-    ),
-  )
+  /** Cells holding a crown. */
+  const queens = computed(() => cells.value.flatMap((state, i) => (state === 'queen' ? [i] : [])))
   const conflicts = computed(() =>
-    puzzle.value ? conflictCells(puzzle.value.regions, queens.value) : [],
+    puzzle.value ? variant.conflicts(puzzle.value, cells.value) : [],
   )
   const won = computed(
-    () => !!puzzle.value && queens.value.length === puzzle.value.size && !conflicts.value.length,
+    () =>
+      !!puzzle.value &&
+      queens.value.length === variant.crowns(puzzle.value.size) &&
+      !conflicts.value.length,
   )
   const time = computed(() => formatDuration(seconds.value))
   const blocked = computed(() => busy.value || paused.value || won.value)
   const hintInfo = computed(() =>
     hint.value && puzzle.value && hintLevel.value
-      ? hintView(hint.value, hintLevel.value, puzzle.value.regions)
+      ? variant.hintView(hint.value, hintLevel.value, puzzle.value)
       : null,
   )
   const feedback = computed(() => hintInfo.value?.text ?? message.value)
@@ -92,7 +118,7 @@ export function useQueensGame() {
       | Omit<Extract<WorkerRequest, { type: 'hint' | 'check' }>, 'id'>,
   ): Promise<WorkerResponse> {
     if (!worker) {
-      worker = new Worker(new URL('../queens/worker.ts', import.meta.url), { type: 'module' })
+      worker = variant.worker()
       worker.onmessage = (event: MessageEvent<WorkerResponse>) => {
         const pending = requests.get(event.data.id)
         if (!pending) return
@@ -121,7 +147,7 @@ export function useQueensGame() {
     message.value = null
   }
   function resetSession() {
-    cells.value = Array<CellState>(puzzle.value!.size ** 2).fill('empty')
+    cells.value = Array<CellState>(variant.cellCount(puzzle.value!.size)).fill('empty')
     history.value = []
     future.value = []
     moves.value = 0
@@ -193,7 +219,9 @@ export function useQueensGame() {
     try {
       const result = await rpc({ type: 'generate', options: { size, difficulty, seed } })
       if (generation !== generationId) return 'stale'
-      puzzle.value = result.puzzle!
+      // Each variant's worker answers with its own kind of puzzle.
+      const generated: unknown = result.puzzle
+      puzzle.value = generated as P
       daily.value = dailyDate
       resetSession()
       if (restore) applyProgress(restore)
@@ -204,7 +232,7 @@ export function useQueensGame() {
         v: puzzle.value.version,
       })
       if (dailyDate) params.set('daily', dailyDate)
-      await router.replace({ path: '/solo', query: Object.fromEntries(params) })
+      await router.replace({ path: variant.path, query: Object.fromEntries(params) })
       return 'ready'
     } catch (reason) {
       if (generation !== generationId) return 'stale'

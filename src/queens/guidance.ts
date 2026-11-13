@@ -6,14 +6,17 @@ export interface BoardGuidance {
   columns: boolean
   regions: boolean
   adjacent: boolean
+  /** Stacked boards only: the other layers of a crown's pillar. Missing means on. */
+  pillars?: boolean
 }
-export type GuidanceReason = 'row' | 'column' | 'region' | 'adjacent'
+export type GuidanceReason = 'row' | 'column' | 'region' | 'adjacent' | 'pillar'
 export const DEFAULT_GUIDANCE: Readonly<BoardGuidance> = {
   enabled: false,
   rows: true,
   columns: true,
   regions: true,
   adjacent: true,
+  pillars: true,
 }
 
 /** Only considers placed queens; never changes marks or consults the solution. */

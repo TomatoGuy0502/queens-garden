@@ -194,7 +194,13 @@ const ja: Messages<typeof zhHant> = {
     roomTitle: 'Queens マルチプレイのルーム',
     puzzleTitle: 'Queens の問題',
   },
-  guidance: { row: '同じ行', column: '同じ列', region: '同じ色の領域', adjacent: '周囲 8 マス' },
+  guidance: {
+    row: '同じ行',
+    column: '同じ列',
+    region: '同じ色の領域',
+    adjacent: '周囲 8 マス',
+    pillar: '同じ柱',
+  },
   ranked: {
     badge: 'デイリーランク戦',
     signIn: 'ログインしてから始めると、記録がランキングに載ります。',
@@ -384,6 +390,7 @@ const ja: Messages<typeof zhHant> = {
       timeout: 'サーバーの応答がタイムアウトしました。再接続して同期してください。',
     },
   },
+  play: { intro: '盤面の種類を選んでください。', classic: 'クラシック Queens', new: 'NEW' },
   rooms: {
     intro: '友だちとの遊び方を選んでください。',
     coop: {
@@ -426,6 +433,24 @@ const ja: Messages<typeof zhHant> = {
     },
   },
   unit: { row: '{index} 行目', column: '{index} 列目', region: '領域 {letter}', separator: '、' },
+  stacked: {
+    nav: '3D Queens',
+    home: {
+      title: '3D Queens（積層）',
+      body: '複数の Queens 盤を積み重ねます。どの柱にもクラウンは 1 つだけなので、層をまたいだ推理が必要です。',
+      cta: '積層パズルを始める',
+    },
+    rules: {
+      intro: '各層はそれぞれ Queens 盤です。上のルールは層ごとに成り立ちます。',
+      pillars: 'どの柱（全層の同じマス）にも、クラウンは合計でちょうど 1 つ。',
+      apart: '別の層のクラウン同士は隣接とみなしません。',
+      keys: '[ と ]（または PageUp・PageDown）で、上下の層の同じマスに移動します。',
+    },
+    layer: '第 {layer} 層',
+    boardLabel: '第 {layer} 層の盤面。矢印キーで移動、[ と ] で層を切り替え',
+    tabs: '表示する層を選ぶ',
+    cell: '第 {layer} 層、{label}',
+  },
   unit3: {
     layerRow: '{layer} 層の {index} 行目',
     layerCol: '{layer} 層の {index} 列目',

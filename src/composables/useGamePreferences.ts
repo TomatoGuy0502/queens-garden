@@ -9,13 +9,14 @@ function read(): BoardGuidance {
       return { ...DEFAULT_GUIDANCE }
     const values = stored as Record<string, unknown>
     const value = (key: keyof BoardGuidance) =>
-      typeof values[key] === 'boolean' ? values[key] : DEFAULT_GUIDANCE[key]
+      typeof values[key] === 'boolean' ? values[key] : (DEFAULT_GUIDANCE[key] ?? true)
     return {
       enabled: value('enabled'),
       rows: value('rows'),
       columns: value('columns'),
       regions: value('regions'),
       adjacent: value('adjacent'),
+      pillars: value('pillars'),
     }
   } catch {
     guidanceStorageAvailable.value = false

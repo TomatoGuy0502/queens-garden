@@ -1,0 +1,48 @@
+<script setup lang="ts">
+import { Crown, Layers } from '@lucide/vue'
+import AppHeader from '../components/AppHeader.vue'
+import ModeCard from '../components/ModeCard.vue'
+</script>
+<template>
+  <main class="page-shell">
+    <AppHeader />
+    <h1>{{ $t('nav.solo') }}</h1>
+    <p class="page-description">{{ $t('play.intro') }}</p>
+    <div class="mode-cards">
+      <ModeCard
+        to="/solo"
+        :title="$t('play.classic')"
+        :body="$t('home.solo.body')"
+        :cta="$t('home.solo.cta')"
+        ><Crown :size="28"
+      /></ModeCard>
+      <ModeCard
+        to="/solo3d"
+        :title="$t('stacked.home.title')"
+        :body="$t('stacked.home.body')"
+        :cta="$t('stacked.home.cta')"
+        :badge="$t('play.new')"
+        ><Layers :size="28"
+      /></ModeCard>
+    </div>
+  </main>
+</template>
+<style scoped>
+h1 {
+  font-size: 29px;
+  font-weight: 500;
+  margin: 42px 0 14px;
+}
+.mode-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 24px;
+  margin-top: 24px;
+}
+@media (max-width: 650px) {
+  .mode-cards {
+    grid-template-columns: 1fr;
+    gap: 18px;
+  }
+}
+</style>
