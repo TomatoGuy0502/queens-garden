@@ -103,11 +103,6 @@ watch(
   </main>
 </template>
 <style scoped>
-h1 {
-  font-size: 29px;
-  font-weight: 500;
-  margin: 42px 0 14px;
-}
 .days {
   display: flex;
   align-items: center;

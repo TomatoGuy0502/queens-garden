@@ -118,11 +118,6 @@ h2 {
   font-weight: 550;
   margin: 36px 0 0;
 }
-h1 {
-  font-size: 29px;
-  font-weight: 500;
-  margin: 42px 0 14px;
-}
 .notice {
   margin: 18px 0 0;
   padding: 10px 14px;

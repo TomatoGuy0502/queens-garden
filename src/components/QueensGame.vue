@@ -570,10 +570,8 @@ onMounted(() => {
   margin: 0;
   color: var(--accent);
 }
-h1 {
-  font-size: 29px;
-  font-weight: 500;
-  margin: 42px 0 24px;
+.page-shell h1 {
+  margin-bottom: 24px;
 }
 .game-layout {
   display: grid;

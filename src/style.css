@@ -201,6 +201,11 @@ button:not(:disabled):hover {
   margin: 0 auto;
   padding: 0 30px 48px;
 }
+.page-shell h1 {
+  font-size: 29px;
+  font-weight: 500;
+  margin: 42px 0 14px;
+}
 .page-description {
   font-size: 13px;
   line-height: 1.9;

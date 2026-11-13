@@ -82,9 +82,7 @@ async function join() {
   </main>
 </template>
 <style scoped>
-h1 {
-  font-size: 29px;
-  font-weight: 500;
+.page-shell h1 {
   margin: 40px 0 30px;
 }
 h2 {

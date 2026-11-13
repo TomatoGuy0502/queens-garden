@@ -38,11 +38,6 @@ import ModeCard from '../components/ModeCard.vue'
   </main>
 </template>
 <style scoped>
-h1 {
-  font-size: 29px;
-  font-weight: 500;
-  margin: 42px 0 14px;
-}
 .daily-card {
   margin-top: 28px;
 }

@@ -51,11 +51,6 @@ watch(isLast, (last) => last && markDone())
   </main>
 </template>
 <style scoped>
-h1 {
-  font-size: 29px;
-  font-weight: 500;
-  margin: 42px 0 14px;
-}
 .tutorial {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(280px, 380px);
