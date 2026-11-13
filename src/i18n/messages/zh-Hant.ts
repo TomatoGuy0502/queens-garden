@@ -206,6 +206,8 @@ export default {
     days: '選擇日期',
     previous: '前一天',
     next: '後一天',
+    play: '遊玩這天的題目',
+    playBoard: '{board}・{difficulty}。同一盤題目，可以對照排行榜上的成績有多厲害。',
     loading: '載入中…',
     empty: '這天還沒有人上榜。',
     caption: '{day} 排行榜',

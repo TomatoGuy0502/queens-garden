@@ -6,7 +6,8 @@ import AppHeader from '../components/AppHeader.vue'
 import { fetchLeaderboard } from '../composables/useAccount'
 import { useDailyChallenge } from '../composables/useDailyChallenge'
 import { useMessage } from '../i18n/message'
-import { isDateKey, shiftDay } from '../queens/daily'
+import { dailyConfig, isDateKey, shiftDay } from '../queens/daily'
+import { boardLabel } from '../queens/levels'
 import { HINT_PENALTY_SECONDS } from '../queens/replay'
 import { formatDuration } from '../queens/stats'
 import type { LeaderboardEntry } from '../../shared/account'
@@ -18,6 +19,14 @@ const day = computed(() => {
   const value = route.query.day
   return isDateKey(value) && value <= today.value ? value : today.value
 })
+// What the day's board is, so a score can be tried on it: today's through the daily itself, an
+// earlier day's as an ordinary game on the same board.
+const board = computed(() => dailyConfig(day.value))
+const playTo = computed(() =>
+  day.value === today.value
+    ? { path: '/solo', query: { daily: 'today' } }
+    : { path: '/solo', query: { practice: day.value } },
+)
 const entries = shallowRef<LeaderboardEntry[] | null>(null)
 const error = shallowRef<Message | null>(null)
 watch(
@@ -61,6 +70,15 @@ watch(
       /></RouterLink>
       <span v-else class="icon-button" aria-hidden="true"></span>
     </nav>
+    <div class="play-day">
+      <RouterLink class="secondary" :to="playTo">{{ $t('leaderboard.play') }}</RouterLink>
+      <span>{{
+        $t('leaderboard.playBoard', {
+          board: boardLabel(board.size),
+          difficulty: $t(`difficulty.${board.difficulty}`),
+        })
+      }}</span>
+    </div>
     <p v-if="error" class="notice" role="alert">{{ render(error) }}</p>
     <p v-else-if="!entries" class="notice" role="status">{{ $t('leaderboard.loading') }}</p>
     <p v-else-if="!entries.length" class="notice">{{ $t('leaderboard.empty') }}</p>
@@ -117,6 +135,18 @@ watch(
   font-size: 16px;
   font-weight: 550;
   font-variant-numeric: tabular-nums;
+}
+.play-day {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px 14px;
+  margin-top: 14px;
+  font-size: 12px;
+  color: var(--muted);
+}
+.play-day a {
+  text-decoration: none;
 }
 .notice {
   margin: 18px 0 0;

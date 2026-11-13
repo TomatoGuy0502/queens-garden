@@ -224,6 +224,8 @@ const ja: Messages<typeof zhHant> = {
     days: '日付を選ぶ',
     previous: '前の日',
     next: '次の日',
+    play: 'この日の問題を遊ぶ',
+    playBoard: '{board}・{difficulty}。同じ盤面で、ランキングの成績のすごさを確かめられます。',
     loading: '読み込み中…',
     empty: 'この日はまだ誰も載っていません。',
     caption: '{day} のランキング',

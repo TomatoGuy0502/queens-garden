@@ -1,5 +1,5 @@
 import { test, expect, type Page } from '@playwright/test'
-import { dailyConfig } from '../src/queens/daily'
+import { dailyConfig, dailySeed } from '../src/queens/daily'
 import { solve } from '../src/queens/solver'
 import zhHant from '../src/i18n/messages/zh-Hant'
 
@@ -146,4 +146,36 @@ test('the daily page hides game settings and free play brings them back', async 
   await expect(page.getByRole('heading', { name: '遊戲設定' })).toHaveCount(0)
   await page.getByRole('button', { name: '離開每日挑戰，自由遊玩' }).click()
   await expect(page.getByRole('heading', { name: '遊戲設定' })).toBeVisible()
+})
+
+test("the leaderboard offers a day's board, as an ordinary game once the day is past", async ({
+  page,
+}) => {
+  const past = '2026-10-27'
+  const { size, difficulty } = dailyConfig(past)
+  await day(page, '2026-10-28')
+  // Today's board is the daily itself, so signing in still ranks the run.
+  await page.goto('/leaderboard')
+  await expect(page.getByRole('link', { name: '遊玩這天的題目' })).toHaveAttribute(
+    'href',
+    /daily=today/,
+  )
+  await page.goto(`/leaderboard?day=${past}`)
+  await expect(page.locator('.play-day')).toContainText(`${size} × ${size}`)
+  await expect(page.locator('.play-day')).toContainText(zhHant.difficulty[difficulty])
+  await page.getByRole('link', { name: '遊玩這天的題目' }).click()
+  await expect(page).toHaveURL(new RegExp(`practice=${past}`))
+  await expect(page.getByRole('gridcell')).toHaveCount(size * size, { timeout: 60000 })
+  await expect(page.locator('.puzzle-meta')).toContainText(zhHant.difficulty[difficulty])
+  // No daily label, so nothing is ranked and no streak is touched.
+  await expect(page.locator('.daily-badge')).toHaveCount(0)
+  const regions = () =>
+    page
+      .getByRole('gridcell')
+      .evaluateAll((elements) => elements.map((el) => el.getAttribute('data-region')))
+  const practised = await regions()
+  // It is the board the day's seed makes.
+  await page.goto(`/solo?size=${size}&difficulty=${difficulty}&seed=${dailySeed(past, 0)}`)
+  await expect(page.getByRole('gridcell')).toHaveCount(size * size, { timeout: 60000 })
+  expect(await regions()).toEqual(practised)
 })

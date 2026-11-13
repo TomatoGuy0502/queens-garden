@@ -222,6 +222,8 @@ const en: Messages<typeof zhHant> = {
     days: 'Choose a day',
     previous: 'Previous day',
     next: 'Next day',
+    play: "Play this day's puzzle",
+    playBoard: '{board} · {difficulty}. The same board, so you can see what a score takes.',
     loading: 'Loading…',
     empty: 'Nobody is on the board for this day yet.',
     caption: 'Leaderboard for {day}',

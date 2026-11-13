@@ -117,6 +117,8 @@ const initialSeed =
     ? Number(requestedSeed)
     : crypto.getRandomValues(new Uint32Array(1))[0]
 const dailyParam = props.stacked ? null : params.get('daily')
+const practiceParam = props.stacked ? null : params.get('practice')
+const practiceDay = isDateKey(practiceParam) && practiceParam < dateKey() ? practiceParam : null
 // A link only counts as today's challenge when it really is today's board; old days stay closed.
 const linkedDaily =
   isDateKey(dailyParam) &&
@@ -211,16 +213,25 @@ function discardSaved() {
   progress.clear()
   void startGame(initialSize, initialDifficulty, initialSeed)
 }
-async function startDaily() {
-  const key = dateKey()
+/** A day's board. A seed can exhaust the generation budget; everyone walks the same fixed fallback seeds. */
+async function playBoardOf(key: string, dailyDate: string | null, run?: RunStart | null) {
   const { size, difficulty } = dailyConfig(key)
-  rankedNotice.value = null
-  const run = await ranking.start(key)
-  // A seed can exhaust the generation budget; everyone walks the same fixed fallback seeds.
   for (let attempt = 0; attempt < DAILY_MAX_ATTEMPTS; attempt++) {
-    const status = await startGame(size, difficulty, dailySeed(key, attempt), key, undefined, run)
+    const status = await startGame(
+      size,
+      difficulty,
+      dailySeed(key, attempt),
+      dailyDate,
+      undefined,
+      run,
+    )
     if (status !== 'failed') return
   }
+}
+async function startDaily() {
+  const key = dateKey()
+  rankedNotice.value = null
+  await playBoardOf(key, key, await ranking.start(key))
 }
 function confirmRestart() {
   game.restart()
@@ -239,7 +250,10 @@ onMounted(() => {
     const today = dateKey()
     if (saved?.daily === today && isDailyPuzzle(today, saved)) void resume(saved)
     else void startDaily()
-  } else if (versionMismatch.value) return
+    // A past day's board, as an ordinary game: no daily label, ranking or streak, so it only
+    // lets a player try what a leaderboard score was made on.
+  } else if (practiceDay) void playBoardOf(practiceDay, null)
+  else if (versionMismatch.value) return
   else if (
     saved &&
     params.has('seed') &&
