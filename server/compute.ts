@@ -2,6 +2,7 @@ import { Worker } from 'node:worker_threads'
 import { resolve } from 'node:path'
 import type { Message } from '../shared/message'
 import type { CellState, DeductionStep, GenerateOptions, QueensPuzzle } from '../src/queens/types'
+import type { Generate3DOptions, Queens3DPuzzle } from '../src/queens3d/types'
 export interface HintResult {
   step: DeductionStep | null
   message: Message
@@ -11,6 +12,8 @@ export type ComputeJob =
   | { type: 'generate-validated'; options: GenerateOptions }
   | { type: 'validate'; puzzle: QueensPuzzle; options: GenerateOptions }
   | { type: 'hint'; regions: number[][]; cells: CellState[] }
+  | { type: 'generate3d'; options: Generate3DOptions }
+  | { type: 'hint3d'; regions: number[][][]; cells: CellState[] }
 export interface ComputeReply {
   type: 'queens:compute-result'
   result?: unknown
@@ -20,6 +23,8 @@ export interface ComputeReply {
 export interface Compute {
   generate(options: GenerateOptions): Promise<QueensPuzzle>
   hint(regions: number[][], cells: CellState[]): Promise<HintResult>
+  generate3d(options: Generate3DOptions): Promise<Queens3DPuzzle>
+  hint3d(regions: number[][][], cells: CellState[]): Promise<HintResult>
   close(): Promise<void>
 }
 export type ComputePriority = 'foreground' | 'background'
@@ -122,6 +127,8 @@ export function workerPool(concurrency = 2, timeoutMs = 120000): CatalogCompute 
       execute<QueensPuzzle>({ type: 'generate-validated', options }, priority),
     validate: (puzzle, options) => execute<QueensPuzzle>({ type: 'validate', puzzle, options }),
     hint: (regions, cells) => execute<HintResult>({ type: 'hint', regions, cells }),
+    generate3d: (options) => execute<Queens3DPuzzle>({ type: 'generate3d', options }),
+    hint3d: (regions, cells) => execute<HintResult>({ type: 'hint3d', regions, cells }),
     cancelBackground() {
       for (const task of background.splice(0))
         task.reject(new ComputeError('Preempted by a player request.', 'BACKGROUND_PREEMPTED'))

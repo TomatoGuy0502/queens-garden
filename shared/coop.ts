@@ -3,6 +3,8 @@ import type { Message } from './message'
 import { ROOM_CODE_PATTERN } from './roomCode'
 import { BOARD_SIZES, DIFFICULTIES } from '../src/queens/levels'
 import type { CellState, DeductionStep, PuzzleDefinition } from '../src/queens/types'
+import { BOARD_SIZES_3D } from '../src/queens3d/version'
+import type { Puzzle3DDefinition } from '../src/queens3d/types'
 export const MAX_ROOM_PLAYERS = 8
 export const MAX_DUEL_PLAYERS = 2
 export const ROOM_MODES = ['coop', 'duel'] as const
@@ -10,17 +12,28 @@ export type RoomMode = (typeof ROOM_MODES)[number]
 export const maxPlayers = (mode: RoomMode) =>
   mode === 'duel' ? MAX_DUEL_PLAYERS : MAX_ROOM_PLAYERS
 
-export const sizeSchema = z.literal(BOARD_SIZES)
+/** The most cells a board has: a 6 × 6 × 6 stacked board. */
+const MAX_CELL = 215
+export const sizeSchema = z.union([z.literal(BOARD_SIZES), z.literal(BOARD_SIZES_3D)])
 export const difficultySchema = z.enum(DIFFICULTIES)
 export const settingsSchema = z.object({
   size: sizeSchema,
   difficulty: difficultySchema,
   seed: z.number().int().min(0).max(0xffffffff).optional(),
+  /** A stacked (3D) board: as many layers as rows. */
+  stacked: z.boolean().optional(),
 })
-export const createRoomSchema = settingsSchema.extend({
-  name: z.string().trim().min(1).max(24),
-  mode: z.enum(ROOM_MODES).default('coop'),
-})
+/** A stacked board has its own sizes and no expert level yet; a duel keeps the flat board. */
+export const validSettings = ({ size, difficulty, stacked }: z.infer<typeof settingsSchema>) =>
+  stacked
+    ? BOARD_SIZES_3D.some((n) => n === size) && difficulty !== 'expert'
+    : BOARD_SIZES.some((n) => n === size)
+export const createRoomSchema = settingsSchema
+  .extend({
+    name: z.string().trim().min(1).max(24),
+    mode: z.enum(ROOM_MODES).default('coop'),
+  })
+  .refine((room) => validSettings(room) && !(room.stacked && room.mode === 'duel'))
 export const joinRoomSchema = z.object({ name: z.string().trim().min(1).max(24) })
 export const roomCodeSchema = z.string().trim().toUpperCase().regex(ROOM_CODE_PATTERN)
 export const credentialsSchema = z.object({
@@ -33,7 +46,11 @@ export type RoomSettings = z.infer<typeof settingsSchema>
 const envelope = { actionId: z.uuid() }
 const round = { ...envelope, gameId: z.uuid() }
 export const commandSchema = z.discriminatedUnion('type', [
-  z.object({ ...round, type: z.literal('configure'), settings: settingsSchema }),
+  z.object({
+    ...round,
+    type: z.literal('configure'),
+    settings: settingsSchema.refine(validSettings),
+  }),
   z.object({ ...round, type: z.literal('start') }),
   z.object({ ...round, type: z.literal('reset') }),
   z.object({ ...round, type: z.literal('restart') }),
@@ -41,7 +58,7 @@ export const commandSchema = z.discriminatedUnion('type', [
   z.object({
     ...round,
     type: z.literal('setCell'),
-    index: z.number().int().min(0).max(143),
+    index: z.number().int().min(0).max(MAX_CELL),
     expectedVersion: z.number().int().min(0),
     nextState: z.enum(['empty', 'queen', 'marked']),
   }),
@@ -95,7 +112,7 @@ export interface DuelSnapshot {
 export interface GameSnapshot {
   id: string
   phase: 'waiting' | 'generating' | 'playing' | 'paused' | 'completed'
-  puzzle: PuzzleDefinition | null
+  puzzle: PuzzleDefinition | Puzzle3DDefinition | null
   cells: CellState[]
   versions: number[]
   boardRevision: number
@@ -127,7 +144,10 @@ export interface RoomAccess {
   credentials: Credentials
   state: RoomSnapshot
 }
-export const pointSchema = z.object({ gameId: z.uuid(), index: z.number().int().min(0).max(143) })
+export const pointSchema = z.object({
+  gameId: z.uuid(),
+  index: z.number().int().min(0).max(MAX_CELL),
+})
 export interface Point {
   playerId: string
   name: string
@@ -137,7 +157,7 @@ export interface Point {
 }
 export const hoverSchema = z.object({
   gameId: z.uuid(),
-  index: z.number().int().min(0).max(143).nullable(),
+  index: z.number().int().min(0).max(MAX_CELL).nullable(),
 })
 export interface Hover extends Omit<Point, 'index'> {
   index: number | null

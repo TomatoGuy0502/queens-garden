@@ -1,6 +1,7 @@
 import { errorMessage, type ErrorCode, type Message, type MessageParam } from '../shared/message'
 import type { BoardAction, GameSnapshot, RoomMode, RoomSettings, SharedHint } from '../shared/coop'
 import type { CellState, QueensPuzzle } from '../src/queens/types'
+import type { Queens3DPuzzle } from '../src/queens3d/types'
 export interface StoredPlayer {
   id: string
   name: string
@@ -18,7 +19,7 @@ export interface StoredRoom {
   checkpointAt: number
   gameId: string
   phase: GameSnapshot['phase']
-  puzzle: QueensPuzzle | null
+  puzzle: QueensPuzzle | Queens3DPuzzle | null
   cells: CellState[]
   versions: number[]
   boardRevision: number

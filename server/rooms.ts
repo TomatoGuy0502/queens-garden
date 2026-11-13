@@ -12,12 +12,15 @@ import type {
   RoomSnapshot,
 } from '../shared/coop'
 import { ROOM_CODE_ALPHABET, ROOM_CODE_LENGTH, ROOM_CODE_PATTERN } from '../shared/roomCode'
-import type { CellState, PuzzleDefinition } from '../src/queens/types'
+import type { CellState, PuzzleDefinition, QueensPuzzle } from '../src/queens/types'
+import type { Puzzle3DDefinition, Queens3DPuzzle } from '../src/queens3d/types'
+import { cellAt } from '../src/queens3d/geometry'
+import { conflictCells3d } from '../src/queens3d/play'
 import { HINT_LEVELS } from '../src/queens/strategies'
 import { conflictCells } from '../src/queens/validator'
 import { duelProgress } from '../src/queens/duel'
 import { RoomError, type RoomRepository, type StoredPlayer, type StoredRoom } from './model'
-import type { Compute, HintResult } from './compute'
+import { ComputeError, type Compute, type HintResult } from './compute'
 const ROOM_TTL = 3 * 60 * 60 * 1000
 const MAX_ACTIONS = 300
 const MAX_RECEIPTS = 1000
@@ -30,6 +33,15 @@ const DUEL_FORBIDDEN = new Set<RoomCommand['type']>([
   'redo',
   'applyHint',
 ])
+const cellCount = ({ size, stacked }: RoomSettings) => size ** (stacked ? 3 : 2)
+/** Whether the unique solution puts a crown on this cell. */
+function crownAt(room: StoredRoom, index: number) {
+  const { size } = room.settings
+  if (!room.settings.stacked)
+    return (room.puzzle as QueensPuzzle).solution[Math.floor(index / size)] === index % size
+  const { z, r, c } = cellAt(size, index)
+  return (room.puzzle as Queens3DPuzzle).solution[r][c] === z
+}
 const hash = (value: string) => createHash('sha256').update(value).digest('hex')
 function player(name: string): { stored: StoredPlayer; token: string } {
   const token = randomBytes(32).toString('hex')
@@ -122,7 +134,7 @@ export class RoomManager {
         0,
         (room.finishedAt ?? room.pausedAt ?? now) - room.startedAt - room.pausedMs,
       )
-    let definition: PuzzleDefinition | null = null
+    let definition: PuzzleDefinition | Puzzle3DDefinition | null = null
     if (room.puzzle) {
       const { solution: _solution, analysis: _analysis, ...publicPuzzle } = room.puzzle
       definition = publicPuzzle
@@ -343,6 +355,11 @@ export class RoomManager {
     if (room.phase !== 'playing') throw new RoomError('NOT_PLAYING')
   }
   private solved(room: StoredRoom, cells: CellState[]) {
+    if (room.settings.stacked)
+      return (
+        cells.filter((cell) => cell === 'queen').length === room.settings.size ** 2 &&
+        conflictCells3d((room.puzzle as Queens3DPuzzle).regions, cells).length === 0
+      )
     const queens = cells.flatMap((cell, index) =>
       cell === 'queen'
         ? [{ row: Math.floor(index / room.settings.size), col: index % room.settings.size }]
@@ -350,7 +367,7 @@ export class RoomManager {
     )
     return (
       queens.length === room.settings.size &&
-      conflictCells(room.puzzle!.regions, queens).length === 0
+      conflictCells((room.puzzle as QueensPuzzle).regions, queens).length === 0
     )
   }
   private completion(room: StoredRoom) {
@@ -404,6 +421,7 @@ export class RoomManager {
         case 'configure':
           this.host(room, member.id)
           if (room.phase !== 'waiting') throw new RoomError('NOT_WAITING')
+          if (room.mode === 'duel' && command.settings.stacked) throw new RoomError('INVALID_INPUT')
           room.settings = command.settings
           break
         case 'start':
@@ -426,8 +444,8 @@ export class RoomManager {
           const puzzle = room.puzzle
           freshGame(room)
           room.puzzle = puzzle
-          room.cells = Array<CellState>(puzzle.size ** 2).fill('empty')
-          room.versions = Array<number>(puzzle.size ** 2).fill(0)
+          room.cells = Array<CellState>(cellCount(room.settings)).fill('empty')
+          room.versions = Array<number>(cellCount(room.settings)).fill(0)
           room.phase = 'playing'
           room.startedAt = Date.now()
           room.message = message('notice.hostRestarted')
@@ -549,18 +567,20 @@ export class RoomManager {
     this.generating.set(id, gameId)
     try {
       const initial = await this.load(id)
-      const puzzle = this.puzzles
-        ? await this.puzzles.get(initial.settings)
-        : await this.compute.generate({
-            ...initial.settings,
-            seed: initial.settings.seed ?? randomBytes(4).readUInt32LE(),
-          })
+      const puzzle = initial.settings.stacked
+        ? await this.stackedPuzzle(initial.settings)
+        : this.puzzles
+          ? await this.puzzles.get(initial.settings)
+          : await this.compute.generate({
+              ...initial.settings,
+              seed: initial.settings.seed ?? randomBytes(4).readUInt32LE(),
+            })
       await this.serial(id, async () => {
         const room = await this.load(id)
         if (room.gameId !== gameId || room.phase !== 'generating') return
         room.puzzle = puzzle
-        room.cells = Array<CellState>(puzzle.size ** 2).fill('empty')
-        room.versions = Array<number>(puzzle.size ** 2).fill(0)
+        room.cells = Array<CellState>(cellCount(room.settings)).fill('empty')
+        room.versions = Array<number>(cellCount(room.settings)).fill(0)
         room.startedAt = Date.now()
         room.phase = 'playing'
         room.pausedAt = null
@@ -577,6 +597,20 @@ export class RoomManager {
     } finally {
       this.generating.delete(id)
     }
+  }
+  /** Stacked boards skip the catalog: a seed we chose is replaced when its budget runs out, a player's is not. */
+  private async stackedPuzzle({ size, difficulty, seed }: RoomSettings) {
+    for (let attempt = 1; ; attempt++)
+      try {
+        return await this.compute.generate3d({
+          size,
+          difficulty,
+          seed: seed ?? randomBytes(4).readUInt32LE(),
+        })
+      } catch (error) {
+        const exhausted = error instanceof ComputeError && error.code === 'GENERATION_BUDGET'
+        if (!exhausted || seed !== undefined || attempt >= 3) throw error
+      }
   }
   private async assist(
     credentials: Credentials,
@@ -604,15 +638,16 @@ export class RoomManager {
       if (this.hinting.has(credentials.roomId)) throw new RoomError('COMPUTE_BUSY')
       this.hinting.add(credentials.roomId)
       try {
-        result = await this.compute.hint(context.room.puzzle!.regions, context.room.cells)
+        const { room } = context
+        result = room.settings.stacked
+          ? await this.compute.hint3d((room.puzzle as Queens3DPuzzle).regions, room.cells)
+          : await this.compute.hint((room.puzzle as QueensPuzzle).regions, room.cells)
       } finally {
         this.hinting.delete(credentials.roomId)
       }
     } else if (command.type === 'check')
       context.room.cells.forEach((state, index) => {
-        const queen =
-          context.room.puzzle!.solution[Math.floor(index / context.room.settings.size)] ===
-          index % context.room.settings.size
+        const queen = crownAt(context.room, index)
         if ((state === 'queen' && !queen) || (state === 'marked' && queen)) mistakes.push(index)
       })
     return this.serial(credentials.roomId, async () => {

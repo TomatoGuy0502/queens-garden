@@ -18,6 +18,8 @@ it('runs the actual migration on PostgreSQL and persists private snapshots and a
   const repository = databaseRepository(drizzle(client, { schema }))
   const manager = new RoomManager(repository, {
     generate: () => Promise.resolve(generatePuzzle({ size: 6, seed: 42 })),
+    generate3d: () => Promise.reject(new Error('unused')),
+    hint3d: () => Promise.reject(new Error('unused')),
     hint: () => Promise.resolve({ step: null, message: { key: 'hint.stuck' } }),
     close: () => Promise.resolve(),
   })

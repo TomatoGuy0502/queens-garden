@@ -5,6 +5,10 @@ import { generatePuzzle } from '../src/queens/generator'
 import { logicalHint } from '../src/queens/difficulty'
 import { createState } from '../src/queens/deductions/state'
 import { solve } from '../src/queens/solver'
+import { generatePuzzle3d } from '../src/queens3d/generator'
+import { logicalHint3d } from '../src/queens3d/difficulty'
+import { createState3d } from '../src/queens3d/deductions/state'
+import { solve3d } from '../src/queens3d/solver'
 import type { ComputeJob, ComputeReply } from './compute'
 parentPort!.on('message', (job: ComputeJob) => {
   try {
@@ -21,6 +25,24 @@ parentPort!.on('message', (job: ComputeJob) => {
       parentPort!.postMessage({
         type: 'queens:compute-result',
         result: validateCatalogPuzzle(job.puzzle, job.options),
+      } satisfies ComputeReply)
+      return
+    }
+    if (job.type === 'generate3d') {
+      parentPort!.postMessage({
+        type: 'queens:compute-result',
+        result: generatePuzzle3d(job.options),
+      } satisfies ComputeReply)
+      return
+    }
+    if (job.type === 'hint3d') {
+      const open = solve3d(job.regions, 1, createState3d(job.regions, job.cells).candidates)
+      parentPort!.postMessage({
+        type: 'queens:compute-result',
+        result:
+          !open.exhausted && open.solutionCount === 0
+            ? { step: null, message: message('hint.impossible') }
+            : logicalHint3d(job.regions, job.cells),
       } satisfies ComputeReply)
       return
     }

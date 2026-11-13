@@ -26,6 +26,8 @@ function memory(): RoomRepository {
 }
 const compute = (): Compute => ({
   generate: () => Promise.resolve(structuredClone(puzzle)),
+  generate3d: () => Promise.reject(new Error('unused')),
+  hint3d: () => Promise.reject(new Error('unused')),
   hint: (regions, cells) => Promise.resolve(logicalHint(regions, cells)),
   close: () => Promise.resolve(),
 })

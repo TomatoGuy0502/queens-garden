@@ -27,6 +27,8 @@ it('real Socket.IO clients receive shared state, authorized operations and trans
     },
     compute: {
       generate: () => Promise.resolve(generatePuzzle({ size: 6, seed: 42, difficulty: 'easy' })),
+      generate3d: () => Promise.reject(new Error('unused')),
+      hint3d: () => Promise.reject(new Error('unused')),
       hint: (regions, cells) => Promise.resolve(logicalHint(regions, cells)),
       close: () => Promise.resolve(),
     },
@@ -128,6 +130,8 @@ it('static assets do not consume API limits and rate-limit errors remain HTTP 42
     },
     compute: {
       generate: () => Promise.reject(new Error('not used')),
+      generate3d: () => Promise.reject(new Error('unused')),
+      hint3d: () => Promise.reject(new Error('unused')),
       hint: () => Promise.resolve({ step: null, message: { key: 'hint.stuck' } }),
       close: () => Promise.resolve(),
     },
@@ -170,6 +174,8 @@ it('rate limits cannot be dodged by sending a forged X-Forwarded-For', async () 
     },
     compute: {
       generate: () => Promise.reject(new Error('not used')),
+      generate3d: () => Promise.reject(new Error('unused')),
+      hint3d: () => Promise.reject(new Error('unused')),
       hint: () => Promise.resolve({ step: null, message: { key: 'hint.stuck' } }),
       close: () => Promise.resolve(),
     },
@@ -249,6 +255,8 @@ it('a duel is looked up by code, and each board travels only to its owner over r
     },
     compute: {
       generate: () => Promise.resolve(generatePuzzle({ size: 6, seed: 42, difficulty: 'easy' })),
+      generate3d: () => Promise.reject(new Error('unused')),
+      hint3d: () => Promise.reject(new Error('unused')),
       hint: (regions, cells) => Promise.resolve(logicalHint(regions, cells)),
       close: () => Promise.resolve(),
     },
