@@ -58,14 +58,14 @@ test('a faster repeat shows a personal best and a slower one shows the old best'
   await expect(page.getByText('第一次完成這個大小與難度，成績已記錄')).toBeVisible()
   await page.getByRole('button', { name: '重新開始', exact: true }).click()
   await page
-    .locator('.restart-confirm')
+    .locator('.confirm-inline')
     .getByRole('button', { name: '重新開始', exact: true })
     .click()
   await solvePuzzle(page)
   await expect(page.getByText(/^新紀錄！原本最佳 00:0[2-4]$/)).toBeVisible()
   await page.getByRole('button', { name: '重新開始', exact: true }).click()
   await page
-    .locator('.restart-confirm')
+    .locator('.confirm-inline')
     .getByRole('button', { name: '重新開始', exact: true })
     .click()
   await page.waitForTimeout(2200)

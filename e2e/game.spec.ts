@@ -83,7 +83,7 @@ test('cycle empty marked queen empty, undo, redo, keyboard navigation and restar
   await expect(page.locator('.timer > span')).not.toHaveText('00:00')
   await page.getByRole('button', { name: '重新開始', exact: true }).click()
   const confirm = page
-    .locator('.restart-confirm')
+    .locator('.confirm-inline')
     .getByRole('button', { name: '重新開始', exact: true })
   await expect(confirm).toBeVisible()
   // Capture the reset after Vue's DOM flush, before real time can advance another second.

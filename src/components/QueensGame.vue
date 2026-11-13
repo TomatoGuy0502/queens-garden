@@ -6,6 +6,7 @@ import { Pause, Play, LoaderCircle } from '@lucide/vue'
 import CrownIcon from './CrownIcon.vue'
 import QueensBoard from './QueensBoard.vue'
 import Queens3DBoard from './Queens3DBoard.vue'
+import BaseConfirmInline from './BaseConfirmInline.vue'
 import GameMeta from './GameMeta.vue'
 import HintFeedback from './HintFeedback.vue'
 import GameSettings from './GameSettings.vue'
@@ -462,16 +463,14 @@ onMounted(() => {
             @hint="game.assist('hint')"
             @check="game.assist('check')"
           />
-          <div v-if="restartConfirm" class="restart-confirm">
-            <p>{{ $t('game.restart.prompt') }}</p>
-            <div>
-              <button type="button" class="text-button" @click="restartConfirm = false">
-                {{ $t('game.restart.keep') }}</button
-              ><button type="button" class="primary" @click="confirmRestart">
-                {{ $t('game.restart.confirm') }}
-              </button>
-            </div>
-          </div>
+          <BaseConfirmInline
+            v-if="restartConfirm"
+            :prompt="$t('game.restart.prompt')"
+            :keep-label="$t('game.restart.keep')"
+            :confirm-label="$t('game.restart.confirm')"
+            @keep="restartConfirm = false"
+            @confirm="confirmRestart"
+          />
           <div
             :class="{ 'has-feedback': feedback || conflicts.length }"
             class="feedback"
@@ -689,25 +688,6 @@ onMounted(() => {
   margin: 15px 0;
   border-radius: 5px;
   color: var(--error);
-}
-.restart-confirm {
-  padding: 17px;
-  background: var(--accent-soft);
-  margin-top: 17px;
-  border-radius: 5px;
-}
-.restart-confirm p {
-  margin: 0 0 12px;
-  font-size: 12px;
-}
-.restart-confirm > div {
-  display: flex;
-  justify-content: flex-end;
-  gap: 15px;
-}
-.restart-confirm .primary {
-  font-size: 12px;
-  padding: 8px 13px;
 }
 @keyframes pulse {
   50% {

@@ -95,7 +95,7 @@ test('finishing or restarting a game removes its save', async ({ page }) => {
   await play(page)
   await page.getByRole('button', { name: '重新開始', exact: true }).click()
   await page
-    .locator('.restart-confirm')
+    .locator('.confirm-inline')
     .getByRole('button', { name: '重新開始', exact: true })
     .click()
   await expect.poll(() => saved(page)).toBeNull()

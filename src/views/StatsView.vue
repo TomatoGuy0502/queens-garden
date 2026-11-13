@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, shallowRef } from 'vue'
 import AppHeader from '../components/AppHeader.vue'
+import BaseConfirmInline from '../components/BaseConfirmInline.vue'
 import { useGameStats } from '../composables/useGameStats'
 import { useAccount } from '../composables/useAccount'
 import { BOARD_SIZES, DIFFICULTIES, boardLabel } from '../queens/levels'
@@ -98,18 +99,21 @@ function clear() {
       <p>{{ $t('stats.empty') }}</p>
       <RouterLink class="primary" to="/solo">{{ $t('stats.start') }}</RouterLink>
     </div>
-    <div v-if="ready && total" class="reset">
-      <template v-if="confirming">
-        <p>{{ $t('stats.confirm') }}</p>
-        <button type="button" class="text-button" @click="confirming = false">
-          {{ $t('stats.keep') }}
+    <template v-if="ready && total">
+      <BaseConfirmInline
+        v-if="confirming"
+        :prompt="$t('stats.confirm')"
+        :keep-label="$t('stats.keep')"
+        :confirm-label="$t('stats.clear')"
+        @keep="confirming = false"
+        @confirm="clear"
+      />
+      <div v-else class="reset">
+        <button type="button" class="text-button" @click="confirming = true">
+          {{ $t('stats.clearAll') }}
         </button>
-        <button type="button" class="primary" @click="clear">{{ $t('stats.clear') }}</button>
-      </template>
-      <button v-else type="button" class="text-button" @click="confirming = true">
-        {{ $t('stats.clearAll') }}
-      </button>
-    </div>
+      </div>
+    </template>
   </main>
 </template>
 <style scoped>
@@ -179,9 +183,5 @@ td .empty {
   gap: 12px;
   margin-top: 16px;
   font-size: 12px;
-}
-.reset p {
-  margin: 0;
-  color: var(--muted);
 }
 </style>
