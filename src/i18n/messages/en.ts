@@ -460,6 +460,9 @@ const en: Messages<typeof zhHant> = {
     },
     layer: 'Layer {layer}',
     boardLabel: 'Layer {layer} board; arrow keys move, [ and ] change layer',
+    hoverMode: 'Hover mode',
+    hoverNote:
+      'Tap a cell to outline its pillar in every layer, and tap it again to clear. Turn the mode off to place crowns.',
     tabs: 'Choose the layer to show',
     cell: 'Layer {layer}, {label}',
   },

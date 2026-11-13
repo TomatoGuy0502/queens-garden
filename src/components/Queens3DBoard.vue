@@ -1,6 +1,7 @@
 <script setup lang="ts">
+import { Crosshair } from '@lucide/vue'
 import { useEventListener } from '@vueuse/core'
-import { computed, nextTick, shallowRef, useTemplateRef } from 'vue'
+import { computed, nextTick, shallowRef, useTemplateRef, watch } from 'vue'
 import { guidedCells, type BoardGuidance } from '../queens/guidance'
 import type { CellState, PuzzleDefinition } from '../queens/types'
 import { pillarGuided } from '../queens3d/play'
@@ -85,6 +86,22 @@ function blockedCells(regions: number[][], cells: CellState[], z: number) {
       state === 'marked' || excluded.has(index) || taken.value.has(z * area.value + index),
   )
 }
+// Hover mode, for a touch screen that has no hover: a tap pins a cell instead of changing it, and its
+// pillar stays outlined in every layer, including the thumbnails of the layers that are not shown.
+const hoverMode = shallowRef(false)
+const pinned = shallowRef<{ z: number; index: number } | null>(null)
+watch([hoverMode, () => props.puzzle.id], () => (pinned.value = null))
+// The cell whose pillar is outlined; in hover mode it is outlined in its own layer too.
+const focused = computed(() => (hoverMode.value ? pinned.value : hovered.value))
+function act(type: 'play' | 'mark' | 'crown', z: number, index: number) {
+  const cell = z * area.value + index
+  if (hoverMode.value) {
+    if (type === 'play')
+      pinned.value = pinned.value?.z === z && pinned.value.index === index ? null : { z, index }
+  } else if (type === 'play') emit('play', cell)
+  else if (type === 'mark') emit('mark', cell)
+  else emit('crown', cell)
+}
 const layers = computed(() =>
   layerPuzzles.value.map((puzzle, z) => ({
     z,
@@ -101,7 +118,8 @@ const layers = computed(() =>
     pending: inLayer(props.pendingCells ?? [], z),
     points: named(props.points, z),
     hovers: named(props.hovers, z),
-    linked: hovered.value && hovered.value.z !== z ? hovered.value.index : null,
+    linked:
+      focused.value && (hoverMode.value || focused.value.z !== z) ? focused.value.index : null,
   })),
 )
 function hover(z: number, index: number | null) {
@@ -142,6 +160,18 @@ useEventListener(window, 'keydown', (event: KeyboardEvent) => {
 </script>
 <template>
   <div ref="stage" class="stage" :style="{ '--n': n }" @keydown="switchLayer">
+    <div class="hover-bar" :class="{ concealed: placeholder || won || paused }">
+      <button
+        type="button"
+        class="secondary hover-toggle"
+        :class="{ active: hoverMode }"
+        :aria-pressed="hoverMode"
+        @click="hoverMode = !hoverMode"
+      >
+        <Crosshair :size="15" />{{ $t('stacked.hoverMode') }}
+      </button>
+      <p v-if="hoverMode">{{ $t('stacked.hoverNote') }}</p>
+    </div>
     <!-- On a narrow screen the layers are tabs, and each tab is a thumbnail of its layer. -->
     <div
       class="tabs"
@@ -204,9 +234,9 @@ useEventListener(window, 'keydown', (event: KeyboardEvent) => {
           :pending-cells="layer.pending"
           :points="layer.points"
           :hovers="layer.hovers"
-          @play="emit('play', layer.z * area + $event)"
-          @mark="emit('mark', layer.z * area + $event)"
-          @crown="emit('crown', layer.z * area + $event)"
+          @play="act('play', layer.z, $event)"
+          @mark="act('mark', layer.z, $event)"
+          @crown="act('crown', layer.z, $event)"
           @hover="hover(layer.z, $event)"
         />
       </section>
@@ -247,6 +277,25 @@ useEventListener(window, 'keydown', (event: KeyboardEvent) => {
   font-size: 12px;
   font-weight: 500;
   color: var(--muted);
+}
+.hover-bar {
+  display: none;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px 12px;
+  margin-bottom: 12px;
+}
+.hover-bar p {
+  flex: 1 1 200px;
+  margin: 0;
+  font-size: 11px;
+  line-height: 1.6;
+  color: var(--muted);
+}
+.hover-toggle.active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--surface);
 }
 .tabs {
   display: none;
@@ -318,6 +367,12 @@ useEventListener(window, 'keydown', (event: KeyboardEvent) => {
 .result-cover {
   padding: 20px;
   background: var(--result-overlay);
+}
+/* Only where hovering is impossible, or where the layers are tabs and the others are out of sight. */
+@media (hover: none), (max-width: 650px) {
+  .hover-bar {
+    display: flex;
+  }
 }
 @media (max-width: 650px) {
   .tabs {

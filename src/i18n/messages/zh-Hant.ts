@@ -424,6 +424,8 @@ export default {
     },
     layer: '第 {layer} 層',
     boardLabel: '第 {layer} 層棋盤；方向鍵移動，[ 與 ] 切換層',
+    hoverMode: '懸停模式',
+    hoverNote: '點一格，每一層同一根柱的格子都會框起來；再點一次取消。關閉模式才能放皇冠。',
     tabs: '選擇顯示的層',
     cell: '第 {layer} 層，{label}',
   },

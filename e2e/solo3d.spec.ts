@@ -287,3 +287,31 @@ test('a paused stacked board can be resumed', async ({ page }) => {
   await resume.click()
   await expect(page.getByRole('button', { name: '暫停遊戲', exact: true })).toBeVisible()
 })
+
+test('hover mode pins a cell without changing it and outlines its pillar in every layer', async ({
+  page,
+  isMobile,
+}) => {
+  await page.goto(link)
+  await expect(cells(page)).toHaveCount(N ** 3)
+  const toggle = page.getByRole('button', { name: '懸停模式' })
+  // A mouse can hover, so only a touch screen is offered the mode.
+  if (!isMobile) return expect(toggle).toBeHidden()
+  await toggle.click()
+  await expect(toggle).toHaveAttribute('aria-pressed', 'true')
+  const target = await cell(page, 0, 7)
+  await target.click()
+  // The tap changed nothing, and the pillar is outlined in the thumbnail of every layer.
+  await expect(target).toHaveAttribute('data-state', 'empty')
+  await expect(page.locator('.thumbnail .linked')).toHaveCount(N)
+  // Opening another layer shows the same pillar outlined there.
+  await page.locator('[data-tab="3"]').click()
+  await expect(page.locator('[data-layer="3"][data-index="7"]')).toHaveClass(/linked/)
+  // A second tap on the pinned cell clears it.
+  await (await cell(page, 0, 7)).click()
+  await expect(page.locator('.thumbnail .linked')).toHaveCount(0)
+  // With the mode off, a tap marks the cell again.
+  await toggle.click()
+  await (await cell(page, 0, 7)).click()
+  await expect(await cell(page, 0, 7)).toHaveAttribute('data-state', 'marked')
+})

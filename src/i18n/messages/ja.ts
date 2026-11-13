@@ -452,6 +452,9 @@ const ja: Messages<typeof zhHant> = {
     },
     layer: '第 {layer} 層',
     boardLabel: '第 {layer} 層の盤面。矢印キーで移動、[ と ] で層を切り替え',
+    hoverMode: 'ホバーモード',
+    hoverNote:
+      'マスをタップすると、すべてのレイヤーで同じ柱のマスが枠で示されます。もう一度タップすると解除。クラウンを置くにはモードをオフにしてください。',
     tabs: '表示する層を選ぶ',
     cell: '第 {layer} 層、{label}',
   },
