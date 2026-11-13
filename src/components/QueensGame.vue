@@ -400,6 +400,7 @@ onMounted(() => {
             :assisting="assisting"
             :hint-level="hintLevel"
             :hint-revealed="hintRevealed"
+            :no-check="!!daily"
             :can-restart="!!puzzle && !busy && !ranked"
             :can-undo="!!history.length && !busy && !paused && !reviewing"
             :can-redo="!!future.length && !busy && !paused && !reviewing"

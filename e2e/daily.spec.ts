@@ -36,6 +36,9 @@ async function playToday(page: Page, key: string) {
   await expect(page.getByRole('gridcell')).toHaveCount(size * size, { timeout: 60000 })
   await expect(page.locator('.daily-badge')).toHaveText('每日挑戰')
   await expect(page.locator('.puzzle-meta')).toContainText(zhHant.difficulty[difficulty])
+  // The daily keeps its hints, but offers no check for mistakes.
+  await expect(page.getByRole('button', { name: '給我一點提示', exact: true })).toBeVisible()
+  await expect(page.getByRole('button', { name: '檢查錯誤', exact: true })).toHaveCount(0)
   await expect(page).toHaveURL(new RegExp(`daily=${key}`))
   await solvePuzzle(page)
 }
@@ -167,8 +170,9 @@ test("the leaderboard offers a day's board, as an ordinary game once the day is 
   await expect(page).toHaveURL(new RegExp(`practice=${past}`))
   await expect(page.getByRole('gridcell')).toHaveCount(size * size, { timeout: 60000 })
   await expect(page.locator('.puzzle-meta')).toContainText(zhHant.difficulty[difficulty])
-  // No daily label, so nothing is ranked and no streak is touched.
+  // No daily label, so nothing is ranked and no streak is touched, and checking is allowed.
   await expect(page.locator('.daily-badge')).toHaveCount(0)
+  await expect(page.getByRole('button', { name: '檢查錯誤', exact: true })).toBeVisible()
   const regions = () =>
     page
       .getByRole('gridcell')

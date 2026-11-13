@@ -14,8 +14,10 @@ const props = withDefaults(
     canRestart: boolean
     /** A duel has no restart, hints or checks. */
     duel?: boolean
+    /** The daily challenge gives no check, so a ranked score cannot lean on the solution. */
+    noCheck?: boolean
   }>(),
-  { hintLevel: 0, hintRevealed: false, duel: false },
+  { hintLevel: 0, hintRevealed: false, duel: false, noCheck: false },
 )
 const { t } = useI18n()
 const HINT_KEYS = ['hintAsk', 'hintMore', 'hintAnswer', 'hintShown'] as const
@@ -67,7 +69,13 @@ const emit = defineEmits<{
   <div v-if="!duel" class="assist-tools">
     <button type="button" :disabled="blocked || assisting || hintRevealed" @click="emit('hint')">
       <Lightbulb :size="17" />{{ assisting ? $t('toolbar.thinking') : hintLabel }}</button
-    ><button type="button" :disabled="blocked || assisting" @click="emit('check')">
+    ><button
+      v-if="!noCheck"
+      type="button"
+      class="check-button"
+      :disabled="blocked || assisting"
+      @click="emit('check')"
+    >
       <ScanLine :size="17" />{{ $t('toolbar.check') }}
     </button>
   </div>
@@ -115,7 +123,7 @@ const emit = defineEmits<{
   color: var(--accent);
   cursor: pointer;
 }
-.assist-tools button:last-child {
+.assist-tools .check-button {
   color: var(--muted);
 }
 </style>

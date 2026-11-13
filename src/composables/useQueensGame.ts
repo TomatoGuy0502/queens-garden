@@ -278,6 +278,9 @@ export function useQueensGame<P extends BasePuzzle = PuzzleDefinition>(
   }
   async function assist(type: 'hint' | 'check') {
     if (blocked.value || assisting.value || !puzzle.value) return
+    // The daily challenge gives no check: it names wrong crowns and X marks, and a ranked run
+    // would not log it.
+    if (type === 'check' && daily.value) return
     // Asking again on an unchanged board only reveals more of the same hint.
     if (type === 'hint' && hint.value) {
       if (hintLevel.value < HINT_LEVELS) {
