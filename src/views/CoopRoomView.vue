@@ -232,7 +232,7 @@ async function reset() {
         </button>
       </p>
       <p v-if="room.error" class="error-notice" role="alert">{{ render(room.error) }}</p>
-      <div class="coop-layout" :class="{ expanded: expandedBoard }">
+      <div class="coop-layout" :class="{ expanded: expandedBoard || stacked }">
         <section class="coop-play">
           <RoomLobby
             v-if="game.state?.phase === 'waiting'"

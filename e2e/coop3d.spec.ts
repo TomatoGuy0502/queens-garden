@@ -32,6 +32,10 @@ test('a co-op room plays a stacked board that both players see', async ({
       })
       await expect(page.locator('[data-layer]')).toHaveCount(125)
     }
+    // Like the solo board, the layers take the full width rather than the flat board's column.
+    const board = await host.locator('.layers').boundingBox()
+    const page = await host.locator('.page-shell').boundingBox()
+    expect(board!.width).toBeGreaterThan(page!.width * 0.8)
     // Pointer position is named by layer, row and column.
     await cell(host, 2, 7).hover()
     await expect(guest.locator('.hover-position').first()).toContainText('第 3 層 2,3')
