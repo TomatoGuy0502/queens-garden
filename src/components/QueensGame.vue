@@ -20,7 +20,8 @@ import TutorialPrompt from './TutorialPrompt.vue'
 import ResumePrompt from './ResumePrompt.vue'
 import { useMessage } from '../i18n/message'
 import { useGamePreferences } from '../composables/useGamePreferences'
-import { useGameStats } from '../composables/useGameStats'
+import { useSoloScoring } from '../composables/useSoloScoring'
+import { useRankedDaily } from '../composables/useRankedDaily'
 import { useProgressAutosave } from '../composables/useProgressAutosave'
 import { useSoloProgress } from '../composables/useSoloProgress'
 import { restoreProgress, sameGame, type SavedProgress } from '../queens/progress'
@@ -28,7 +29,6 @@ import {
   DAILY_MAX_ATTEMPTS,
   dailyConfig,
   dailySeed,
-  dailyStreak,
   dateKey,
   isDailyPuzzle,
   isDateKey,
@@ -41,9 +41,7 @@ import { storeToRefs } from 'pinia'
 import { GENERATOR_VERSION } from '../queens/version'
 import { BOARD_SIZES, DIFFICULTIES, boardLabel } from '../queens/levels'
 import type { Difficulty } from '../queens/types'
-import { finishRankedRun, startRankedRun } from '../composables/useAccount'
-import type { RunFinish, RunStart } from '../../shared/account'
-import { LocalizedError, errorMessage, message, type Message } from '../../shared/message'
+import type { RunStart } from '../../shared/account'
 const props = defineProps<{
   /** Plays the stacked (3D) board: no daily challenge, tutorial or stats, and its own save. */
   stacked?: boolean
@@ -136,78 +134,12 @@ const reviewing = shallowRef(false)
 watch([won, () => puzzle.value?.id], () => {
   reviewing.value = false
 })
-const { record: recordStats, stats } = useGameStats()
-const lastRecord = shallowRef<{
-  newBest: boolean
-  previousBest: number | null
-  streak?: number
-} | null>(null)
-let scored = ''
-// Score each attempt once; undo then redo of the final move must not count as a new win.
-watch(won, (isWon) => {
-  const current = puzzle.value
-  if (!isWon || !current) return
-  const key = `${current.id}#${attempt.value}`
-  if (scored === key) return
-  scored = key
-  const { newBest, previousBest } = recordStats({
-    size: current.size,
-    difficulty: current.difficulty,
-    seconds: seconds.value,
-    moves: moves.value,
-    hints: hints.value,
-    stacked: props.stacked,
-    daily: daily.value ?? undefined,
-  })
-  lastRecord.value = {
-    newBest,
-    previousBest,
-    streak: daily.value ? dailyStreak(stats.value.dailies, daily.value) : undefined,
-  }
-})
-watch(
-  () => `${puzzle.value?.id}#${attempt.value}`,
-  () => {
-    lastRecord.value = null
-  },
+const { lastRecord } = useSoloScoring(
+  { won, puzzle, attempt, seconds, moves, hints, daily },
+  props.stacked,
 )
-// True while asking the server whether today's daily is ranked, before the board is generated.
-const preparing = shallowRef(false)
-// Today's leaderboard entry: submitted once the ranked board is solved.
-const rankedResult = shallowRef<RunFinish | 'pending' | null>(null)
-const rankedNotice = shallowRef<Message | null>(null)
-const failure = (reason: unknown) =>
-  reason instanceof LocalizedError ? reason.localized : errorMessage('SERVER_ERROR')
-async function submitRanked() {
-  const current = puzzle.value
-  if (!current || !daily.value) return
-  rankedResult.value = 'pending'
-  rankedNotice.value = null
-  try {
-    rankedResult.value = await finishRankedRun(daily.value, current.seed, game.runLog())
-  } catch (reason) {
-    rankedResult.value = null
-    rankedNotice.value = failure(reason)
-  }
-}
-watch(won, (isWon) => {
-  if (isWon && ranked.value) void submitRanked()
-})
-/** Today's ranked run for a signed-in player; null plays the daily unranked. */
-async function rankedRun(day: string): Promise<RunStart | null> {
-  preparing.value = true
-  try {
-    const run = await startRankedRun()
-    if (run?.day !== day) return null
-    if (run.finished) rankedNotice.value = message('ranked.finished')
-    return run.finished ? null : run
-  } catch (reason) {
-    rankedNotice.value = failure(reason)
-    return null
-  } finally {
-    preparing.value = false
-  }
-}
+const ranking = useRankedDaily({ won, ranked, daily, puzzle, runLog: () => game.runLog() })
+const { preparing, result: rankedResult, notice: rankedNotice } = ranking
 const highlighted = computed(() => (paused.value ? [] : hintCells.value))
 const allMistakes = computed(() => [...new Set([...conflicts.value, ...mistakes.value])])
 // The daily challenge is a fixed board, so its page offers no settings until the player leaves it.
@@ -272,7 +204,7 @@ async function resume(saved: SavedProgress) {
   // Only today's challenge keeps its daily label; an older unfinished day is a normal puzzle.
   const dailyDate = saved.daily === dateKey() ? saved.daily : null
   // Only a board played ranked from the start has the log the server needs.
-  const run = dailyDate && saved.log ? await rankedRun(dailyDate) : null
+  const run = dailyDate && saved.log ? await ranking.start(dailyDate) : null
   return startGame(saved.size, saved.difficulty, saved.seed, dailyDate, saved, run)
 }
 function discardSaved() {
@@ -283,7 +215,7 @@ async function startDaily() {
   const key = dateKey()
   const { size, difficulty } = dailyConfig(key)
   rankedNotice.value = null
-  const run = await rankedRun(key)
+  const run = await ranking.start(key)
   // A seed can exhaust the generation budget; everyone walks the same fixed fallback seeds.
   for (let attempt = 0; attempt < DAILY_MAX_ATTEMPTS; attempt++) {
     const status = await startGame(size, difficulty, dailySeed(key, attempt), key, undefined, run)
@@ -426,7 +358,7 @@ onMounted(() => {
                   </p>
                   <template v-else-if="ranked && rankedNotice">
                     <p class="ranked-status" role="alert">{{ render(rankedNotice) }}</p>
-                    <button type="button" class="text-button" @click="submitRanked">
+                    <button type="button" class="text-button" @click="ranking.submit">
                       {{ $t('ranked.retry') }}
                     </button>
                   </template>
