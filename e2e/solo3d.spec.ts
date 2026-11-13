@@ -277,3 +277,13 @@ test('an old version link is refused and the pillar guidance option only shows h
   await expect(page.getByLabel('同一欄')).toBeVisible()
   await expect(page.getByLabel('同一柱')).toHaveCount(0)
 })
+
+test('a paused stacked board can be resumed', async ({ page }) => {
+  await page.goto(link)
+  await expect(cells(page)).toHaveCount(N ** 3)
+  await page.getByRole('button', { name: '暫停遊戲', exact: true }).click()
+  const resume = page.getByRole('button', { name: '繼續遊戲', exact: true }).last()
+  await expect(resume).toBeEnabled()
+  await resume.click()
+  await expect(page.getByRole('button', { name: '暫停遊戲', exact: true })).toBeVisible()
+})

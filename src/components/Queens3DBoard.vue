@@ -10,24 +10,28 @@ import type { Puzzle3DDefinition } from '../queens3d/types'
 import QueensBoard from './QueensBoard.vue'
 
 // Same props and events as QueensBoard, with cells numbered through all layers.
-const props = defineProps<{
-  puzzle: Puzzle3DDefinition
-  cells: CellState[]
-  paused: boolean
-  won: boolean
-  reviewing?: boolean
-  highlighted: number[]
-  mistakes: number[]
-  busy: boolean
-  guidance: BoardGuidance
-  /** Draws nothing, but takes exactly the room the board will: for what is shown before a board exists. */
-  placeholder?: boolean
-  /** Room play: cells (numbered through all layers) other players are pointing at or hovering. */
-  canResume?: boolean
-  pendingCells?: number[]
-  points?: { index: number; name: string }[]
-  hovers?: { index: number | null; name: string }[]
-}>()
+const props = withDefaults(
+  defineProps<{
+    puzzle: Puzzle3DDefinition
+    cells: CellState[]
+    paused: boolean
+    won: boolean
+    reviewing?: boolean
+    highlighted: number[]
+    mistakes: number[]
+    busy: boolean
+    guidance: BoardGuidance
+    /** Draws nothing, but takes exactly the room the board will: for what is shown before a board exists. */
+    placeholder?: boolean
+    /** Room play, where cells are numbered through all layers. */
+    canResume?: boolean
+    pendingCells?: number[]
+    points?: { index: number; name: string }[]
+    hovers?: { index: number | null; name: string }[]
+  }>(),
+  // An absent boolean prop would otherwise be false, which disabled the resume button.
+  { canResume: true, pendingCells: () => [], points: () => [], hovers: () => [] },
+)
 const emit = defineEmits<{
   hover: [index: number | null]
   play: [index: number]
