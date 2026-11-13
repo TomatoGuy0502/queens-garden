@@ -32,8 +32,8 @@ async function pair(
   }
   await host.goto('/rooms/new')
   await host.getByLabel('你的暱稱').fill('Alice')
-  await host.getByLabel('棋盤大小').selectOption('6')
   await host.getByRole('button', { name: '建立房間', exact: true }).click()
+  await host.getByLabel('棋盤大小').selectOption('6')
   await expect(host).toHaveURL(/\/rooms\/[A-Z0-9]{5}$/)
   await expect(host.getByRole('heading', { name: /等待室/ })).toBeVisible()
   await guest.goto(host.url())
@@ -251,8 +251,8 @@ test('three players join freely, synchronize edits and pointers, reconnect and f
   try {
     await page.goto('/rooms/new')
     await page.getByLabel('你的暱稱').fill('Alice')
-    await page.getByLabel('棋盤大小').selectOption('6')
     await page.getByRole('button', { name: '建立房間', exact: true }).click()
+    await page.getByLabel('棋盤大小').selectOption('6')
     await expect(page.getByRole('heading', { name: /等待室/ })).toBeVisible()
     for (const [i, guest] of guests.entries()) {
       await guest.goto(page.url())
@@ -386,8 +386,8 @@ test('cooperative nickname input remains usable when localStorage is unavailable
   try {
     await page.goto('/rooms/new')
     await page.getByLabel('你的暱稱').fill('Host without storage')
-    await page.getByLabel('棋盤大小').selectOption('6')
     await page.getByRole('button', { name: '建立房間', exact: true }).click()
+    await page.getByLabel('棋盤大小').selectOption('6')
     await page.getByRole('button', { name: '開始合作', exact: true }).click()
     await expect(page.getByRole('grid')).toBeVisible({ timeout: 30000 })
     await queen(page, 0)
@@ -697,8 +697,8 @@ test('a large board scrolls inside its own box instead of widening the phone pag
   await page.setViewportSize({ width: 393, height: 851 })
   await page.goto('/rooms/new')
   await page.getByLabel('你的暱稱').fill('Alice')
-  await page.getByLabel('棋盤大小').selectOption('12')
   await page.getByRole('button', { name: '建立房間', exact: true }).click()
+  await page.getByLabel('棋盤大小').selectOption('12')
   await page.getByRole('button', { name: '開始合作', exact: true }).click()
   await expect(page.getByRole('grid')).toBeVisible({ timeout: 60000 })
   const widths = await page.evaluate(() => ({
@@ -711,8 +711,8 @@ test('a large board scrolls inside its own box instead of widening the phone pag
 test('your own tap shows at once, before the server has answered', async ({ page }) => {
   await page.goto('/rooms/new')
   await page.getByLabel('你的暱稱').fill('Alice')
-  await page.getByLabel('棋盤大小').selectOption('6')
   await page.getByRole('button', { name: '建立房間', exact: true }).click()
+  await page.getByLabel('棋盤大小').selectOption('6')
   await page.getByRole('button', { name: '開始合作', exact: true }).click()
   await expect(page.getByRole('grid')).toBeVisible({ timeout: 30000 })
   // Hold every command back so only a local update can explain the change.

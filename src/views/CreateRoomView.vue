@@ -9,9 +9,6 @@ import RoomCodeInput from '../components/coop/RoomCodeInput.vue'
 import { parseRoomCode } from '../../shared/roomCode'
 import AppHeader from '../components/AppHeader.vue'
 import { useRoomStore } from '../stores/room'
-import type { RoomSettings } from '../../shared/coop'
-import { BOARD_SIZES, DIFFICULTIES } from '../queens/levels'
-import type { Difficulty } from '../queens/types'
 const { t } = useI18n()
 const render = useMessage()
 const room = useRoomStore(),
@@ -19,9 +16,7 @@ const room = useRoomStore(),
   route = useRoute()
 const duel = computed(() => route.query.mode === 'duel')
 const name = usePlayerName()
-const size = shallowRef<RoomSettings['size']>(8),
-  difficulty = shallowRef<Difficulty>('easy'),
-  code = shallowRef(''),
+const code = shallowRef(''),
   busy = shallowRef(false),
   error = shallowRef('')
 async function create() {
@@ -30,7 +25,8 @@ async function create() {
   try {
     const id = await room.create(
       name.value.trim(),
-      { size: size.value, difficulty: difficulty.value },
+      // The host picks the board in the lobby, where it can still change while teammates arrive.
+      { size: 8, difficulty: 'easy' },
       duel.value ? 'duel' : 'coop',
     )
     await router.push(`/rooms/${id}`)
@@ -67,15 +63,7 @@ async function join() {
             required
             maxlength="24"
             autocomplete="nickname"
-          /><label for="room-size">{{ $t('coop.create.size') }}</label
-          ><select id="room-size" v-model="size">
-            <option v-for="n in BOARD_SIZES" :key="n" :value="n">{{ n }} × {{ n }}</option></select
-          ><label for="room-difficulty">{{ $t('coop.create.difficulty') }}</label
-          ><select id="room-difficulty" v-model="difficulty">
-            <option v-for="item in DIFFICULTIES" :key="item" :value="item">
-              {{ $t(`difficulty.${item}`) }}
-            </option></select
-          ><button type="submit" class="primary" :disabled="busy || !name.trim()">
+          /><button type="submit" class="primary" :disabled="busy || !name.trim()">
             {{ busy ? $t('coop.create.submitting') : $t('coop.create.submit') }}
           </button>
         </form>
