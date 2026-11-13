@@ -144,6 +144,8 @@ export default {
     introSynced: '單人遊戲的完成紀錄已同步到你的帳號，登入的每台裝置都看得到。共完成 {total} 局。',
     storage: '瀏覽器拒絕儲存，成績只會保留到關閉此頁面。',
     caption: '各棋盤大小與難度的最佳時間、平均時間與完成局數',
+    flat: '平面棋盤',
+    stacked: '疊層（3D）棋盤',
     size: '大小',
     average: '平均 {time}',
     completed: '{count} 局 · {withoutHints} 局無提示',

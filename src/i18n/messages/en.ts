@@ -158,6 +158,8 @@ const en: Messages<typeof zhHant> = {
       'Your solo results are synced to your account and show on every device you sign in on. {total} puzzles completed.',
     storage: 'The browser refused storage, so results last only until this page is closed.',
     caption: 'Best time, average time and completed games for each board size and difficulty',
+    flat: 'Flat boards',
+    stacked: 'Stacked (3D) boards',
     size: 'Size',
     average: 'Avg {time}',
     completed: '{count} played · {withoutHints} without hints',

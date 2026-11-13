@@ -1,6 +1,7 @@
 import { z } from 'zod'
 import { runLogSchema } from '../src/queens/replay'
 import { BOARD_SIZES, DIFFICULTIES } from '../src/queens/levels'
+import { BOARD_SIZES_3D } from '../src/queens3d/version'
 import { isDateKey } from '../src/queens/daily'
 export const profileSchema = z.object({ nickname: z.string().trim().min(1).max(24) })
 export const finishRunSchema = z.object({
@@ -9,14 +10,17 @@ export const finishRunSchema = z.object({
   log: runLogSchema,
 })
 const count = z.number().int().nonnegative().max(1e9)
-export const outcomeSchema = z.object({
-  size: z.number().refine((size) => BOARD_SIZES.some((item) => item === size)),
-  difficulty: z.enum(DIFFICULTIES),
-  seconds: count,
-  moves: count,
-  hints: count,
-  daily: z.string().refine(isDateKey).optional(),
-})
+export const outcomeSchema = z
+  .object({
+    size: z.number(),
+    difficulty: z.enum(DIFFICULTIES),
+    seconds: count,
+    moves: count,
+    hints: count,
+    stacked: z.boolean().optional(),
+    daily: z.string().refine(isDateKey).optional(),
+  })
+  .refine(({ size, stacked }) => (stacked ? BOARD_SIZES_3D : BOARD_SIZES).some((n) => n === size))
 export interface LeaderboardEntry {
   rank: number
   /** Null until the player picks one; shown as an anonymous player. */

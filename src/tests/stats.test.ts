@@ -131,3 +131,10 @@ it('merges two play histories by summing buckets and keeping the better daily', 
   expect(merged.dailies['2026-10-26']).toEqual({ seconds: 50, moves: 15, hints: 0 })
   expect(mergeStats(merged, emptyStats())).toEqual(merged)
 })
+it('keeps stacked results apart from the flat board of the same size', () => {
+  const flat = recordOutcome(emptyStats(), { ...outcome(90), size: 6, difficulty: 'easy' }).stats
+  const both = recordOutcome(flat, { ...outcome(40), size: 6, difficulty: 'easy', stacked: true })
+  expect(Object.keys(both.stats.buckets).sort()).toEqual(['3d:6:easy', '6:easy'])
+  expect(both.previousBest).toBeNull()
+  expect(parseStats(JSON.parse(JSON.stringify(both.stats)))).toEqual(both.stats)
+})

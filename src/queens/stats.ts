@@ -8,6 +8,8 @@ export interface GameOutcome {
   seconds: number
   moves: number
   hints: number
+  /** Played on the stacked (3D) board, whose results are kept apart from the flat board's. */
+  stacked?: boolean
   /** Local date key when the game was that day's challenge. */
   daily?: string
 }
@@ -35,7 +37,8 @@ export interface RecordedOutcome {
   newBest: boolean
 }
 
-export const bucketKey = (size: number, difficulty: Difficulty) => `${size}:${difficulty}`
+export const bucketKey = (size: number, difficulty: Difficulty, stacked = false) =>
+  `${stacked ? '3d:' : ''}${size}:${difficulty}`
 export const emptyStats = (): StatsData => ({ buckets: {}, dailies: {} })
 export function formatDuration(seconds: number): string {
   return `${String(Math.floor(seconds / 60)).padStart(2, '0')}:${String(seconds % 60).padStart(2, '0')}`
@@ -59,7 +62,7 @@ export function parseStats(raw: unknown): StatsData {
     }
   if (!buckets || typeof buckets !== 'object') return stats
   for (const [key, value] of Object.entries(buckets)) {
-    const [size, difficulty] = key.split(':')
+    const [size, difficulty] = key.replace(/^3d:/, '').split(':')
     const entry = value as Partial<Record<keyof BucketStats, unknown>> | null
     const completed = count(entry?.completed),
       totalSeconds = count(entry?.totalSeconds),
@@ -82,7 +85,7 @@ export function parseStats(raw: unknown): StatsData {
 }
 
 export function recordOutcome(stats: StatsData, outcome: GameOutcome): RecordedOutcome {
-  const key = bucketKey(outcome.size, outcome.difficulty)
+  const key = bucketKey(outcome.size, outcome.difficulty, outcome.stacked)
   const current = stats.buckets[key]
   const previousBest = current?.bestSeconds ?? null
   const next: BucketStats = {

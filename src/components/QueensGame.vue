@@ -143,8 +143,7 @@ let scored = ''
 // Score each attempt once; undo then redo of the final move must not count as a new win.
 watch(won, (isWon) => {
   const current = puzzle.value
-  // Stacked boards keep no stats yet.
-  if (!isWon || !current || props.stacked) return
+  if (!isWon || !current) return
   const key = `${current.id}#${attempt.value}`
   if (scored === key) return
   scored = key
@@ -154,6 +153,7 @@ watch(won, (isWon) => {
     seconds: seconds.value,
     moves: moves.value,
     hints: hints.value,
+    stacked: props.stacked,
     daily: daily.value ?? undefined,
   })
   lastRecord.value = {

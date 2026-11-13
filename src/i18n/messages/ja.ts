@@ -160,6 +160,8 @@ const ja: Messages<typeof zhHant> = {
       'ソロゲームの記録はアカウントに同期され、ログインしたどの端末でも見られます。これまでに {total} 回クリアしました。',
     storage: 'ブラウザが保存を拒否したため、記録はこのページを閉じるまでしか残りません。',
     caption: '盤面サイズと難易度ごとのベストタイム、平均タイム、クリア回数',
+    flat: '平面ボード',
+    stacked: '積層（3D）ボード',
     size: 'サイズ',
     average: '平均 {time}',
     completed: '{count} 回 · ヒントなし {withoutHints} 回',
