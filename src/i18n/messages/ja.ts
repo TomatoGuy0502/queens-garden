@@ -306,8 +306,6 @@ const ja: Messages<typeof zhHant> = {
       board: 'ボードの種類',
       flat: 'クラシック（2D）',
       stackedBoard: '積層（3D）',
-      size: '盤面サイズ',
-      difficulty: '難易度',
       submit: 'ルームを作成',
       submitting: '作成中…',
     },

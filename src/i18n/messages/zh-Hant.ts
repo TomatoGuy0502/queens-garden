@@ -285,8 +285,6 @@ export default {
       board: '棋盤類型',
       flat: '經典（2D）',
       stackedBoard: '疊層（3D）',
-      size: '棋盤大小',
-      difficulty: '難度',
       submit: '建立房間',
       submitting: '建立中…',
     },

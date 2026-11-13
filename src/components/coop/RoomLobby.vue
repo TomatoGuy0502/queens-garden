@@ -3,7 +3,8 @@ import { maxPlayers } from '../../../shared/coop'
 import type { Player, RoomMode, RoomSettings } from '../../../shared/coop'
 import { Crown, Layers } from '@lucide/vue'
 import { computed, shallowRef, watch } from 'vue'
-import { BOARD_SIZES, DIFFICULTIES, boardLabel } from '../../queens/levels'
+import { BOARD_SIZES, DIFFICULTIES } from '../../queens/levels'
+import BoardChoice from '../BoardChoice.vue'
 import { BOARD_SIZES_3D } from '../../queens3d/version'
 import type { Difficulty } from '../../queens/types'
 const props = defineProps<{
@@ -49,17 +50,11 @@ function board(stacked: boolean) {
     difficulty: stacked && view.value.difficulty === 'expert' ? 'hard' : view.value.difficulty,
   })
 }
-function size(event: Event) {
-  configure({
-    ...view.value,
-    size: Number((event.target as HTMLSelectElement).value) as RoomSettings['size'],
-  })
+function setSize(size: number) {
+  configure({ ...view.value, size: size as RoomSettings['size'] })
 }
-function difficulty(event: Event) {
-  configure({
-    ...view.value,
-    difficulty: (event.target as HTMLSelectElement).value as Difficulty,
-  })
+function setDifficulty(difficulty: Difficulty) {
+  configure({ ...view.value, difficulty })
 }
 </script>
 <template>
@@ -92,7 +87,7 @@ function difficulty(event: Event) {
         {{ mode === 'duel' ? $t('duel.lobby.invite') : $t('coop.lobby.invite') }}
       </div>
     </div>
-    <div class="lobby-settings room-form">
+    <div class="lobby-settings">
       <fieldset
         v-if="mode === 'coop'"
         class="board-kinds"
@@ -117,27 +112,16 @@ function difficulty(event: Event) {
           <span v-if="kind.stacked" class="badge">{{ $t('play.new') }}</span>
         </label>
       </fieldset>
-      <label for="coop-size">{{ $t('coop.create.size') }}</label
-      ><select
-        id="coop-size"
-        :value="view.size"
+      <BoardChoice
+        :size="view.size"
+        :difficulty="view.difficulty"
+        :sizes="sizes"
+        :difficulties="difficulties"
+        :stacked="view.stacked"
         :disabled="meId !== hostId || !connected"
-        @change="size"
-      >
-        <option v-for="n in sizes" :key="n" :value="n">
-          {{ boardLabel(n, view.stacked) }}
-        </option></select
-      ><label for="coop-difficulty">{{ $t('coop.create.difficulty') }}</label
-      ><select
-        id="coop-difficulty"
-        :value="view.difficulty"
-        :disabled="meId !== hostId || !connected"
-        @change="difficulty"
-      >
-        <option v-for="item in difficulties" :key="item" :value="item">
-          {{ $t(`difficulty.${item}`) }}
-        </option>
-      </select>
+        @update:size="setSize"
+        @update:difficulty="setDifficulty"
+      />
     </div>
     <div class="lobby-actions">
       <button
@@ -156,6 +140,11 @@ function difficulty(event: Event) {
   </section>
 </template>
 <style scoped>
+.lobby-settings {
+  display: flex;
+  flex-direction: column;
+  gap: 19px;
+}
 .board-kinds {
   display: grid;
   grid-template-columns: 1fr 1fr;

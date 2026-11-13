@@ -2,7 +2,8 @@
 import { ArrowRight, Shuffle } from '@lucide/vue'
 import { shallowRef, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { BOARD_SIZES, DIFFICULTIES, boardLabel } from '../queens/levels'
+import { BOARD_SIZES, DIFFICULTIES } from '../queens/levels'
+import BoardChoice from './BoardChoice.vue'
 import type { Difficulty } from '../queens/types'
 const props = withDefaults(
   defineProps<{
@@ -56,35 +57,13 @@ function loadSeed() {
     <h2 id="settings-title">{{ $t('settings.title') }}</h2>
     <form @submit.prevent="start">
       <fieldset :disabled="busy">
-        <label for="size"
-          >{{ $t('settings.size.label') }} <span>{{ $t('settings.size.caption') }}</span></label
-        >
-        <select id="size" v-model="size">
-          <option v-for="n in sizes" :key="n" :value="n">
-            {{ boardLabel(n, stacked) }}{{ n === 12 ? ` · ${$t('settings.size.advanced')}` : '' }}
-          </option>
-        </select>
-        <label for="difficulty"
-          >{{ $t('settings.difficulty.label') }}
-          <span>{{ $t('settings.difficulty.caption') }}</span></label
-        >
-        <div
-          id="difficulty"
-          class="difficulty-options"
-          role="group"
-          :aria-label="$t('settings.difficulty.label')"
-        >
-          <button
-            v-for="item in difficulties"
-            :key="item"
-            type="button"
-            :aria-pressed="difficulty === item"
-            :class="{ selected: difficulty === item }"
-            @click="difficulty = item"
-          >
-            {{ $t(`difficulty.${item}`) }}
-          </button>
-        </div>
+        <BoardChoice
+          v-model:size="size"
+          v-model:difficulty="difficulty"
+          :sizes="sizes"
+          :difficulties="difficulties"
+          :stacked="stacked"
+        />
         <label for="seed"
           >{{ $t('settings.seed.label') }} <span>{{ $t('settings.seed.caption') }}</span></label
         >
@@ -149,7 +128,6 @@ label span {
 label:first-child {
   margin-top: 0;
 }
-select,
 input {
   width: 100%;
   border: 1px solid var(--control-border);
@@ -159,29 +137,6 @@ input {
   color: var(--ink);
   font: inherit;
   font-size: 13px;
-}
-select {
-  height: 43px;
-}
-.difficulty-options {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 6px;
-}
-.difficulty-options button {
-  border: 1px solid var(--control-border);
-  background: transparent;
-  border-radius: 5px;
-  padding: 10px 2px;
-  font-size: 12px;
-  color: var(--muted);
-  cursor: pointer;
-}
-.difficulty-options .selected {
-  background: var(--accent-soft);
-  border-color: var(--accent-border);
-  color: var(--accent);
-  font-weight: 600;
 }
 .seed-field {
   position: relative;

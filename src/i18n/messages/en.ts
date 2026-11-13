@@ -306,8 +306,6 @@ const en: Messages<typeof zhHant> = {
       board: 'Board type',
       flat: 'Classic (2D)',
       stackedBoard: 'Stacked (3D)',
-      size: 'Board size',
-      difficulty: 'Difficulty',
       submit: 'Create room',
       submitting: 'Creating…',
     },
