@@ -149,6 +149,10 @@ function swallowClick(event: MouseEvent) {
   event.stopPropagation()
   event.preventDefault()
 }
+// A native listener, not @click.capture: Vue drops an event whose timestamp is not later than
+// the next listener's attach time, so under a frozen clock (as tests set) the cell's own click
+// handler would never run once the event had passed through a Vue listener here.
+useEventListener(board, 'click', swallowClick, { capture: true })
 function focus(index: number) {
   focusIndex.value = index
   emit('hover', index)
@@ -215,7 +219,6 @@ async function navigate(index: number, event: KeyboardEvent) {
             :class="{ concealed: paused, drawable: expandedBoard }"
             :inert="paused || (busy && !readOnlyReview)"
             @pointerdown="startDrag"
-            @click.capture="swallowClick"
             @pointerleave="emit('hover', null)"
           >
             <div
