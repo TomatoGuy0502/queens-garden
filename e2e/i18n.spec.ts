@@ -52,7 +52,7 @@ test('the chosen language is remembered, applied to the page and synced between 
   await expect(page.locator('html')).toHaveAttribute('lang', 'en')
   await expect(page).toHaveTitle('Queens · Puzzle')
   await expect(page.locator('meta[name="description"]')).toHaveAttribute('content', /one crown/)
-  await page.getByRole('link', { name: 'Tutorial', exact: true }).click()
+  await page.getByRole('link', { name: /Start learning/ }).click()
   await expect(language(page)).toHaveValue('en')
   await page.reload()
   await expect(language(page)).toHaveValue('en')

@@ -118,6 +118,8 @@ test('lessons can be reset, revisited and skipped', async ({ page }) => {
 })
 test('new players are offered the tutorial once and can dismiss it for good', async ({ page }) => {
   await page.goto('/')
+  // The way in is the home card and the prompt on a game, not the header.
+  await expect(page.locator('.app-header').getByRole('link', { name: /新手教學/ })).toHaveCount(0)
   await expect(page.getByRole('link', { name: /新手教學/ }).first()).toBeVisible()
   await page.goto('/solo?size=6&difficulty=easy&seed=42')
   const prompt = page.getByRole('region', { name: '新手教學' })
