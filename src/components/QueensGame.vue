@@ -2,10 +2,11 @@
 import { SOLO_ONLY } from '../deployment'
 import { useRoute } from 'vue-router'
 import { computed, onMounted, onUnmounted, shallowRef, useTemplateRef, watch } from 'vue'
-import { Clock3, Pause, Play, LoaderCircle } from '@lucide/vue'
+import { Pause, Play, LoaderCircle } from '@lucide/vue'
 import CrownIcon from './CrownIcon.vue'
 import QueensBoard from './QueensBoard.vue'
 import Queens3DBoard from './Queens3DBoard.vue'
+import GameMeta from './GameMeta.vue'
 import GameSettings from './GameSettings.vue'
 import GameToolbar from './GameToolbar.vue'
 import GameRules from './GameRules.vue'
@@ -325,21 +326,18 @@ onMounted(() => {
       <h1>{{ $t(stacked ? 'stacked.nav' : 'nav.solo') }}</h1>
       <div class="game-layout" :class="{ expanded: expandedBoard || stacked }">
         <section ref="playArea" class="play-area" :aria-label="$t('game.area')" :aria-busy="busy">
-          <div class="game-meta">
-            <div class="puzzle-meta">
-              <span v-if="shown.daily" class="difficulty-badge daily-badge">{{
-                $t(ranked ? 'ranked.badge' : 'game.dailyBadge')
-              }}</span
-              ><span class="difficulty-badge">{{ $t(`difficulty.${shown.difficulty}`) }}</span
-              ><span class="board-size">{{ boardLabel(shown.size, stacked) }}</span
-              ><span v-if="puzzle" class="queen-count"
-                ><CrownIcon /> {{ queens.length
-                }}<span>/ {{ stacked ? puzzle.size ** 2 : puzzle.size }}</span></span
-              >
-            </div>
-            <div class="timer">
-              <Clock3 :size="15" /><span>{{ time }}</span
-              ><button
+          <GameMeta
+            :difficulty="shown.difficulty"
+            :size="boardLabel(shown.size, stacked)"
+            :time="time"
+            :badge="shown.daily ? $t(ranked ? 'ranked.badge' : 'game.dailyBadge') : undefined"
+          >
+            <span v-if="puzzle" class="queen-count"
+              ><CrownIcon /> {{ queens.length
+              }}<span>/ {{ stacked ? puzzle.size ** 2 : puzzle.size }}</span></span
+            >
+            <template #actions>
+              <button
                 v-if="!ranked"
                 type="button"
                 class="icon-button pause-button"
@@ -349,8 +347,8 @@ onMounted(() => {
               >
                 <Play v-if="paused" :size="15" /><Pause v-else :size="15" />
               </button>
-            </div>
-          </div>
+            </template>
+          </GameMeta>
           <div class="board-slot" :class="{ reserved: placeholder }">
             <Queens3DBoard
               v-if="placeholder"
@@ -582,38 +580,6 @@ onMounted(() => {
   padding-left: 31px;
   border-left: 1px solid var(--line);
 }
-.game-meta {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: space-between;
-  align-items: center;
-  gap: 8px 12px;
-  margin: 0 0 17px;
-  min-height: 29px;
-}
-.puzzle-meta {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 8px 12px;
-}
-.difficulty-badge,
-.board-size,
-.queen-count,
-.timer {
-  white-space: nowrap;
-}
-.difficulty-badge {
-  font-size: 10px;
-  color: var(--accent);
-  background: var(--accent-soft);
-  padding: 5px 11px;
-  border-radius: 4px;
-}
-.daily-badge {
-  color: var(--surface);
-  background: var(--accent);
-}
 .daily-panel {
   margin-bottom: 27px;
 }
@@ -621,12 +587,8 @@ onMounted(() => {
   display: block;
   margin: 0 auto 27px;
 }
-.board-size {
-  font-size: 12px;
-  color: var(--muted);
-  letter-spacing: 1px;
-}
 .queen-count {
+  white-space: nowrap;
   display: flex;
   gap: 6px;
   align-items: center;
@@ -641,19 +603,6 @@ onMounted(() => {
 }
 .queen-count > span {
   color: var(--muted);
-}
-.timer {
-  display: flex;
-  align-items: center;
-  gap: 7px;
-  color: var(--muted);
-}
-.timer > span {
-  font:
-    13px ui-monospace,
-    monospace;
-  color: var(--ink);
-  min-width: 42px;
 }
 .pause-button {
   width: 25px !important;
@@ -839,23 +788,8 @@ onMounted(() => {
   .side-panel {
     padding-left: 22px;
   }
-  .puzzle-meta {
-    gap: 8px;
-  }
 }
 @media (max-width: 400px) {
-  .puzzle-meta {
-    gap: 6px 8px;
-  }
-  .difficulty-badge {
-    padding: 5px 8px;
-  }
-  .timer {
-    gap: 4px;
-  }
-  .timer > span {
-    min-width: 0;
-  }
   .pause-button {
     margin-left: 0;
   }
@@ -878,9 +812,6 @@ onMounted(() => {
     display: grid;
     grid-template-columns: 1fr;
     gap: 0;
-  }
-  .game-meta {
-    margin-bottom: 13px;
   }
   .puzzle-footer {
     font-size: 10px;

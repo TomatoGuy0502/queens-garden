@@ -141,7 +141,7 @@ test('two players share cells, personal undo, markers, hints and team completion
     const finishedCells = await page
       .getByRole('gridcell')
       .evaluateAll((cells) => cells.map((cell) => cell.getAttribute('data-state')))
-    const time = await page.locator('.coop-meta > div:last-child > span').innerText()
+    const time = await page.locator('.timer > span').innerText()
     await page.getByRole('button', { name: '查看棋盤', exact: true }).click()
     await expect(page.getByRole('heading', { name: '關卡完成' })).not.toBeVisible()
     await expect(guest.getByRole('heading', { name: '關卡完成' })).toBeVisible()
@@ -150,7 +150,7 @@ test('two players share cells, personal undo, markers, hints and team completion
     await cell(page, 0).press('x')
     await cell(page, 0).press('Enter')
     await page.waitForTimeout(1100)
-    await expect(page.locator('.coop-meta > div:last-child > span')).toHaveText(time)
+    await expect(page.locator('.timer > span')).toHaveText(time)
     expect(
       await page
         .getByRole('gridcell')
@@ -187,9 +187,9 @@ test('guest disconnect, reconnect and explicit leaving do not interrupt the host
     await expect(page.locator('.presence-bar')).toContainText('離線', { timeout: 25000 })
     await expect(page.getByRole('grid')).toBeVisible()
     await expect(page.getByRole('button', { name: '暫停合作', exact: true })).toBeEnabled()
-    const time = await page.locator('.coop-meta > div:last-child > span').innerText()
+    const time = await page.locator('.timer > span').innerText()
     await queen(page, 1)
-    await expect(page.locator('.coop-meta > div:last-child > span')).not.toHaveText(time)
+    await expect(page.locator('.timer > span')).not.toHaveText(time)
     await page.getByRole('button', { name: '暫停合作', exact: true }).click()
     await expect(page.getByRole('button', { name: '繼續合作', exact: true })).toBeEnabled()
     await page.getByRole('button', { name: '繼續合作', exact: true }).click()
@@ -575,7 +575,7 @@ test('host restarts the same shared puzzle with confirmation while guests cannot
         .getByRole('gridcell')
         .evaluateAll((cells) => cells.map((cell) => cell.getAttribute('data-region'))),
     ).toEqual(regions)
-    await expect(page.locator('.coop-meta > div:last-child > span')).toHaveText('00:00')
+    await expect(page.locator('.timer > span')).toHaveText('00:00')
     await expect(cell(guest, 0)).toBeEnabled()
     await cell(guest, 0).click()
     heldAck?.()

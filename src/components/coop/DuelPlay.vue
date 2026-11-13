@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { computed, shallowRef, watch } from 'vue'
-import { Clock3 } from '@lucide/vue'
 import { useI18n } from 'vue-i18n'
 import { useMessage } from '../../i18n/message'
+import GameMeta from '../GameMeta.vue'
 import QueensBoard from '../QueensBoard.vue'
 import GameToolbar from '../GameToolbar.vue'
 import GameResult from '../GameResult.vue'
@@ -49,15 +49,7 @@ const guidance = { ...DEFAULT_GUIDANCE, enabled: false }
 const idle = computed(() => !room.connected || game.state?.phase !== 'playing')
 </script>
 <template>
-  <div class="duel-meta">
-    <div>
-      <span class="difficulty-badge">{{ $t(`difficulty.${puzzle.difficulty}`) }}</span
-      ><span>{{ boardLabel(puzzle.size) }}</span>
-    </div>
-    <div>
-      <Clock3 :size="15" /><span>{{ game.time }}</span>
-    </div>
-  </div>
+  <GameMeta :difficulty="puzzle.difficulty" :size="boardLabel(puzzle.size)" :time="game.time" />
   <ul class="duel-progress">
     <li v-for="racer in racers" :key="racer.id">
       <span class="duel-name">{{ racer.name }}{{ racer.id === meId ? $t('coop.you') : '' }}</span>
@@ -125,24 +117,6 @@ const idle = computed(() => !room.connected || game.state?.phase !== 'playing')
   </p>
 </template>
 <style scoped>
-.duel-meta,
-.duel-meta > div {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-.duel-meta {
-  justify-content: space-between;
-  margin-bottom: 16px;
-  font-size: 11px;
-  color: var(--muted);
-}
-.difficulty-badge {
-  background: var(--accent-soft);
-  color: var(--accent);
-  padding: 5px 9px;
-  border-radius: 4px;
-}
 .duel-progress {
   list-style: none;
   margin: 0 0 18px;
@@ -185,11 +159,5 @@ const idle = computed(() => !room.connected || game.state?.phase !== 'playing')
   font-size: 12px;
   line-height: 1.9;
   margin: 16px 0;
-}
-@media (max-width: 750px) {
-  .duel-meta,
-  .duel-meta > div {
-    gap: 7px;
-  }
 }
 </style>

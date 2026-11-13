@@ -8,13 +8,14 @@ import type { RoomMode } from '../../shared/coop'
 import type { PuzzleDefinition } from '../queens/types'
 import { useMessage } from '../i18n/message'
 import { useRouter } from 'vue-router'
-import { Clock3, Pause, Play, MousePointer2, LoaderCircle, LogOut } from '@lucide/vue'
+import { Pause, Play, MousePointer2, LoaderCircle, LogOut } from '@lucide/vue'
 import AppHeader from '../components/AppHeader.vue'
 import PlayerPresence from '../components/coop/PlayerPresence.vue'
 import RoundConfirmation from '../components/coop/RoundConfirmation.vue'
 import RoomToast from '../components/coop/RoomToast.vue'
 import RoomLobby from '../components/coop/RoomLobby.vue'
 import DuelPlay from '../components/coop/DuelPlay.vue'
+import GameMeta from '../components/GameMeta.vue'
 import QueensBoard from '../components/QueensBoard.vue'
 import Queens3DBoard from '../components/Queens3DBoard.vue'
 import GameToolbar from '../components/GameToolbar.vue'
@@ -259,22 +260,19 @@ async function reset() {
           </div>
           <DuelPlay v-else-if="duel && game.state?.puzzle" @change="confirmRound('new')" />
           <template v-else-if="game.state?.puzzle"
-            ><div class="coop-meta">
-              <div>
-                <span class="difficulty-badge">{{
-                  $t(`difficulty.${game.state.puzzle.difficulty}`)
-                }}</span
-                ><span>{{ boardLabel(game.state.puzzle.size, stacked) }}</span
-                ><span>{{
-                  $t('coop.room.crowns', {
-                    count: game.crowns,
-                    size: game.state.puzzle.size ** (stacked ? 2 : 1),
-                  })
-                }}</span>
-              </div>
-              <div>
-                <Clock3 :size="15" /><span>{{ game.time }}</span
-                ><button
+            ><GameMeta
+              :difficulty="game.state.puzzle.difficulty"
+              :size="boardLabel(game.state.puzzle.size, stacked)"
+              :time="game.time"
+            >
+              <span class="crown-count">{{
+                $t('coop.room.crowns', {
+                  count: game.crowns,
+                  size: game.state.puzzle.size ** (stacked ? 2 : 1),
+                })
+              }}</span>
+              <template #actions>
+                <button
                   type="button"
                   class="icon-button"
                   :disabled="
@@ -292,8 +290,8 @@ async function reset() {
                     :size="16"
                   />
                 </button>
-              </div>
-            </div>
+              </template>
+            </GameMeta>
             <component
               :is="board"
               :puzzle="game.state.puzzle as PuzzleDefinition"
@@ -504,23 +502,9 @@ async function reset() {
   line-height: 1.9;
   color: var(--muted);
 }
-.coop-meta,
-.coop-meta > div {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-.coop-meta {
-  justify-content: space-between;
-  margin-bottom: 16px;
-  font-size: 11px;
+.crown-count {
+  font-size: 12px;
   color: var(--muted);
-}
-.difficulty-badge {
-  background: var(--accent-soft);
-  color: var(--accent);
-  padding: 5px 9px;
-  border-radius: 4px;
 }
 .generating-panel {
   aspect-ratio: 1;
@@ -597,10 +581,6 @@ async function reset() {
     padding: 25px 0 0;
     border-left: 0;
     border-top: 1px solid var(--line);
-  }
-  .coop-meta,
-  .coop-meta > div {
-    gap: 7px;
   }
   .room-heading h1 {
     font-size: 24px;
