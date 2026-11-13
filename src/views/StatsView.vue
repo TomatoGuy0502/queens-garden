@@ -3,7 +3,7 @@ import { computed, shallowRef } from 'vue'
 import AppHeader from '../components/AppHeader.vue'
 import { useGameStats } from '../composables/useGameStats'
 import { useAccount } from '../composables/useAccount'
-import { BOARD_SIZES, DIFFICULTIES } from '../queens/levels'
+import { BOARD_SIZES, DIFFICULTIES, boardLabel } from '../queens/levels'
 import { BOARD_SIZES_3D } from '../queens3d/version'
 import { averageSeconds, bucketKey, formatDuration } from '../queens/stats'
 const { stats, storageAvailable, reset } = useGameStats()
@@ -73,7 +73,7 @@ function clear() {
             <tbody>
               <tr v-for="row in table.rows" :key="row.size">
                 <th scope="row">
-                  {{ row.size }} × {{ row.size }}{{ table.stacked ? ` × ${row.size}` : '' }}
+                  {{ boardLabel(row.size, table.stacked) }}
                 </th>
                 <td v-for="cell in row.cells" :key="cell.difficulty">
                   <template v-if="cell.best">

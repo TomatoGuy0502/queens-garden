@@ -36,7 +36,7 @@ import { BOARD_SIZES_3D, GENERATOR_3D_VERSION } from '../queens3d/version'
 import { blankPuzzle3d } from '../queens3d/play'
 import { storeToRefs } from 'pinia'
 import { GENERATOR_VERSION } from '../queens/version'
-import { BOARD_SIZES, DIFFICULTIES } from '../queens/levels'
+import { BOARD_SIZES, DIFFICULTIES, boardLabel } from '../queens/levels'
 import type { Difficulty } from '../queens/types'
 import { finishRankedRun, startRankedRun } from '../composables/useAccount'
 import type { RunFinish, RunStart } from '../../shared/account'
@@ -331,8 +331,7 @@ onMounted(() => {
                 $t(ranked ? 'ranked.badge' : 'game.dailyBadge')
               }}</span
               ><span class="difficulty-badge">{{ $t(`difficulty.${shown.difficulty}`) }}</span
-              ><span class="board-size"
-                >{{ shown.size }} × {{ shown.size }}{{ stacked ? ` × ${shown.size}` : '' }}</span
+              ><span class="board-size">{{ boardLabel(shown.size, stacked) }}</span
               ><span v-if="puzzle" class="queen-count"
                 ><CrownIcon /> {{ queens.length
                 }}<span>/ {{ stacked ? puzzle.size ** 2 : puzzle.size }}</span></span

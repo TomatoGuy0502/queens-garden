@@ -3,7 +3,7 @@ import { maxPlayers } from '../../../shared/coop'
 import type { Player, RoomMode, RoomSettings } from '../../../shared/coop'
 import { Crown, Layers } from '@lucide/vue'
 import { computed, shallowRef, watch } from 'vue'
-import { BOARD_SIZES, DIFFICULTIES } from '../../queens/levels'
+import { BOARD_SIZES, DIFFICULTIES, boardLabel } from '../../queens/levels'
 import { BOARD_SIZES_3D } from '../../queens3d/version'
 import type { Difficulty } from '../../queens/types'
 const props = defineProps<{
@@ -125,7 +125,7 @@ function difficulty(event: Event) {
         @change="size"
       >
         <option v-for="n in sizes" :key="n" :value="n">
-          {{ n }} × {{ n }}{{ view.stacked ? ` × ${n}` : '' }}
+          {{ boardLabel(n, view.stacked) }}
         </option></select
       ><label for="coop-difficulty">{{ $t('coop.create.difficulty') }}</label
       ><select

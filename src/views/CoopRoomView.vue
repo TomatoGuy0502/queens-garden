@@ -22,6 +22,7 @@ import GameResult from '../components/GameResult.vue'
 import GameRules from '../components/GameRules.vue'
 import GameShare from '../components/GameShare.vue'
 import { HINT_LEVELS, hintView } from '../queens/strategies'
+import { boardLabel } from '../queens/levels'
 import { hintView3d, isPuzzle3d } from '../queens3d/play'
 import { useLeaveGuard } from '../composables/useLeaveGuard'
 import { useRoomStore } from '../stores/room'
@@ -263,9 +264,7 @@ async function reset() {
                 <span class="difficulty-badge">{{
                   $t(`difficulty.${game.state.puzzle.difficulty}`)
                 }}</span
-                ><span
-                  >{{ game.state.puzzle.size }} × {{ game.state.puzzle.size
-                  }}{{ stacked ? ` × ${game.state.puzzle.size}` : '' }}</span
+                ><span>{{ boardLabel(game.state.puzzle.size, stacked) }}</span
                 ><span>{{
                   $t('coop.room.crowns', {
                     count: game.crowns,

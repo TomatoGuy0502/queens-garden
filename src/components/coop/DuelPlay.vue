@@ -8,6 +8,7 @@ import GameToolbar from '../GameToolbar.vue'
 import GameResult from '../GameResult.vue'
 import type { PuzzleDefinition } from '../../queens/types'
 import { DEFAULT_GUIDANCE } from '../../queens/guidance'
+import { boardLabel } from '../../queens/levels'
 import { duelProgress } from '../../queens/duel'
 import { useCoopGameStore } from '../../stores/game'
 import { useDuelStore } from '../../stores/duel'
@@ -51,7 +52,7 @@ const idle = computed(() => !room.connected || game.state?.phase !== 'playing')
   <div class="duel-meta">
     <div>
       <span class="difficulty-badge">{{ $t(`difficulty.${puzzle.difficulty}`) }}</span
-      ><span>{{ puzzle.size }} × {{ puzzle.size }}</span>
+      ><span>{{ boardLabel(puzzle.size) }}</span>
     </div>
     <div>
       <Clock3 :size="15" /><span>{{ game.time }}</span>

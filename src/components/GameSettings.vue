@@ -2,7 +2,7 @@
 import { ArrowRight, Shuffle } from '@lucide/vue'
 import { shallowRef, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { BOARD_SIZES, DIFFICULTIES } from '../queens/levels'
+import { BOARD_SIZES, DIFFICULTIES, boardLabel } from '../queens/levels'
 import type { Difficulty } from '../queens/types'
 const props = withDefaults(
   defineProps<{
@@ -61,8 +61,7 @@ function loadSeed() {
         >
         <select id="size" v-model="size">
           <option v-for="n in sizes" :key="n" :value="n">
-            {{ n }} × {{ n }}{{ stacked ? ` × ${n}` : ''
-            }}{{ n === 12 ? ` · ${$t('settings.size.advanced')}` : '' }}
+            {{ boardLabel(n, stacked) }}{{ n === 12 ? ` · ${$t('settings.size.advanced')}` : '' }}
           </option>
         </select>
         <label for="difficulty"
