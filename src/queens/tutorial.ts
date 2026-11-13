@@ -5,6 +5,7 @@ import { solve } from './solver'
 import { conflictCells } from './validator'
 import { GENERATOR_VERSION } from './version'
 import type { CellState, DeductionStep, PuzzleDefinition } from './types'
+import type { Puzzle3DDefinition } from '../queens3d/types'
 
 /** A fixed medium 6×6 board whose first steps are small adjacency, intersection and single moves. */
 const REGIONS = [
@@ -53,7 +54,24 @@ const queensOf = (cells: readonly CellState[]) =>
     state === 'queen' ? [{ row: Math.floor(i / size), col: i % size }] : [],
   )
 export const conflictsOf = (cells: readonly CellState[]) => conflictCells(REGIONS, queensOf(cells))
-export function goalMet(goal: TutorialGoal, cells: readonly CellState[]): boolean {
+/** One tutorial: its board, its lessons, and the rules that judge a lesson's board. */
+export interface TutorialCourse {
+  puzzle: PuzzleDefinition | Puzzle3DDefinition
+  lessons: TutorialLesson[]
+  /** Crowns on a solved board. */
+  crowns: number
+  conflicts: (cells: readonly CellState[]) => number[]
+  hint: (cells: CellState[]) => { message: Message; cells: number[]; action: string | null }
+  /** i18n prefix of the course's page texts. */
+  texts: 'tutorial' | 'tutorial3d'
+  /** Where a finished player goes to play for real. */
+  play: string
+}
+export function goalMet(
+  goal: TutorialGoal,
+  cells: readonly CellState[],
+  course: Pick<TutorialCourse, 'crowns' | 'conflicts'> = { crowns: size, conflicts: conflictsOf },
+): boolean {
   switch (goal.type) {
     case 'continue':
       return true
@@ -62,13 +80,16 @@ export function goalMet(goal: TutorialGoal, cells: readonly CellState[]): boolea
     case 'mark-any':
       return cells.includes('marked')
     case 'no-conflict':
-      return !conflictsOf(cells).length
+      return !course.conflicts(cells).length
     case 'mark-all':
       return goal.cells.every((cell) => cells[cell] === 'marked')
     case 'queen-at':
       return cells[goal.cell] === 'queen'
     case 'solved':
-      return queensOf(cells).length === size && !conflictsOf(cells).length
+      return (
+        cells.filter((state) => state === 'queen').length === course.crowns &&
+        !course.conflicts(cells).length
+      )
   }
 }
 /** The board a careful player would have after the first `count` logical steps. */
@@ -167,3 +188,13 @@ export function buildLessons(): TutorialLesson[] {
     lesson('done', ['p1', 'p2'], { type: 'continue' }, { task: false, preset: solved }),
   ]
 }
+
+export const classicCourse = (): TutorialCourse => ({
+  puzzle: TUTORIAL_PUZZLE,
+  lessons: buildLessons(),
+  crowns: size,
+  conflicts: conflictsOf,
+  hint: nextHint,
+  texts: 'tutorial',
+  play: '/solo',
+})

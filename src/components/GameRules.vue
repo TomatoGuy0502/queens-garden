@@ -39,9 +39,17 @@ defineProps<{ stacked?: boolean }>()
       <p>{{ $t('rules.shortcutsBody') }}</p>
       <p v-if="stacked">{{ $t('stacked.rules.keys') }}</p>
     </details>
+    <RouterLink v-if="stacked" class="tutorial-link" to="/tutorial3d">{{
+      $t('stacked.rules.tutorial')
+    }}</RouterLink>
   </section>
 </template>
 <style scoped>
+.tutorial-link {
+  display: inline-block;
+  margin-top: 14px;
+  font-size: 12px;
+}
 .rules {
   border-top: 1px solid var(--line);
   padding-top: 27px;

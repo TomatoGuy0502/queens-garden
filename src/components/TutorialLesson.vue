@@ -11,6 +11,8 @@ defineProps<{
   hint: { message: Message; cells: number[] } | null
   isFirst: boolean
   isLast: boolean
+  /** Where the finished player goes to play. */
+  play: string
 }>()
 const emit = defineEmits<{ next: []; previous: []; restart: []; hint: [] }>()
 const render = useMessage()
@@ -34,7 +36,7 @@ const render = useMessage()
       <p v-if="hint" class="hint" role="status">{{ render(hint.message) }}</p>
     </div>
     <div v-if="isLast" class="actions finish">
-      <RouterLink class="primary" to="/solo">{{ $t('tutorial.start') }}</RouterLink>
+      <RouterLink class="primary" :to="play">{{ $t('tutorial.start') }}</RouterLink>
       <RouterLink class="secondary" to="/">{{ $t('tutorial.home') }}</RouterLink>
     </div>
     <div v-else class="actions">

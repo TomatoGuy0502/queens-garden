@@ -3,17 +3,24 @@ import { computed } from 'vue'
 import { GraduationCap } from '@lucide/vue'
 import { useGameStats } from '../composables/useGameStats'
 import { useTutorialStatus } from '../composables/useTutorialStatus'
-const { status, dismiss } = useTutorialStatus()
+const props = defineProps<{ stacked?: boolean }>()
+const { status, dismiss } = useTutorialStatus(props.stacked ? 'stacked' : 'flat')
 const { stats } = useGameStats()
-// Only offered to someone who has neither learned nor finished a game here.
-const visible = computed(() => status.value === null && !Object.keys(stats.value.buckets).length)
+// Only offered to someone who has neither learned nor finished a game of this kind here.
+const visible = computed(
+  () =>
+    status.value === null &&
+    !Object.keys(stats.value.buckets).some((key) => !props.stacked || key.startsWith('3d:')),
+)
 </script>
 <template>
   <section v-if="visible" class="prompt" :aria-label="$t('tutorialPrompt.label')">
     <GraduationCap :size="22" aria-hidden="true" />
     <div>
-      <p>{{ $t('tutorialPrompt.body') }}</p>
-      <RouterLink class="primary" to="/tutorial">{{ $t('tutorialPrompt.start') }}</RouterLink>
+      <p>{{ stacked ? $t('tutorialPrompt.stackedBody') : $t('tutorialPrompt.body') }}</p>
+      <RouterLink class="primary" :to="stacked ? '/tutorial3d' : '/tutorial'">{{
+        $t('tutorialPrompt.start')
+      }}</RouterLink>
       <button type="button" class="text-button" @click="dismiss">
         {{ $t('tutorialPrompt.dismiss') }}
       </button>

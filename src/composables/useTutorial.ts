@@ -1,17 +1,17 @@
 import { computed, shallowRef } from 'vue'
 import type { Message } from '../../shared/message'
 import { nextCell, type CellAction } from '../queens/cells'
-import { buildLessons, conflictsOf, goalMet, nextHint } from '../queens/tutorial'
+import { classicCourse, goalMet, type TutorialCourse } from '../queens/tutorial'
 import type { CellState } from '../queens/types'
 
-export function useTutorial() {
-  const lessons = buildLessons()
+export function useTutorial(course: TutorialCourse = classicCourse()) {
+  const { lessons } = course
   const index = shallowRef(0)
   const cells = shallowRef<CellState[]>([...lessons[0].preset])
   const hint = shallowRef<{ message: Message; cells: number[] } | null>(null)
   const lesson = computed(() => lessons[index.value])
-  const met = computed(() => goalMet(lesson.value.goal, cells.value))
-  const conflicts = computed(() => conflictsOf(cells.value))
+  const met = computed(() => goalMet(lesson.value.goal, cells.value, course))
+  const conflicts = computed(() => course.conflicts(cells.value))
   const isFirst = computed(() => index.value === 0)
   const isLast = computed(() => index.value === lessons.length - 1)
   const highlighted = computed(() => hint.value?.cells ?? lesson.value.highlight)
@@ -29,7 +29,7 @@ export function useTutorial() {
   const next = () => !isLast.value && load(index.value + 1)
   const previous = () => !isFirst.value && load(index.value - 1)
   const restart = () => load(index.value)
-  const showHint = () => (hint.value = nextHint(cells.value))
+  const showHint = () => (hint.value = course.hint(cells.value))
   return {
     lessons,
     index,

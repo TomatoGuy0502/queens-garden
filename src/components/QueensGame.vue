@@ -43,7 +43,7 @@ import { BOARD_SIZES, DIFFICULTIES, boardLabel } from '../queens/levels'
 import type { Difficulty } from '../queens/types'
 import type { RunStart } from '../../shared/account'
 const props = defineProps<{
-  /** Plays the stacked (3D) board: no daily challenge, tutorial or stats, and its own save. */
+  /** Plays the stacked (3D) board: no daily challenge, its own tutorial, stats and save. */
   stacked?: boolean
 }>()
 const render = useMessage()
@@ -457,7 +457,7 @@ onMounted(() => {
             {{ $t('game.leaveDaily') }}
           </button>
           <template v-else>
-            <TutorialPrompt v-if="!stacked" />
+            <TutorialPrompt :stacked="stacked" />
             <DailyChallenge
               v-if="!stacked"
               class="daily-panel"

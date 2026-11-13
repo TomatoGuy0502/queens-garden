@@ -1,32 +1,38 @@
 import { shallowRef } from 'vue'
 type Status = 'done' | 'dismissed' | null
-const STORAGE_KEY = 'queens:tutorial:v1'
+const STORAGE_KEYS = { flat: 'queens:tutorial:v1', stacked: 'queens:tutorial3d:v1' } as const
+type Board = keyof typeof STORAGE_KEYS
 const storageAvailable = shallowRef(true)
-function read(): Status {
+function read(board: Board): Status {
   try {
-    const value = localStorage.getItem(STORAGE_KEY)
+    const value = localStorage.getItem(STORAGE_KEYS[board])
     return value === 'done' || value === 'dismissed' ? value : null
   } catch {
     storageAvailable.value = false
     return null
   }
 }
-const status = shallowRef<Status>(read())
-function write(value: Exclude<Status, null>) {
-  status.value = value
+const statuses = {
+  flat: shallowRef<Status>(read('flat')),
+  stacked: shallowRef<Status>(read('stacked')),
+}
+function write(board: Board, value: Exclude<Status, null>) {
+  statuses[board].value = value
   try {
-    localStorage.setItem(STORAGE_KEY, value)
+    localStorage.setItem(STORAGE_KEYS[board], value)
     storageAvailable.value = true
   } catch {
     storageAvailable.value = false
   }
 }
-export function useTutorialStatus() {
+/** The classic and the stacked tutorial are learned, and their prompts dismissed, separately. */
+export function useTutorialStatus(board: Board = 'flat') {
+  const status = statuses[board]
   return {
     status,
     storageAvailable,
     // A finished tutorial is never downgraded by dismissing the prompt later.
-    markDone: () => write('done'),
-    dismiss: () => status.value ?? write('dismissed'),
+    markDone: () => write(board, 'done'),
+    dismiss: () => status.value ?? write(board, 'dismissed'),
   }
 }

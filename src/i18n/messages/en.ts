@@ -135,6 +135,8 @@ const en: Messages<typeof zhHant> = {
   tutorialPrompt: {
     label: 'Tutorial',
     body: 'New here? Learn the rules and reasoning with a few minutes of interactive lessons.',
+    stackedBody:
+      'New to 3D? A few minutes of interactive lessons introduce pillars and reasoning across layers.',
     start: 'Start the tutorial',
     dismiss: 'No thanks',
   },
@@ -459,6 +461,7 @@ const en: Messages<typeof zhHant> = {
       pillars: 'Every pillar (the same cell in all layers) holds exactly one crown in total.',
       apart: 'Crowns in different layers never count as touching.',
       keys: 'Press [ and ] (or PageUp and PageDown) to move to the same cell one layer up or down.',
+      tutorial: 'Not sure about pillars yet? Try the 3D tutorial →',
     },
     layer: 'Layer {layer}',
     boardLabel: 'Layer {layer} board; arrow keys move, [ and ] change layer',
@@ -653,6 +656,47 @@ const en: Messages<typeof zhHant> = {
         title: 'You did it!',
         p1: 'You now know the rules, X marks and three basic deductions.',
         p2: 'Harder puzzles use more advanced reasoning; when you meet it, use "Give me a hint". Now you can start a real game.',
+      },
+    },
+  },
+  tutorial3d: {
+    title: '3D tutorial',
+    intro:
+      'Already know classic Queens? These lessons only teach what 3D adds: pillars, and reasoning across layers.',
+    lessons: {
+      rules: {
+        title: 'A stack of Queens',
+        p1: 'A 3D board is several Queens boards stacked up, and each layer is a puzzle of its own: one crown in every row, column and region of a layer, and crowns in the same layer may not touch.',
+        p2: 'A wide screen shows every layer side by side; on a phone, switch layers with the tabs and watch the others in the thumbnails.',
+        p3: 'This board has 5 layers of 5 crowns: {count} crowns in all.',
+      },
+      pillar: {
+        title: 'The new rule: pillars',
+        p1: 'The same cell (same row and column) in every layer forms a pillar. Each pillar holds exactly one crown across all layers.',
+        p2: 'Layer {layer} already has a crown, so the same cell above and below it cannot take one.',
+        task: 'Mark the {count} outlined cells of that pillar with X',
+      },
+      stack: {
+        title: 'One pillar, one crown; layers never touch',
+        p1: 'These two crowns share a pillar, so they conflict. Tap one of them to clear it.',
+        p2: 'Touching only counts inside a layer: crowns in different layers may sit diagonally to each other, as long as they are not in the same pillar.',
+        task: 'Clear the conflict so the pillar holds one crown',
+      },
+      single: {
+        title: 'Across layers: a pillar with one cell left',
+        p1: 'Every other cell of the outlined pillar is ruled out. The pillar needs a crown, so it goes in the one cell left, even though its own layer cannot tell yet.',
+        task: 'Place a crown on the outlined pillar',
+      },
+      finish: {
+        title: 'Your turn',
+        p1: '{left} crowns to go. With each crown, rule out its row, column, region and surrounding cells in its layer, and its pillar.',
+        p2: 'If you get stuck, press "Get a hint" to see which layer or pillar to look at next.',
+        task: 'Place all {count} crowns to finish this board',
+      },
+      done: {
+        title: 'You know 3D now!',
+        p1: 'You have learned pillars, and how a pillar can place a crown across layers.',
+        p2: 'Real 3D puzzles go back and forth between layers and pillars more often. Now you can start a stacked puzzle.',
       },
     },
   },

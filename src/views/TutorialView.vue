@@ -1,15 +1,21 @@
 <script setup lang="ts">
 import { watch } from 'vue'
 import AppHeader from '../components/AppHeader.vue'
+import Queens3DBoard from '../components/Queens3DBoard.vue'
 import QueensBoard from '../components/QueensBoard.vue'
 import TutorialLesson from '../components/TutorialLesson.vue'
 import { useGamePreferences } from '../composables/useGamePreferences'
 import { useTutorial } from '../composables/useTutorial'
 import { useTutorialStatus } from '../composables/useTutorialStatus'
-import { TUTORIAL_PUZZLE } from '../queens/tutorial'
+import { classicCourse } from '../queens/tutorial'
+import { stackedCourse } from '../queens3d/tutorial'
+import type { Puzzle3DDefinition } from '../queens3d/types'
+import type { PuzzleDefinition } from '../queens/types'
+const props = defineProps<{ stacked?: boolean }>()
 const { guidance } = useGamePreferences()
-const tutorial = useTutorial()
-const { markDone } = useTutorialStatus()
+const course = props.stacked ? stackedCourse() : classicCourse()
+const tutorial = useTutorial(course)
+const { markDone } = useTutorialStatus(props.stacked ? 'stacked' : 'flat')
 const { lesson, lessons, index, cells, met, conflicts, hint, highlighted, isFirst, isLast } =
   tutorial
 watch(isLast, (last) => last && markDone())
@@ -17,12 +23,28 @@ watch(isLast, (last) => last && markDone())
 <template>
   <main class="page-shell">
     <AppHeader />
-    <h1>{{ $t('tutorial.title') }}</h1>
-    <p class="page-description">{{ $t('tutorial.intro') }}</p>
+    <h1>{{ $t(`${course.texts}.title`) }}</h1>
+    <p class="page-description">{{ $t(`${course.texts}.intro`) }}</p>
     <div class="tutorial">
-      <QueensBoard
+      <Queens3DBoard
+        v-if="stacked"
         :key="lesson.id"
-        :puzzle="TUTORIAL_PUZZLE"
+        :puzzle="course.puzzle as Puzzle3DDefinition"
+        :cells="cells"
+        :guidance="guidance"
+        :paused="false"
+        :won="false"
+        :highlighted="highlighted"
+        :mistakes="conflicts"
+        :busy="false"
+        @play="tutorial.edit($event)"
+        @mark="tutorial.edit($event, 'mark')"
+        @crown="tutorial.edit($event, 'queen')"
+      />
+      <QueensBoard
+        v-else
+        :key="lesson.id"
+        :puzzle="course.puzzle as PuzzleDefinition"
         :cells="cells"
         :guidance="guidance"
         :paused="false"
@@ -42,6 +64,7 @@ watch(isLast, (last) => last && markDone())
         :hint="hint"
         :is-first="isFirst"
         :is-last="isLast"
+        :play="course.play"
         @next="tutorial.next"
         @previous="tutorial.previous"
         @restart="tutorial.restart"

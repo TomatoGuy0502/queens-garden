@@ -38,6 +38,11 @@ export const router = createRouter({
       meta: { title: 'nav.tutorial' },
     },
     {
+      path: '/tutorial3d',
+      component: () => import('./views/Tutorial3DView.vue'),
+      meta: { title: 'tutorial3d.title' },
+    },
+    {
       path: '/stats',
       component: () => import('./views/StatsView.vue'),
       meta: { title: 'nav.stats' },
