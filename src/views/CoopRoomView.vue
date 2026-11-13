@@ -16,6 +16,7 @@ import RoomToast from '../components/coop/RoomToast.vue'
 import RoomLobby from '../components/coop/RoomLobby.vue'
 import DuelPlay from '../components/coop/DuelPlay.vue'
 import GameMeta from '../components/GameMeta.vue'
+import HintFeedback from '../components/HintFeedback.vue'
 import QueensBoard from '../components/QueensBoard.vue'
 import Queens3DBoard from '../components/Queens3DBoard.vue'
 import GameToolbar from '../components/GameToolbar.vue'
@@ -371,20 +372,14 @@ async function reset() {
               {{ $t('coop.room.changeRound') }}
             </button>
             <div class="coop-feedback" role="status" aria-live="polite">
-              <p v-if="feedback">
-                <span v-if="hintInfo" class="hint-level">{{
-                  $t('game.feedback.hint', { level: hintLevel })
-                }}</span
-                >{{ render(feedback) }}
-              </p>
-              <button
-                v-if="hintRevealed && !blocked"
-                type="button"
-                class="text-button"
-                @click="applyHint"
-              >
-                {{ $t('game.feedback.apply') }}
-              </button>
+              <HintFeedback
+                v-if="feedback"
+                :text="feedback"
+                :label="hintInfo ? $t('game.feedback.hint', { level: hintLevel }) : undefined"
+                :evidence="hintRevealed ? game.state.hint?.step?.evidence : undefined"
+                :can-apply="hintRevealed && !blocked"
+                @apply="applyHint"
+              />
               <p v-if="game.conflicts.length">{{ $t('coop.room.conflict') }}</p>
             </div>
             <div class="coop-footer">
@@ -546,11 +541,6 @@ async function reset() {
 }
 .coop-feedback p {
   margin: 16px 0;
-}
-.hint-level {
-  color: var(--accent);
-  font-weight: 600;
-  margin-right: 0.8em;
 }
 .coop-footer {
   font:
