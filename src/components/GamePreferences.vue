@@ -2,7 +2,7 @@
 import { computed, useTemplateRef } from 'vue'
 import { useRoute } from 'vue-router'
 import { Settings2 } from '@lucide/vue'
-import ModalDialog from './ModalDialog.vue'
+import BaseModalDialog from './BaseModalDialog.vue'
 import { useGamePreferences } from '../composables/useGamePreferences'
 import type { BoardGuidance } from '../queens/guidance'
 const { expandedBoard } = useGamePreferences()
@@ -32,7 +32,7 @@ function update(key: keyof BoardGuidance, event: Event) {
   >
     <Settings2 :size="18" />
   </button>
-  <ModalDialog
+  <BaseModalDialog
     ref="dialog"
     class="preferences-dialog"
     :title="$t('preferences.title')"
@@ -77,7 +77,7 @@ function update(key: keyof BoardGuidance, event: Event) {
     <p class="storage-note" role="status">
       {{ $t(storageAvailable ? 'preferences.saved' : 'preferences.unsaved') }}
     </p>
-  </ModalDialog>
+  </BaseModalDialog>
 </template>
 <style scoped>
 .preferences-button {

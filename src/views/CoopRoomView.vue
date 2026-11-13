@@ -10,11 +10,11 @@ import { useMessage } from '../i18n/message'
 import { useRouter } from 'vue-router'
 import { Pause, Play, MousePointer2, LoaderCircle, LogOut } from '@lucide/vue'
 import AppHeader from '../components/AppHeader.vue'
-import PlayerPresence from '../components/coop/PlayerPresence.vue'
-import RoundConfirmation from '../components/coop/RoundConfirmation.vue'
-import RoomToast from '../components/coop/RoomToast.vue'
-import RoomLobby from '../components/coop/RoomLobby.vue'
-import DuelPlay from '../components/coop/DuelPlay.vue'
+import CoopRoomPlayerPresence from '../components/coop/CoopRoomPlayerPresence.vue'
+import CoopRoomRoundConfirmation from '../components/coop/CoopRoomRoundConfirmation.vue'
+import CoopRoomToast from '../components/coop/CoopRoomToast.vue'
+import CoopRoomLobby from '../components/coop/CoopRoomLobby.vue'
+import CoopRoomDuelPlay from '../components/coop/CoopRoomDuelPlay.vue'
 import GameMeta from '../components/GameMeta.vue'
 import HintFeedback from '../components/HintFeedback.vue'
 import QueensBoard from '../components/QueensBoard.vue'
@@ -169,8 +169,8 @@ async function reset() {
 }
 </script>
 <template>
-  <RoomToast :notice="room.notice" @dismiss="room.dismissNotice" />
-  <RoundConfirmation
+  <CoopRoomToast :notice="room.notice" @dismiss="room.dismissNotice" />
+  <CoopRoomRoundConfirmation
     v-if="confirmation"
     :kind="confirmation.kind"
     :busy="!!room.pending"
@@ -221,7 +221,7 @@ async function reset() {
       </p>
     </section>
     <template v-else>
-      <PlayerPresence
+      <CoopRoomPlayerPresence
         :players="room.room.players"
         :me-id="room.credentials?.playerId"
         :hovers="room.hovers"
@@ -237,7 +237,7 @@ async function reset() {
       <p v-if="room.error" class="error-notice" role="alert">{{ render(room.error) }}</p>
       <div class="coop-layout" :class="{ expanded: expandedBoard || stacked }">
         <section class="coop-play">
-          <RoomLobby
+          <CoopRoomLobby
             v-if="game.state?.phase === 'waiting'"
             :mode="room.room.mode"
             :players="room.room.players"
@@ -259,7 +259,7 @@ async function reset() {
             <h2>{{ duel ? $t('duel.generating') : $t('coop.room.generating.title') }}</h2>
             <p>{{ $t('coop.room.generating.body') }}</p>
           </div>
-          <DuelPlay v-else-if="duel && game.state?.puzzle" @change="confirmRound('new')" />
+          <CoopRoomDuelPlay v-else-if="duel && game.state?.puzzle" @change="confirmRound('new')" />
           <template v-else-if="game.state?.puzzle"
             ><GameMeta
               :difficulty="game.state.puzzle.difficulty"

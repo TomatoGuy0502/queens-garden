@@ -81,13 +81,17 @@ src/
   components/
     QueensGame.vue         薄的功能組合、網址與設定協調
     QueensBoard.vue        區域邊界、棋盤與鍵盤焦點；傳入定義與狀態，傳出操作
-    QueensCell.vue         單格顯示與操作事件，不持有遊戲邏輯
+    QueensBoardCell.vue    單格顯示與操作事件，不持有遊戲邏輯
     GameSettings.vue       設定表單；傳出 size/difficulty/seed
     GameToolbar.vue        操作按鈕；傳出 action
     GameRules.vue          規則與操作說明
     GameResult.vue         接收時間、操作與提示次數，顯示摘要
     GameShare.vue          目前關卡的重現連結、QR Code、複製與系統分享
     GamePreferences.vue    遊玩設定 Modal 與視覺引導範圍開關
+    GameMeta.vue           棋盤上方的難度、大小與計時列；單人、房間與對戰共用
+    HintFeedback.vue       提示文字、推理依據與套用按鈕；單人與房間共用
+    BoardChoice.vue        棋盤大小與難度的選擇；設定面板與等待室共用
+    Base*.vue              沒有遊戲邏輯的共用元件（對話框、確認列、模式卡片、皇冠圖示）
   tests/                   核心 Vitest 測試
  e2e/                      桌面 Chromium 與 Pixel 7 模擬的 Playwright 測試
 ```

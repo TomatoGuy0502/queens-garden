@@ -3,7 +3,7 @@ import { SOLO_ONLY } from '../deployment'
 import { Crown, Users, GraduationCap } from '@lucide/vue'
 import AppHeader from '../components/AppHeader.vue'
 import DailyChallenge from '../components/DailyChallenge.vue'
-import ModeCard from '../components/ModeCard.vue'
+import BaseModeCard from '../components/BaseModeCard.vue'
 </script>
 <template>
   <main class="page-shell">
@@ -12,28 +12,28 @@ import ModeCard from '../components/ModeCard.vue'
     <p class="page-description">{{ $t('home.intro') }}</p>
     <DailyChallenge class="daily-card" />
     <div class="mode-cards">
-      <ModeCard
+      <BaseModeCard
         to="/play"
         :title="$t('home.solo.title')"
         :body="$t('home.solo.body')"
         :cta="$t('home.solo.cta')"
         ><Crown :size="28"
-      /></ModeCard>
-      <ModeCard
+      /></BaseModeCard>
+      <BaseModeCard
         v-if="!SOLO_ONLY"
         to="/rooms"
         :title="$t('home.coop.title')"
         :body="$t('home.coop.body')"
         :cta="$t('home.coop.cta')"
         ><Users :size="28"
-      /></ModeCard>
-      <ModeCard
+      /></BaseModeCard>
+      <BaseModeCard
         to="/tutorial"
         :title="$t('home.tutorial.title')"
         :body="$t('home.tutorial.body')"
         :cta="$t('home.tutorial.cta')"
         ><GraduationCap :size="28"
-      /></ModeCard>
+      /></BaseModeCard>
     </div>
   </main>
 </template>

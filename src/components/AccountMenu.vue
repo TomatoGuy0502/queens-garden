@@ -2,7 +2,7 @@
 import { shallowRef, useTemplateRef, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { UserRound } from '@lucide/vue'
-import ModalDialog from './ModalDialog.vue'
+import BaseModalDialog from './BaseModalDialog.vue'
 import { useAccount } from '../composables/useAccount'
 import { usePlayerName } from '../composables/usePlayerName'
 import { useMessage } from '../i18n/message'
@@ -79,7 +79,7 @@ async function remove() {
       <UserRound v-else :size="18" /><span>{{ account.nickname ?? $t('account.open') }}</span>
     </button>
     <p v-if="error && !account" class="account-error" role="alert">{{ render(error) }}</p>
-    <ModalDialog
+    <BaseModalDialog
       ref="dialog"
       class="account-dialog"
       :title="$t('account.title')"
@@ -108,7 +108,7 @@ async function remove() {
           {{ $t('account.delete') }}
         </button>
       </div>
-    </ModalDialog>
+    </BaseModalDialog>
   </template>
 </template>
 <style scoped>

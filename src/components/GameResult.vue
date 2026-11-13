@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { onMounted, useTemplateRef } from 'vue'
-import CrownIcon from './CrownIcon.vue'
+import BaseIconCrown from './BaseIconCrown.vue'
 import { formatDuration } from '../queens/stats'
 const props = defineProps<{
   time: string
@@ -26,7 +26,7 @@ onMounted(() => {
 </script>
 <template>
   <section ref="result" class="result" aria-labelledby="result-title">
-    <CrownIcon filled class="result-crown" />
+    <BaseIconCrown filled class="result-crown" />
     <h2 id="result-title">{{ title ?? $t('result.title') }}</h2>
     <p>
       {{

@@ -3,7 +3,7 @@ import { computed, shallowRef, nextTick, useTemplateRef, watch } from 'vue'
 import { useEventListener } from '@vueuse/core'
 import BoardPauseCover from './BoardPauseCover.vue'
 import BoardReviewBar from './BoardReviewBar.vue'
-import QueensCell from './QueensCell.vue'
+import QueensBoardCell from './QueensBoardCell.vue'
 import { useGamePreferences } from '../composables/useGamePreferences'
 import { guidedCells, type BoardGuidance, type GuidanceReason } from '../queens/guidance'
 import type { CellState, PuzzleDefinition } from '../queens/types'
@@ -229,7 +229,7 @@ async function navigate(index: number, event: KeyboardEvent) {
               class="board-row"
               :style="{ gridTemplateColumns: `repeat(${puzzle.size}, 1fr)` }"
             >
-              <QueensCell
+              <QueensBoardCell
                 v-for="cell in row"
                 :key="cell.index"
                 v-bind="cell"

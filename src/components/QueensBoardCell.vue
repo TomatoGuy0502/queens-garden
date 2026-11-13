@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import CrownIcon from './CrownIcon.vue'
+import BaseIconCrown from './BaseIconCrown.vue'
 import { i18n } from '../i18n'
 import type { GuidanceReason } from '../queens/guidance'
 import type { CellState } from '../queens/types'
@@ -96,7 +96,7 @@ const emit = defineEmits<{
       participantLabel
     }}</span>
     <span class="region-label" aria-hidden="true">{{ String.fromCharCode(65 + region) }}</span>
-    <CrownIcon v-if="state === 'queen'" filled class="cell-crown" />
+    <BaseIconCrown v-if="state === 'queen'" filled class="cell-crown" />
     <span v-else-if="state === 'marked'" class="cell-mark" aria-hidden="true">×</span>
   </button>
 </template>

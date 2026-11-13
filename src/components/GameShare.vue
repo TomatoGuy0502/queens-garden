@@ -4,7 +4,7 @@ import { computed, shallowRef, useTemplateRef } from 'vue'
 import { useI18n } from 'vue-i18n'
 import QRCode from 'qrcode'
 import { Share2, Copy, Check } from '@lucide/vue'
-import ModalDialog from './ModalDialog.vue'
+import BaseModalDialog from './BaseModalDialog.vue'
 import type { PuzzleDefinition } from '../queens/types'
 const props = defineProps<{
   puzzle?: Pick<PuzzleDefinition, 'size' | 'difficulty' | 'seed' | 'version'>
@@ -76,7 +76,7 @@ async function share() {
   <button type="button" class="text-button share-button" @click="open">
     <Share2 :size="14" />{{ shareTitle }}
   </button>
-  <ModalDialog
+  <BaseModalDialog
     ref="dialog"
     class="share-dialog"
     :title="shareTitle"
@@ -120,7 +120,7 @@ async function share() {
       </button>
     </div>
     <p class="share-status" role="status" aria-live="polite">{{ status }}</p>
-  </ModalDialog>
+  </BaseModalDialog>
 </template>
 <style scoped>
 .share-button {

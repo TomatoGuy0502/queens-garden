@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { SOLO_ONLY } from '../deployment'
 import AccountMenu from './AccountMenu.vue'
-import CrownIcon from './CrownIcon.vue'
+import BaseIconCrown from './BaseIconCrown.vue'
 import GamePreferences from './GamePreferences.vue'
 import LanguageSwitcher from './LanguageSwitcher.vue'
 import ThemeToggle from './ThemeToggle.vue'
@@ -11,7 +11,7 @@ const { guidance, storageAvailable } = useGamePreferences()
 <template>
   <header class="app-header">
     <RouterLink class="brand" to="/" :aria-label="$t('brand.home')"
-      ><CrownIcon /><span>queens<span class="brand-dot">.</span></span></RouterLink
+      ><BaseIconCrown /><span>queens<span class="brand-dot">.</span></span></RouterLink
     >
     <nav>
       <RouterLink to="/play">{{ $t('nav.solo') }}</RouterLink

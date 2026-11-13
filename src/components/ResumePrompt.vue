@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
-import CrownIcon from './CrownIcon.vue'
+import BaseIconCrown from './BaseIconCrown.vue'
 import { dateKey } from '../queens/daily'
 import type { SavedProgress } from '../queens/progress'
 import { formatDuration } from '../queens/stats'
@@ -28,7 +28,7 @@ const summary = computed(() => {
 </script>
 <template>
   <div class="empty-board resume" role="group" aria-labelledby="resume-title">
-    <CrownIcon />
+    <BaseIconCrown />
     <h2 id="resume-title">{{ $t('resume.title') }}</h2>
     <p>{{ summary }}</p>
     <div class="resume-actions">

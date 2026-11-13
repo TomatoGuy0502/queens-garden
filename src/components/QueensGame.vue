@@ -3,7 +3,7 @@ import { SOLO_ONLY } from '../deployment'
 import { useRoute } from 'vue-router'
 import { computed, onMounted, onUnmounted, shallowRef, useTemplateRef, watch } from 'vue'
 import { Pause, Play, LoaderCircle } from '@lucide/vue'
-import CrownIcon from './CrownIcon.vue'
+import BaseIconCrown from './BaseIconCrown.vue'
 import QueensBoard from './QueensBoard.vue'
 import Queens3DBoard from './Queens3DBoard.vue'
 import BaseConfirmInline from './BaseConfirmInline.vue'
@@ -267,7 +267,7 @@ onMounted(() => {
             :badge="shown.daily ? $t(ranked ? 'ranked.badge' : 'game.dailyBadge') : undefined"
           >
             <span v-if="puzzle" class="queen-count"
-              ><CrownIcon /> {{ queens.length
+              ><BaseIconCrown /> {{ queens.length
               }}<span>/ {{ stacked ? puzzle.size ** 2 : puzzle.size }}</span></span
             >
             <template #actions>
@@ -299,7 +299,7 @@ onMounted(() => {
               :busy="false"
             />
             <div v-if="versionMismatch" class="empty-board">
-              <CrownIcon />
+              <BaseIconCrown />
               <h2>{{ $t('game.versionMismatch.title') }}</h2>
               <p>{{ $t('game.versionMismatch.body', { version: kind.version }) }}</p>
             </div>
@@ -311,7 +311,7 @@ onMounted(() => {
             />
             <div v-else-if="busy || preparing" class="empty-board" role="status">
               <div class="generating-art">
-                <CrownIcon /><LoaderCircle class="spinner" :size="21" />
+                <BaseIconCrown /><LoaderCircle class="spinner" :size="21" />
               </div>
               <h2>{{ $t('game.generating.title') }}</h2>
               <p>{{ $t('game.generating.body') }}</p>
@@ -371,7 +371,7 @@ onMounted(() => {
               </template>
             </component>
             <div v-else class="empty-board">
-              <CrownIcon />
+              <BaseIconCrown />
               <h2>{{ $t('game.idle.title') }}</h2>
               <p>{{ $t('game.idle.body') }}</p>
             </div>
