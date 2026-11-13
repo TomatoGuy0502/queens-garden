@@ -41,16 +41,4 @@ import ModeCard from '../components/ModeCard.vue'
 .daily-card {
   margin-top: 28px;
 }
-.mode-cards {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-  gap: 24px;
-  margin-top: 24px;
-}
-@media (max-width: 650px) {
-  .mode-cards {
-    grid-template-columns: 1fr;
-    gap: 18px;
-  }
-}
 </style>

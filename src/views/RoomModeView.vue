@@ -26,17 +26,3 @@ import ModeCard from '../components/ModeCard.vue'
     </div>
   </main>
 </template>
-<style scoped>
-.mode-cards {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-  gap: 24px;
-  margin-top: 24px;
-}
-@media (max-width: 650px) {
-  .mode-cards {
-    grid-template-columns: 1fr;
-    gap: 18px;
-  }
-}
-</style>
