@@ -282,6 +282,9 @@ export default {
       heading: '建立房間',
       intro: '最多 8 人。房主可直接開始，隊友隨時加入。',
       name: '你的暱稱',
+      board: '棋盤類型',
+      flat: '平面（2D）',
+      stackedBoard: '疊層（3D）',
       size: '棋盤大小',
       difficulty: '難度',
       submit: '建立房間',
@@ -347,6 +350,7 @@ export default {
       offline: '離線',
       unknown: '位置 —',
       at: '停在 {row},{col}',
+      atLayer: '第 {layer} 層 {row},{col}',
     },
     round: {
       restartTitle: '重新開始本關？',

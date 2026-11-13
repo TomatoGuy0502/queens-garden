@@ -11,8 +11,10 @@ const props = withDefaults(
     size: number
     /** A duel never shows where anyone is looking. */
     showPosition?: boolean
+    /** Positions are then a layer, row and column. */
+    stacked?: boolean
   }>(),
-  { meId: undefined, showPosition: true },
+  { meId: undefined, showPosition: true, stacked: false },
 )
 const positions = computed(
   () =>
@@ -24,12 +26,14 @@ const positions = computed(
 )
 function position(id: string) {
   const index = positions.value.get(id)
-  return index === undefined || !props.size
-    ? t('coop.presence.unknown')
-    : t('coop.presence.at', {
-        row: Math.floor(index / props.size) + 1,
-        col: (index % props.size) + 1,
-      })
+  if (index === undefined || !props.size) return t('coop.presence.unknown')
+  const area = props.stacked ? props.size ** 2 : Infinity,
+    within = index % area
+  return t(props.stacked ? 'coop.presence.atLayer' : 'coop.presence.at', {
+    layer: Math.floor(index / area) + 1,
+    row: Math.floor(within / props.size) + 1,
+    col: (within % props.size) + 1,
+  })
 }
 </script>
 <template>

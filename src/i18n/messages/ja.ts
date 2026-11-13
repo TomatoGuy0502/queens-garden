@@ -303,6 +303,9 @@ const ja: Messages<typeof zhHant> = {
       heading: 'ルームを作成',
       intro: '最大 8 人。ホストはすぐに開始でき、仲間はいつでも参加できます。',
       name: 'ニックネーム',
+      board: 'ボードの種類',
+      flat: '平面（2D）',
+      stackedBoard: '積層（3D）',
       size: '盤面サイズ',
       difficulty: '難易度',
       submit: 'ルームを作成',
@@ -373,6 +376,7 @@ const ja: Messages<typeof zhHant> = {
       offline: 'オフライン',
       unknown: '位置 —',
       at: '{row},{col} にいます',
+      atLayer: '{layer} 層 {row},{col}',
     },
     round: {
       restartTitle: 'このラウンドをやり直しますか？',

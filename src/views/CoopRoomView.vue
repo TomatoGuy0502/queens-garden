@@ -5,6 +5,7 @@ import { useEventListener, useIntervalFn } from '@vueuse/core'
 import { useI18n } from 'vue-i18n'
 import { failureMessage } from '../../shared/message'
 import type { RoomMode } from '../../shared/coop'
+import type { PuzzleDefinition } from '../queens/types'
 import { useMessage } from '../i18n/message'
 import { useRouter } from 'vue-router'
 import { Clock3, Pause, Play, MousePointer2, LoaderCircle, LogOut } from '@lucide/vue'
@@ -15,11 +16,13 @@ import RoomToast from '../components/coop/RoomToast.vue'
 import RoomLobby from '../components/coop/RoomLobby.vue'
 import DuelPlay from '../components/coop/DuelPlay.vue'
 import QueensBoard from '../components/QueensBoard.vue'
+import Queens3DBoard from '../components/Queens3DBoard.vue'
 import GameToolbar from '../components/GameToolbar.vue'
 import GameResult from '../components/GameResult.vue'
 import GameRules from '../components/GameRules.vue'
 import GameShare from '../components/GameShare.vue'
 import { HINT_LEVELS, hintView } from '../queens/strategies'
+import { hintView3d, isPuzzle3d } from '../queens3d/play'
 import { useLeaveGuard } from '../composables/useLeaveGuard'
 import { useRoomStore } from '../stores/room'
 import { useCoopGameStore } from '../stores/game'
@@ -39,6 +42,11 @@ const joining = shallowRef(false),
   joinError = shallowRef(''),
   pointMode = shallowRef(false)
 const reviewing = shallowRef(false)
+const stacked = computed(() => !!room.room?.settings.stacked)
+// The stacked board takes the flat board's props and events.
+const board = computed(() =>
+  game.state?.puzzle && isPuzzle3d(game.state.puzzle) ? Queens3DBoard : QueensBoard,
+)
 watch([() => game.state?.id, () => game.state?.phase], () => {
   reviewing.value = false
 })
@@ -48,9 +56,11 @@ const canResume = computed(() => room.connected)
 // The shared hint is revealed in levels; the whole room sees the same level.
 const hintInfo = computed(() => {
   const shared = game.state?.hint
-  return shared?.step && game.state?.puzzle
-    ? hintView(shared.step, shared.level, game.state.puzzle.regions)
-    : null
+  const puzzle = game.state?.puzzle
+  if (!shared?.step || !puzzle) return null
+  return isPuzzle3d(puzzle)
+    ? hintView3d(shared.step, shared.level, puzzle.regions)
+    : hintView(shared.step, shared.level, puzzle.regions)
 })
 const hintLevel = computed(() => (hintInfo.value ? game.state!.hint!.level : 0))
 const hintRevealed = computed(() => hintLevel.value >= HINT_LEVELS)
@@ -213,6 +223,7 @@ async function reset() {
         :me-id="room.credentials?.playerId"
         :hovers="room.hovers"
         :size="game.state?.puzzle?.size ?? 0"
+        :stacked="stacked"
         :show-position="!duel" />
       <p v-if="!room.connected" class="connection-notice" role="status">
         {{ $t('coop.room.disconnected') }}
@@ -251,11 +262,13 @@ async function reset() {
                 <span class="difficulty-badge">{{
                   $t(`difficulty.${game.state.puzzle.difficulty}`)
                 }}</span
-                ><span>{{ game.state.puzzle.size }} × {{ game.state.puzzle.size }}</span
+                ><span
+                  >{{ game.state.puzzle.size }} × {{ game.state.puzzle.size
+                  }}{{ stacked ? ` × ${game.state.puzzle.size}` : '' }}</span
                 ><span>{{
                   $t('coop.room.crowns', {
-                    count: game.queens.length,
-                    size: game.state.puzzle.size,
+                    count: game.crowns,
+                    size: game.state.puzzle.size ** (stacked ? 2 : 1),
                   })
                 }}</span>
               </div>
@@ -281,8 +294,9 @@ async function reset() {
                 </button>
               </div>
             </div>
-            <QueensBoard
-              :puzzle="game.state.puzzle"
+            <component
+              :is="board"
+              :puzzle="game.state.puzzle as PuzzleDefinition"
               :cells="game.cells"
               :guidance="guidance"
               :paused="game.state.phase === 'paused'"
@@ -310,7 +324,7 @@ async function reset() {
                   :next-label="room.isHost ? $t('coop.room.next') : $t('coop.room.waitHost')"
                   @review="reviewing = true"
                   @next="reset" /></template
-            ></QueensBoard>
+            ></component>
             <div class="point-tools">
               <button
                 type="button"

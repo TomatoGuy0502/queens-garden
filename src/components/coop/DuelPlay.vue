@@ -6,6 +6,7 @@ import { useMessage } from '../../i18n/message'
 import QueensBoard from '../QueensBoard.vue'
 import GameToolbar from '../GameToolbar.vue'
 import GameResult from '../GameResult.vue'
+import type { PuzzleDefinition } from '../../queens/types'
 import { DEFAULT_GUIDANCE } from '../../queens/guidance'
 import { duelProgress } from '../../queens/duel'
 import { useCoopGameStore } from '../../stores/game'
@@ -21,7 +22,8 @@ const reviewing = shallowRef(false)
 watch([() => game.state?.id, () => game.state?.phase], () => {
   reviewing.value = false
 })
-const puzzle = computed(() => game.state!.puzzle!)
+// A duel is always on the flat board.
+const puzzle = computed(() => game.state!.puzzle! as PuzzleDefinition)
 const meId = computed(() => room.credentials?.playerId)
 const finished = computed(() => game.state?.phase === 'completed')
 const racers = computed(() =>

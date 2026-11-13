@@ -4,6 +4,7 @@ import type { GameSnapshot } from '../../shared/coop'
 import type { CellState } from '../queens/types'
 import { formatDuration } from '../queens/stats'
 import { conflictCells } from '../queens/validator'
+import { conflictCells3d, isPuzzle3d } from '../queens3d/play'
 export const useCoopGameStore = defineStore('coopGame', () => {
   const state = shallowRef<GameSnapshot | null>(null),
     tick = shallowRef(0)
@@ -38,7 +39,7 @@ export const useCoopGameStore = defineStore('coopGame', () => {
   )
   const time = computed(() => formatDuration(Math.floor(elapsedMs.value / 1000)))
   const queens = computed(() =>
-    state.value?.puzzle
+    state.value?.puzzle && !isPuzzle3d(state.value.puzzle)
       ? cells.value.flatMap((cell, i) =>
           cell === 'queen'
             ? [
@@ -51,8 +52,26 @@ export const useCoopGameStore = defineStore('coopGame', () => {
         )
       : [],
   )
-  const conflicts = computed(() =>
-    state.value?.puzzle ? conflictCells(state.value.puzzle.regions, queens.value) : [],
-  )
-  return { state, cells, time, elapsedMs, queens, conflicts, accept, clock, clear, show, settle }
+  const crowns = computed(() => cells.value.filter((cell) => cell === 'queen').length)
+  const conflicts = computed(() => {
+    const puzzle = state.value?.puzzle
+    if (!puzzle) return []
+    return isPuzzle3d(puzzle)
+      ? conflictCells3d(puzzle.regions, cells.value)
+      : conflictCells(puzzle.regions, queens.value)
+  })
+  return {
+    state,
+    cells,
+    time,
+    elapsedMs,
+    queens,
+    crowns,
+    conflicts,
+    accept,
+    clock,
+    clear,
+    show,
+    settle,
+  }
 })

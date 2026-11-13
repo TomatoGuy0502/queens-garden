@@ -22,8 +22,14 @@ const props = defineProps<{
   guidance: BoardGuidance
   /** Draws nothing, but takes exactly the room the board will: for what is shown before a board exists. */
   placeholder?: boolean
+  /** Room play: cells (numbered through all layers) other players are pointing at or hovering. */
+  canResume?: boolean
+  pendingCells?: number[]
+  points?: { index: number; name: string }[]
+  hovers?: { index: number | null; name: string }[]
 }>()
 const emit = defineEmits<{
+  hover: [index: number | null]
   play: [index: number]
   mark: [index: number]
   crown: [index: number]
@@ -44,6 +50,13 @@ const layerPuzzles = computed(() =>
     regions: layerRegions(props.puzzle.regions, z),
   })),
 )
+// Cells of one layer, renumbered from the layer's own first cell.
+const named = <T extends { index: number | null }>(items: T[] | undefined, z: number) =>
+  (items ?? []).flatMap((item) =>
+    item.index !== null && Math.floor(item.index / area.value) === z
+      ? [{ ...item, index: item.index % area.value }]
+      : [],
+  )
 const inLayer = (cells: number[], z: number) =>
   cells.flatMap((cell) => (Math.floor(cell / area.value) === z ? [cell % area.value] : []))
 const pillars = computed(() =>
@@ -80,12 +93,16 @@ const layers = computed(() =>
     highlighted: inLayer(props.highlighted, z),
     mistakes: inLayer(props.mistakes, z),
     pillarGuided: inLayer(pillars.value, z),
+    pending: inLayer(props.pendingCells ?? [], z),
+    points: named(props.points, z),
+    hovers: named(props.hovers, z),
     linked: hovered.value && hovered.value.z !== z ? hovered.value.index : null,
   })),
 )
 function hover(z: number, index: number | null) {
   if (index !== null) hovered.value = { z, index }
   else if (hovered.value?.z === z) hovered.value = null
+  emit('hover', index === null ? null : z * area.value + index)
 }
 /** [ and ] (or PageUp and PageDown) move to the same cell of the layer above or below. */
 async function switchLayer(event: KeyboardEvent) {
@@ -178,6 +195,10 @@ useEventListener(window, 'keydown', (event: KeyboardEvent) => {
           :pillar-guided="layer.pillarGuided"
           :linked="layer.linked"
           :busy="busy"
+          :can-resume="canResume"
+          :pending-cells="layer.pending"
+          :points="layer.points"
+          :hovers="layer.hovers"
           @play="emit('play', layer.z * area + $event)"
           @mark="emit('mark', layer.z * area + $event)"
           @crown="emit('crown', layer.z * area + $event)"
@@ -190,7 +211,7 @@ useEventListener(window, 'keydown', (event: KeyboardEvent) => {
       <Pause :size="28" />
       <h2>{{ $t('board.pausedTitle') }}</h2>
       <p>{{ $t('board.pausedBody') }}</p>
-      <button type="button" class="primary" @click="emit('resume')">
+      <button type="button" class="primary" :disabled="canResume === false" @click="emit('resume')">
         <Play :size="16" /> {{ $t('board.resume') }}
       </button>
     </div>

@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import { maxPlayers } from '../../../shared/coop'
 import type { Player, RoomMode, RoomSettings } from '../../../shared/coop'
+import { computed } from 'vue'
 import { BOARD_SIZES, DIFFICULTIES } from '../../queens/levels'
+import { BOARD_SIZES_3D } from '../../queens3d/version'
 import type { Difficulty } from '../../queens/types'
 const props = defineProps<{
   mode: RoomMode
@@ -13,6 +15,21 @@ const props = defineProps<{
   pending: boolean
 }>()
 const emit = defineEmits<{ start: []; configure: [value: RoomSettings] }>()
+const sizes = computed(() => (props.settings.stacked ? BOARD_SIZES_3D : BOARD_SIZES))
+// Expert has no measured threshold on stacked boards yet.
+const difficulties = computed(() =>
+  props.settings.stacked ? DIFFICULTIES.filter((item) => item !== 'expert') : DIFFICULTIES,
+)
+function board(event: Event) {
+  const stacked = (event.target as HTMLSelectElement).value === 'stacked'
+  emit('configure', {
+    ...props.settings,
+    stacked,
+    size: stacked ? 5 : 8,
+    difficulty:
+      stacked && props.settings.difficulty === 'expert' ? 'hard' : props.settings.difficulty,
+  })
+}
 function size(event: Event) {
   emit('configure', {
     ...props.settings,
@@ -57,6 +74,18 @@ function difficulty(event: Event) {
       </div>
     </div>
     <div class="lobby-settings room-form">
+      <template v-if="mode === 'coop'"
+        ><label for="coop-board">{{ $t('coop.create.board') }}</label
+        ><select
+          id="coop-board"
+          :value="settings.stacked ? 'stacked' : 'flat'"
+          :disabled="meId !== hostId || pending"
+          @change="board"
+        >
+          <option value="flat">{{ $t('coop.create.flat') }}</option>
+          <option value="stacked">{{ $t('coop.create.stackedBoard') }}</option>
+        </select></template
+      >
       <label for="coop-size">{{ $t('coop.create.size') }}</label
       ><select
         id="coop-size"
@@ -64,7 +93,9 @@ function difficulty(event: Event) {
         :disabled="meId !== hostId || pending"
         @change="size"
       >
-        <option v-for="n in BOARD_SIZES" :key="n" :value="n">{{ n }} × {{ n }}</option></select
+        <option v-for="n in sizes" :key="n" :value="n">
+          {{ n }} × {{ n }}{{ settings.stacked ? ` × ${n}` : '' }}
+        </option></select
       ><label for="coop-difficulty">{{ $t('coop.create.difficulty') }}</label
       ><select
         id="coop-difficulty"
@@ -72,7 +103,7 @@ function difficulty(event: Event) {
         :disabled="meId !== hostId || pending"
         @change="difficulty"
       >
-        <option v-for="item in DIFFICULTIES" :key="item" :value="item">
+        <option v-for="item in difficulties" :key="item" :value="item">
           {{ $t(`difficulty.${item}`) }}
         </option>
       </select>

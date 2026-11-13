@@ -303,6 +303,9 @@ const en: Messages<typeof zhHant> = {
       heading: 'Create a room',
       intro: 'Up to 8 players. The host can start right away and teammates can join any time.',
       name: 'Your nickname',
+      board: 'Board type',
+      flat: 'Flat (2D)',
+      stackedBoard: 'Stacked (3D)',
       size: 'Board size',
       difficulty: 'Difficulty',
       submit: 'Create room',
@@ -374,6 +377,7 @@ const en: Messages<typeof zhHant> = {
       offline: 'Offline',
       unknown: 'Position —',
       at: 'At {row},{col}',
+      atLayer: 'Layer {layer}, {row},{col}',
     },
     round: {
       restartTitle: 'Restart this round?',

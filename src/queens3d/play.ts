@@ -6,6 +6,10 @@ import { buildUnits, cellAt, cellIndex } from './geometry'
 import { layerRegions } from './regions'
 import type { Puzzle3DDefinition } from './types'
 
+/** Whether a board's puzzle is a stacked one: its regions are a list of layers, not of rows. */
+export const isPuzzle3d = (puzzle: { regions: unknown[] }): puzzle is Puzzle3DDefinition =>
+  Array.isArray((puzzle.regions as unknown[][])[0]?.[0])
+
 /** Crowns that break a rule: the 2D rules inside each layer, plus two crowns in one pillar. */
 export function conflictCells3d(regions: number[][][], cells: readonly CellState[]): number[] {
   const n = regions.length,
