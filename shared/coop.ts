@@ -65,7 +65,7 @@ export const commandSchema = z.discriminatedUnion('type', [
   z.object({
     ...round,
     type: z.literal('duelBoard'),
-    cells: z.array(z.enum(['empty', 'queen', 'marked'])).max(144),
+    cells: z.array(z.enum(['empty', 'queen', 'marked'])).max(MAX_CELL + 1),
   }),
   z.object({ ...round, type: z.literal('undo'), targetId: z.uuid() }),
   z.object({ ...round, type: z.literal('redo'), targetId: z.uuid() }),

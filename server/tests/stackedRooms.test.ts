@@ -4,7 +4,7 @@ import { RoomManager } from '../rooms'
 import type { Compute } from '../compute'
 import type { RoomEvent, RoomRepository, StoredRoom } from '../model'
 import type { RoomCommand, RoomSnapshot } from '../../shared/coop'
-import { createRoomSchema } from '../../shared/coop'
+import { commandSchema, createRoomSchema } from '../../shared/coop'
 import { logicalHint } from '../../src/queens/difficulty'
 import { logicalHint3d } from '../../src/queens3d/difficulty'
 import { generatePuzzle3d } from '../../src/queens3d/generator'
@@ -143,4 +143,16 @@ it('a stacked duel counts layer rows and columns, and a correct skeleton wins', 
     progress: { [guest.credentials.playerId]: 25 },
   })
   expect(won.game.phase).toBe('completed')
+})
+it('a duel board command carries a whole 6 × 6 × 6 board', () => {
+  const command = {
+    type: 'duelBoard',
+    actionId: randomUUID(),
+    gameId: randomUUID(),
+    cells: Array(216).fill('empty'),
+  }
+  expect(commandSchema.safeParse(command).success).toBe(true)
+  expect(commandSchema.safeParse({ ...command, cells: Array(217).fill('empty') }).success).toBe(
+    false,
+  )
 })
