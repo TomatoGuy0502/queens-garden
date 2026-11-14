@@ -409,6 +409,13 @@ export default {
       waitingHost: '等待房主開始對戰。',
     },
     progress: { label: '{name} 的完成進度', value: '{count} / {size}' },
+    rematch: {
+      ask: '再戰一場',
+      accept: '接受再戰',
+      asked: '{name} 想再戰一場！',
+      waiting: '等待 {name} 回應…',
+      alone: '對手已離開',
+    },
     result: {
       win: '你贏了！',
       lose: '你輸了',

@@ -54,6 +54,7 @@ export const commandSchema = z.discriminatedUnion('type', [
   z.object({ ...round, type: z.literal('start') }),
   z.object({ ...round, type: z.literal('reset') }),
   z.object({ ...round, type: z.literal('restart') }),
+  z.object({ ...round, type: z.literal('rematch') }),
   z.object({ ...envelope, type: z.literal('leave') }),
   z.object({
     ...round,
@@ -106,6 +107,8 @@ export interface DuelSnapshot {
   /** Per player id: rows and columns covered by queens, right or wrong. */
   progress: Record<string, number>
   winnerId: string | null
+  /** Players who asked for a rematch after the round. */
+  rematch: string[]
   /** The viewer's own board, present only in replies addressed to that viewer. */
   mine?: CellState[]
 }

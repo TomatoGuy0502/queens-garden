@@ -44,6 +44,24 @@ const racers = computed(() =>
   })),
 )
 const winner = computed(() => room.room?.players.find((p) => p.id === game.state?.duel?.winnerId))
+// A rematch starts once both players ask; each sees whether they, or the other, already did.
+const opponent = computed(() => room.room?.players.find((p) => p.id !== meId.value))
+const rematch = computed(() => {
+  const votes = game.state?.duel?.rematch ?? []
+  if (!opponent.value) return { label: t('duel.rematch.alone'), disabled: true, note: '' }
+  const asked = votes.includes(opponent.value.id)
+  return votes.includes(meId.value ?? '')
+    ? {
+        label: t('duel.rematch.waiting', { name: opponent.value.name }),
+        disabled: true,
+        note: '',
+      }
+    : {
+        label: asked ? t('duel.rematch.accept') : t('duel.rematch.ask'),
+        disabled: false,
+        note: asked ? t('duel.rematch.asked', { name: opponent.value.name }) : '',
+      }
+})
 const won = computed(() => winner.value?.id === meId.value)
 const summary = computed(() =>
   won.value
@@ -99,11 +117,16 @@ const idle = computed(() => !room.connected || game.state?.phase !== 'playing')
         :time="game.time"
         :title="won ? $t('duel.result.win') : $t('duel.result.lose')"
         :summary="summary"
-        :next-disabled="!room.isHost || !room.connected"
-        :next-label="room.isHost ? $t('coop.room.next') : $t('coop.room.waitHost')"
+        :next-disabled="rematch.disabled || !room.connected || !!room.pending"
+        :next-label="rematch.label"
         @review="reviewing = true"
-        @next="room.send({ type: 'reset' })" /></template
-  ></component>
+        @next="room.send({ type: 'rematch' })"
+        ><p v-if="rematch.note" class="rematch-note" role="status">
+          {{ rematch.note }}
+        </p></GameResult
+      ></template
+    ></component
+  >
   <GameToolbar
     duel
     :blocked="idle"
@@ -128,6 +151,12 @@ const idle = computed(() => !room.connected || game.state?.phase !== 'playing')
   </p>
 </template>
 <style scoped>
+.rematch-note {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--accent);
+}
 .duel-progress {
   list-style: none;
   margin: 0 0 18px;

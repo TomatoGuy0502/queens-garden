@@ -438,6 +438,13 @@ const ja: Messages<typeof zhHant> = {
       waitingHost: 'ホストが対戦を開始するのを待っています。',
     },
     progress: { label: '{name} の進み具合', value: '{count} / {size}' },
+    rematch: {
+      ask: 'もう一戦',
+      accept: '再戦を受ける',
+      asked: '{name} が再戦を希望しています！',
+      waiting: '{name} の返事を待っています…',
+      alone: '相手が退出しました',
+    },
     result: {
       win: 'あなたの勝ち！',
       lose: 'あなたの負け',

@@ -75,6 +75,7 @@ function freshGame(room: StoredRoom) {
   room.mistakes = []
   room.boards = {}
   room.winnerId = null
+  room.rematch = []
 }
 export class RoomManager {
   private queues = new Map<string, Promise<void>>()
@@ -176,6 +177,7 @@ export class RoomManager {
                   ]),
                 ),
                 winnerId: room.winnerId,
+                rematch: room.rematch ?? [],
                 // Broadcasts go to both players, so a board only travels in a reply to its owner.
                 mine: viewerId ? room.boards[viewerId] : undefined,
               }
@@ -415,7 +417,11 @@ export class RoomManager {
         member = this.authorize(room, credentials)
       if (this.receipt(room, credentials, command)) return this.snapshot(room, member.id)
       if ('gameId' in command) this.round(room, command.gameId)
-      if (room.mode === 'duel' ? DUEL_FORBIDDEN.has(command.type) : command.type === 'duelBoard')
+      if (
+        room.mode === 'duel'
+          ? DUEL_FORBIDDEN.has(command.type)
+          : command.type === 'duelBoard' || command.type === 'rematch'
+      )
         throw new RoomError('INVALID_ACTION')
       switch (command.type) {
         case 'configure':
@@ -460,6 +466,7 @@ export class RoomManager {
             room.hostId =
               room.players.find((p) => this.online(room.id, p.id))?.id ?? room.players[0]?.id ?? ''
           room.message = message('notice.playerLeft', { name: member.name })
+          room.rematch = room.rematch?.filter((id) => id !== member.id)
           if (room.mode === 'duel' && room.players.length) {
             // Walking out of a race forfeits it; walking out while it is set up cancels it.
             if (room.phase === 'playing') {
@@ -494,6 +501,18 @@ export class RoomManager {
             { index: command.index, before: room.cells[command.index], after: command.nextState },
           ])
           break
+        case 'rematch': {
+          // Both players agree, then the next round starts on the same settings, without the lobby.
+          if (room.phase !== 'completed' || room.players.length < maxPlayers('duel'))
+            throw new RoomError('CANNOT_START')
+          const votes = new Set(room.rematch).add(member.id)
+          if (room.players.every((p) => votes.has(p.id))) {
+            freshGame(room)
+            room.phase = 'generating'
+            launch = true
+          } else room.rematch = [...votes]
+          break
+        }
         case 'duelBoard': {
           // The opponent may have finished while this board was on its way; the snapshot says so.
           if (room.phase === 'completed') break

@@ -605,6 +605,62 @@ it('the first correct board wins the duel and a late board changes nothing', asy
   const late = await manager.command(host, duelBoard(state, solved()))
   expect(late.game.duel).toMatchObject({ winnerId: guest.playerId })
 })
+it('a finished duel starts again on the same settings once both players ask', async () => {
+  const { manager, host, guest, state } = await game(memory(), compute(), 'duel')
+  const rematch = (gameId: string): RoomCommand => ({
+    type: 'rematch',
+    actionId: randomUUID(),
+    gameId,
+  })
+  await expect(manager.command(host, rematch(state.game.id))).rejects.toMatchObject({
+    code: 'CANNOT_START',
+  })
+  const won = await manager.command(guest, duelBoard(state, solved()))
+  const asked = await manager.command(host, rematch(won.game.id))
+  expect(asked.game.phase).toBe('completed')
+  expect(asked.game.duel?.rematch).toEqual([host.playerId])
+  // Asking twice is still one vote.
+  expect((await manager.command(host, rematch(won.game.id))).game.duel?.rematch).toEqual([
+    host.playerId,
+  ])
+  const again = await manager.command(guest, rematch(won.game.id))
+  expect(again.game.id).not.toBe(won.game.id)
+  expect(again.game.duel).toMatchObject({ winnerId: null, rematch: [] })
+  let next = await manager.state(host)
+  for (let i = 0; i < 50 && next.game.phase === 'generating'; i++) {
+    await new Promise((r) => setTimeout(r, 1))
+    next = await manager.state(host)
+  }
+  expect(next.game.phase).toBe('playing')
+  expect(next.settings).toEqual(state.settings)
+  expect(next.game.duel?.progress).toEqual({ [host.playerId]: 0, [guest.playerId]: 0 })
+})
+it('a rematch needs the opponent still in the room, and a co-op room has none', async () => {
+  const duel = await game(memory(), compute(), 'duel')
+  const won = await duel.manager.command(duel.guest, duelBoard(duel.state, solved()))
+  await duel.manager.command(duel.guest, {
+    type: 'rematch',
+    actionId: randomUUID(),
+    gameId: won.game.id,
+  })
+  const left = await duel.manager.command(duel.guest, { type: 'leave', actionId: randomUUID() })
+  expect(left.game.duel?.rematch).toEqual([])
+  await expect(
+    duel.manager.command(duel.host, {
+      type: 'rematch',
+      actionId: randomUUID(),
+      gameId: won.game.id,
+    }),
+  ).rejects.toMatchObject({ code: 'CANNOT_START' })
+  const coop = await game()
+  await expect(
+    coop.manager.command(coop.host, {
+      type: 'rematch',
+      actionId: randomUUID(),
+      gameId: coop.state.game.id,
+    }),
+  ).rejects.toMatchObject({ code: 'INVALID_ACTION' })
+})
 it('a duel offers no hints, checks, pause, shared edits or restart, and a co-op room no duel boards', async () => {
   const { manager, host, state } = await game(memory(), compute(), 'duel')
   const gameId = state.game.id

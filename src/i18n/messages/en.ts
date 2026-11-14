@@ -441,6 +441,13 @@ const en: Messages<typeof zhHant> = {
       waitingHost: 'Waiting for the host to start the duel.',
     },
     progress: { label: "{name}'s progress", value: '{count} / {size}' },
+    rematch: {
+      ask: 'Rematch',
+      accept: 'Accept rematch',
+      asked: '{name} wants a rematch!',
+      waiting: 'Waiting for {name}…',
+      alone: 'Your opponent left',
+    },
     result: {
       win: 'You win!',
       lose: 'You lost',

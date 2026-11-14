@@ -110,3 +110,42 @@ test('a duel can race on a stacked board', async ({ page, browser, isMobile }) =
     await context.close()
   }
 })
+test('both players ask for a rematch and race again on a new board', async ({ page, browser }) => {
+  await page.goto('/rooms/new?mode=duel')
+  await page.getByLabel('你的暱稱').fill('Alice')
+  await page.getByRole('button', { name: '建立房間', exact: true }).click()
+  await page.getByLabel('棋盤大小').selectOption('6')
+  const context = await browser.newContext({ locale: 'zh-TW' })
+  const guest = await context.newPage()
+  try {
+    await guest.goto(page.url())
+    await guest.getByLabel('你的暱稱').fill('Bob')
+    await guest.getByRole('button', { name: '加入房間', exact: true }).click()
+    await page.getByRole('button', { name: '開始對戰', exact: true }).click()
+    await expect(guest.getByRole('grid')).toBeVisible({ timeout: 30000 })
+    const readBoard = () =>
+      guest.getByRole('gridcell').evaluateAll((elements) => {
+        const cells = elements.map((e) => Number(e.getAttribute('data-region')))
+        return Array.from({ length: 6 }, (_, r) => cells.slice(r * 6, r * 6 + 6))
+      })
+    const first = await readBoard()
+    for (const [row, col] of solve(first).solutions[0].entries()) await queen(guest, row * 6 + col)
+    await expect(page.getByRole('heading', { name: '你輸了' })).toBeVisible()
+    await page.getByRole('button', { name: '再戰一場' }).click()
+    await expect(page.getByRole('button', { name: '等待 Bob 回應…' })).toBeDisabled()
+    await expect(guest.getByText('Alice 想再戰一場！')).toBeVisible()
+    await guest.getByRole('button', { name: '接受再戰' }).click()
+    for (const player of [page, guest]) {
+      await expect(player.getByRole('heading', { name: /你(贏|輸)了/ })).toHaveCount(0, {
+        timeout: 30000,
+      })
+      await expect(player.getByRole('gridcell')).toHaveCount(36)
+      await expect(player.locator('[data-state="queen"]')).toHaveCount(0)
+      await expect(bar(player, 'Bob')).toHaveText('0 / 6')
+    }
+    // A fresh seed, not the board just solved.
+    expect(await readBoard()).not.toEqual(first)
+  } finally {
+    await context.close()
+  }
+})

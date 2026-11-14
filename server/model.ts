@@ -36,6 +36,8 @@ export interface StoredRoom {
   /** Duel only: each player's own board, keyed by player id. */
   boards: Record<string, CellState[]>
   winnerId: string | null
+  /** Duel only: players who asked to race again once the round is over; absent in older rooms. */
+  rematch?: string[]
   receipts: Record<string, { playerId: string; fingerprint: string; at?: number }>
 }
 export interface RoomEvent {
